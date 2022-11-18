@@ -1,0 +1,24 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "0.9",
+	"FriendlyName": "CrispSubtitleFramework",
+	"Description": "This plugin provides subtitles in accordance with broadcasting industry standards.",
+	"Category": "Other",
+	"CreatedBy": "Crisp Clover",
+	"CreatedByURL": "https://twitter.com/crispclover",
+	"DocsURL": "",
+	"MarketplaceURL": "",
+	"SupportURL": "https://github.com/CrispClover/SubtitleFramework",
+	"CanContainContent": true,
+	"IsBetaVersion": true,
+	"IsExperimentalVersion": false,
+	"Installed": false,
+	"Modules": [
+		{
+			"Name": "CrispSubtitleFramework",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	]
+}
