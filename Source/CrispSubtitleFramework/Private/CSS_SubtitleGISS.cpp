@@ -11,19 +11,15 @@ void UCSS_SubtitleGISS::Initialize(FSubsystemCollectionBase& collection)
 
 	iTimerManager = gi->TimerManager;
 	
-	gi->OnLocalPlayerAddedEvent.AddUObject(this, &UCSS_SubtitleGISS::iPlayerAdded);
+	gi->OnLocalPlayerAddedEvent.AddUObject(this, &UCSS_SubtitleGISS::uPlayerAdded);
 	gi->OnLocalPlayerRemovedEvent.AddUObject(this, &UCSS_SubtitleGISS::iPlayerRemoved);
 }
 
 void UCSS_SubtitleGISS::Deinitialize()
 {
 	UGameInstance* gi = GetGameInstance();
-
-	if (UCSProjectSettingFunctions::SupportSplitscreen())
-	{
-		gi->OnLocalPlayerAddedEvent.RemoveAll(this);
-		gi->OnLocalPlayerRemovedEvent.RemoveAll(this);
-	}
+	gi->OnLocalPlayerAddedEvent.RemoveAll(this);
+	gi->OnLocalPlayerRemovedEvent.RemoveAll(this);
 
 	Super::Deinitialize();
 }
@@ -611,7 +607,7 @@ bool UCSS_SubtitleGISS::RegisterAutoNamedSource(AActor const* source, FName& nam
 	return iSourcesManager.AddSource(name);
 }
 
-bool UCSS_SubtitleGISS::RegisterAndTrackSound(FCSSoundID const& soundID, FVector const& location, ULocalPlayer const* player)
+bool UCSS_SubtitleGISS::RegisterAndTrackSound3D(FCSSoundID const& soundID, FVector const& location, ULocalPlayer const* player)
 {
 	if (!RegisterSource(soundID.Source))
 		return false;
@@ -629,12 +625,12 @@ bool UCSS_SubtitleGISS::RegisterAndTrackSound2D(FCSSoundID const& soundID, FVect
 	return true;
 }
 
-int32 UCSS_SubtitleGISS::BeginTracking3DSource(FCSSoundID const& soundID, FVector const& location, ULocalPlayer const* player)
+bool UCSS_SubtitleGISS::TrackSound3D(FCSSoundID const& soundID, FVector const& location, ULocalPlayer const* player)
 {
 	return iSourcesManager.TrackSound(soundID, location, player);
 }
 
-bool UCSS_SubtitleGISS::BeginTracking2DSource(FCSSoundID const& soundID, FVector2D const& position, ULocalPlayer const* player)
+bool UCSS_SubtitleGISS::TrackSound2D(FCSSoundID const& soundID, FVector2D const& position, ULocalPlayer const* player)
 {
 	return false;// sourcesManager.TrackSound(name, position, player);//TODO
 }
@@ -644,15 +640,37 @@ bool UCSS_SubtitleGISS::GetSoundLocation(FCSSoundID const& soundID,  FVector& lo
 	return iSourcesManager.GetSoundData(soundID, location, player);
 }
 
-void UCSS_SubtitleGISS::StopTrackingSource(const FName name, ULocalPlayer const* player)
+void UCSS_SubtitleGISS::StopTrackingSound(FCSSoundID const& soundID, ULocalPlayer const* player)
 {
-	iSourcesManager.StopTrackingSource(name, player);
+	//iSourcesManager.StopTrackingSource(name, player);//TODO: update for sound
 }
 
-bool UCSS_SubtitleGISS::UnregisterSource(const FName name)
+bool UCSS_SubtitleGISS::UnregisterSource(const FName source)
 {
-	OnSoundCancelled(name);//TODO: add code here!
-	return iSourcesManager.RemoveSource(name);
+	if (!iSourcesManager.RemoveSource(source))
+		return false;
+
+	RemoveQueuedSubtitlesBySource(source);
+	RemoveQueuedCaptionsBySource(source);
+
+	for (auto it = iDelayedSubtitles.CreateIterator(); it; ++it)
+		if (it.Value().Source == source)
+			it.RemoveCurrent();
+
+	TArray<FTimerHandle> removedHandles = TArray<FTimerHandle>();
+	TArray<int32> removedIDs = TArray<int32>();
+
+	iCurrentSubtitles.RemoveBySource(source, removedHandles, removedIDs);
+
+	if (removedHandles.IsEmpty())
+		return true;
+
+	iManageRemoval(removedHandles, removedIDs);
+
+	iSubtitleBroadcastData.LogDestruction(itNow());
+	uReconstructSubtitles();
+
+	return true;
 }
 
 void UCSS_SubtitleGISS::EmptySources()
@@ -702,10 +720,6 @@ void UCSS_SubtitleGISS::UnregisterIndicator(FCSSoundID const& soundID, ULocalPla
 	iSourcesManager.UnregisterIndicator(soundID, player, widget);
 }
 
-void UCSS_SubtitleGISS::CalcIndicatorData(ULocalPlayer const* player)
-{
-	iSourcesManager.CallCalculate(player);
-}
 #pragma endregion
 
 #pragma region SETTINGS
@@ -739,8 +753,8 @@ bool UCSS_SubtitleGISS::LoadSettingsAsync(FStreamableDelegate delegateToCall)
 	if (!settingsPaths.Num())
 		return false;
 
-	FStreamableManager& Streamable = UAssetManager::GetStreamableManager();
-	Streamable.RequestAsyncLoad(settingsPaths, delegateToCall);
+	FStreamableManager& streamable = UAssetManager::GetStreamableManager();
+	streamable.RequestAsyncLoad(settingsPaths, delegateToCall);
 
 	return true;
 }
@@ -750,7 +764,7 @@ TArray<UCSUserSettings*> UCSS_SubtitleGISS::GetSettingsList()
 	if (!iSettingsLibrary)
 		LoadSettings(GetDefault<UCSProjectSettings>()->SettingsPath.Path);
 
-	return GetSettingsListUnchecked();
+	return uGetSettingsList();
 }
 
 void UCSS_SubtitleGISS::SetSettings(UCSUserSettings* settings)
@@ -767,61 +781,7 @@ void UCSS_SubtitleGISS::ChangeSettingsAsync(FName settingsID)
 	if (iCurrentSettings->ID == settingsID)
 		return;//We don't want to force UI updates when nothing has changed.
 
-	LoadSettingsAsync(FStreamableDelegate::CreateUObject(this, &UCSS_SubtitleGISS::iSetSettingsByID, settingsID));
+	LoadSettingsAsync(FStreamableDelegate::CreateUObject(this, &UCSS_SubtitleGISS::uSetSettingsByID, settingsID));
 }
 
-//TODO: reorder below
-void UCSS_SubtitleGISS::OnSoundCancelled(const FName source)//TODO
-{
-	RemoveQueuedSubtitlesBySource(source);
-	RemoveQueuedCaptionsBySource(source);
-
-	for (auto it = iDelayedSubtitles.CreateIterator(); it; ++it)
-		if (it.Value().Source == source)
-			it.RemoveCurrent();
-
-	TArray<FTimerHandle> removedHandles = TArray<FTimerHandle>();
-	TArray<int32> removedIDs = TArray<int32>();
-
-	iCurrentSubtitles.RemoveBySource(source, removedHandles, removedIDs);
-
-	if (removedHandles.IsEmpty())
-		return;
-
-	for (const int32 id : removedIDs)
-		iIDManager.Delete(id);
-
-	for (FTimerHandle& h : removedHandles)
-		iTimerManager->ClearTimer(h);
-
-	iSubtitleBroadcastData.LogDestruction(itNow());//TODO: needed?
-	uReconstructSubtitles();
-}
 #pragma endregion
-
-// --- TODO: REMOVE --- //
-/*
-double UCSS_SubtitleGISS::GetViewPlaneRotationAngle(APlayerController const* controller, const FName name, bool& bSourceWasFound) const//TODO
-{
-	if (!controller || !sourcesManager.GetBundle(controller->GetLocalPlayer()).Sources3D.Contains(name))//TODO!
-		return 0;
-
-	const int32 controllerID = controller->GetLocalPlayer()->GetControllerId();
-	bSourceWasFound = true;
-
-	//const double angle = CalcAngle(controller, name);
-	return 0;// angle;
-}
-
-double UCSS_SubtitleGISS_Old::CalcAngle(AActor const* controller, const FName name) const//TODO: remove?
-{
-	const FQuat quat = controller->GetActorQuat();//not working, presumably
-	FCrispTrackedSource const* source = trackedSources.Find(name);
-	if (!source)
-		return 0;
-
-	const FVector vector = source->ObjectPosition;
-
-	const FVector newVec = quat.UnrotateVector(vector);//vector in view space
-	return FMath::Atan2(-newVec.Z, newVec.Y);//rotation in view space
-}*/

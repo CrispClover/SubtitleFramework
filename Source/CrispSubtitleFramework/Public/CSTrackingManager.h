@@ -266,7 +266,7 @@ public:
 		: Player(player)
 	{};
 
-	~CSTrackingManager()
+	virtual ~CSTrackingManager()
 	{ Clear(); };
 	
 	inline void Clear()

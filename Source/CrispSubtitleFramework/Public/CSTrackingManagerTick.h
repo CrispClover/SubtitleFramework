@@ -16,7 +16,8 @@ public:
 		: CSTrackingManager(player)
 	{};
 
-	virtual void Tick(float dTime) override;
+	virtual void Tick(float dt) override
+	{ Calculate(); };
 
 	virtual ETickableTickType GetTickableTickType() const override
 	{ return ETickableTickType::Always; };
@@ -29,7 +30,4 @@ public:
 
 	virtual bool IsTickableInEditor() const
 	{ return false; };
-
-private:
-	uint32 infTicked = INDEX_NONE;
 };

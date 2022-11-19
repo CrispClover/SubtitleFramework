@@ -41,7 +41,7 @@ void UCSUserSettingsSelectionWidget::Construct()
 
 void UCSUserSettingsSelectionWidget::oOnSettingsLoaded()
 {
-	SettingsOptions = oCSS->GetSettingsListUnchecked();
+	SettingsOptions = oCSS->uGetSettingsList();
 
 	for (UCSUserSettings* settings : SettingsOptions)
 		settings->RecalculateLayout(GetOwningLocalPlayer()->ViewportClient->Viewport->GetSizeXY());//TODO: oops

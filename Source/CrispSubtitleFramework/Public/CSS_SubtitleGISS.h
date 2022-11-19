@@ -759,7 +759,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Data")
 		float GetBusyDuration() const;
 
-	//Returns the approximated time the user will remain busy with reading the currently displayed subtitles.
+	//Returns whether a subtitle without infinite duration exists.
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Data")
 		bool HasPermanentSubtitle() const;
 
@@ -769,7 +769,6 @@ public:
 
 #pragma endregion
 
-//TODO: player param descriptions below, maybe more
 #pragma region SOURCE MANAGEMENT
 public:
 	/**
@@ -791,16 +790,19 @@ public:
 
 	/**
 	 * Registers a sound source with this subsystem for tracking via direction indicators.
-	 * @param SourceName The name to use for identification.
+	 * @param SoundID The ID of the sound.
 	 * @param SourceLocation The world position to use as the source's location.
+	 * @param Player The player to register the sound source with. If left blank, the source will register with all players.
 	 * @return false if SourceName is already registered.
 	 */
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Sources")
-		bool RegisterAndTrackSound(FCSSoundID const& SoundID, FVector const& SourceLocation, ULocalPlayer const* Player = nullptr);
+		bool RegisterAndTrackSound3D(FCSSoundID const& SoundID, FVector const& SourceLocation, ULocalPlayer const* Player = nullptr);
 
 	/**
 	 * Registers a 2D sound source with this subsystem.
-	 * @param SourceLocation The screen space position to use as the source's location.
+	 * @param SoundID The ID of the sound.
+	 * @param SourcePosition The screen space position to use as the source's location.
+	 * @param Player The player to register the sound source with. If left blank, the source will register with all players.
 	 * @return false if SourceName is already registered.
 	 */
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Sources")
@@ -808,43 +810,40 @@ public:
 
 	/**
 	 * Starts tracking a registered sound source for direction indicators.
-	 * @param SourceName The name used for identification.
+	 * @param SoundID The ID used at registration.
 	 * @param SourceLocation The world position to use as the source's location.
+	 * @param Player The player to change the sound location for. If left blank, the location will update for all players.
 	 * @return false if source hasn't been registered yet.
 	 */
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Sources")
-		int32 BeginTracking3DSource(FCSSoundID const& soundID, FVector const& SourceLocation, ULocalPlayer const* Player = nullptr);
+		bool TrackSound3D(FCSSoundID const& SoundID, FVector const& SourceLocation, ULocalPlayer const* Player = nullptr);
 
 	/**
 	 * Starts tracking a registered sound source for direction indicators.
-	 * @param SourceName The name used for identification.
-	 * @param SourceLocation The screen position to use.
+	 * @param SoundID The ID used at registration.
+	 * @param SourcePosition The screen position to use.
+	 * @param Player The player to change the sound position for. If left blank, the position will update for all players.
 	 * @return false if source hasn't been registered yet.
 	 */
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Sources")
-		bool BeginTracking2DSource(FCSSoundID const& soundID, FVector2D const& SourcePosition, ULocalPlayer const* Player = nullptr);
-
-	/** TODO
-	 * Updates a registered sound source's location.
-	 * @param SourceName The name used for identification.
-	 * @param SourceLocation The new screen position of this source.
-	 * @return false if SourceName is not registered.
-	 */
+		bool TrackSound2D(FCSSoundID const& SoundID, FVector2D const& SourcePosition, ULocalPlayer const* Player = nullptr);
 
 	/**
-	 * @param SourceName The name used for identification.
+	 * @param SoundID The ID used at registration.
 	 * @param SourceLocation The currently registered position of the source.
+	 * @param Player TODO
 	 * @return false if the source isn't tracked/registered.
 	 */
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Sources")
-		bool GetSoundLocation(FCSSoundID const& soundID, FVector& Location, ULocalPlayer const* Player = nullptr) const;
+		bool GetSoundLocation(FCSSoundID const& SoundID, FVector& Location, ULocalPlayer const* Player = nullptr) const;
 
 	/**
-	 * Removes a source from the list of tracked sources.
-	 * @param SourceName The name used for identification.
+	 * Removes a sound from the list of tracked sounds.
+	 * @param SoundID The ID used at registration.
+	 * @param Player The player to remove the sounds data from. If left blank, the data will be removed from all players.
 	 */
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Sources")
-		void StopTrackingSource(const FName SourceName, ULocalPlayer const* Player = nullptr);
+		void StopTrackingSound(FCSSoundID const& SoundID, ULocalPlayer const* Player = nullptr);
 
 	/**
 	 * Unregisters a source from this subsystem.
@@ -862,7 +861,8 @@ public:
 		//void ClearSources();
 
 	/**
-	 * @param SourceName The name used for identification.
+	 * @param SoundID The ID of the sound.
+	 * @param Player The player to check for the tracked sound. If left blank, the function will return true if any player tracks the source.
 	 * @return Whether the given source is being tracked.
 	 */
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Sources")
@@ -902,32 +902,28 @@ private:
 public:
 
 	/**
-	 * Forces recalculation of the indicator data.
-	 * If you want to run calculations on a timer, disable bCalculateIndicatorsOnTick in the project settings.
-	 * You can remove ticking entirely by removing the FTickableGameObject implementation from the subsystem in C++.
-	 * Note however that removing tick entirely will require you to rework the way the subsystem handles the flicker protection (e.g. using SetTimerForNextTick).
+	 * Forces recalculation of the indicator data. Doesn't need to be called by default.
+	 * If you want to run calculations on a timer, use this and disable bCalculateIndicatorsOnTick in the project settings.
 	 */
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Tick")
-		void UpdateIndicatorData(ULocalPlayer const* Player);//TODO
+		void UpdateIndicatorData(ULocalPlayer const* Player);
 
 	/**
-	 * Registers an indicator with this subsystem.
-	 * @param Args The name of the source.
-	 * @return The index used to identify the indicator internally.
+	 * Registers an indicator widget with this subsystem.
+	 * @param Args The ID of the sound and a reference to the widget data pointer.
+	 * @param Player The player the indicator widget belongs to.
+	 * @return The delegates to subscribe to for updates, can be null.
 	 */
 	CSIndicatorDelegates* RegisterIndicator(FCSRegisterArgs Args, ULocalPlayer const* Player = nullptr);
 	
 	/**
-	 * Removes an indicator form the list of registered indicators.
-	 * @param SourceName The name of the source.
-	 * @return false if the specified indicator was not found.
+	 * Removes an indicator from the list of registered indicators.
+	 * @param SoundID The ID of the sound.
+	 * @param Player The player the indicator widget belongs to.
+	 * @param Widget The widget to unregister.
 	 */
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Tick")
-	void UnregisterIndicator(FCSSoundID const& soundID, ULocalPlayer const* Player, UObject* Widget);
-	
-protected:
-	//Calculates the data required to display direction indicators correctly. Called on Tick / UpdateIndicatorData for each player. TODO: callable manually
-	void CalcIndicatorData(ULocalPlayer const* Player);//TODO: remove?
+	void UnregisterIndicator(FCSSoundID const& SoundID, ULocalPlayer const* Player, UObject* Widget);
 
 #pragma endregion
 
@@ -1007,7 +1003,7 @@ public:
 		void ChangeSettingsAsync(FName SettingsID);//TODO
 
 	//Only use after loading settings first. (e.g. binding the streamable delegate using LoadSettingsAsync)
-	inline TArray<UCSUserSettings*> GetSettingsListUnchecked()//TODO
+	inline TArray<UCSUserSettings*> uGetSettingsList()//TODO
 	{
 		TArray<FAssetData> aDataList;
 		iSettingsLibrary->GetAssetDataList(aDataList);
@@ -1028,13 +1024,24 @@ public:
 	}
 
 private:
-	//Only use after loading settings first. (e.g. binding the streamable delegate)
-	inline void iSetSettingsByID(FName settingsID)
+	inline void iRecalculateLayout(UGameViewportClient* viewportClient)
 	{
-		for (UCSUserSettings* settings : GetSettingsListUnchecked())
+		if (!viewportClient)
+			return;
+
+		FVector2D viewportSize;
+		viewportClient->GetViewportSize(viewportSize);
+		const FVector2D scaledSize = viewportSize / viewportClient->GetDPIScale();
+		iCurrentSettings->RecalculateLayout(scaledSize.IntPoint());
+	};
+
+	//Only use after loading settings first. (e.g. binding the streamable delegate)
+	inline void uSetSettingsByID(FName settingsID)
+	{
+		for (UCSUserSettings* settings : uGetSettingsList())
 			if (settings->ID == settingsID)
 				uSetSettings(settings);
-	}
+	};
 
 	inline void uSetSettings(UCSUserSettings* settings)
 	{
@@ -1044,7 +1051,7 @@ private:
 		iCurrentSettings = settings;
 		uReconstructSubtitles();
 		iSettingsLibrary = nullptr;
-	}
+	};
 
 	TSet<FName> iShownSpeakers = TSet<FName>();
 
@@ -1059,8 +1066,10 @@ private:
 //TODO
 #pragma region SPLITSCREEN SUPPORT
 private:
-	inline void iPlayerAdded(ULocalPlayer* player)
+	inline void uPlayerAdded(ULocalPlayer* player)
 	{
+		iRecalculateLayout(player->ViewportClient);
+
 		iSourcesManager.AddPlayer(player);
 	}
 
@@ -1068,6 +1077,7 @@ private:
 	{
 		iSourcesManager.RemovePlayer(player);
 	}
+
 #pragma endregion
 
 #pragma region QOL FUNCTIONS 
@@ -1100,15 +1110,4 @@ private:
 	{ return GetWorld()->GetRealTimeSeconds(); };
 
 #pragma endregion
-
-	// TODO: reorder! -->
-protected:
-	void OnSoundCancelled(const FName source);
-
-	//double CalcAngle(AActor const* Controller, const FName Name) const;//TODO
-/*
-public:
-	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Sources")
-		double GetViewPlaneRotationAngle(APlayerController const* Controller, const FName SourceName, bool& bSourceWasFound) const;//TODO
-*/
 };
