@@ -87,6 +87,8 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "CrispSubtitles")
 		FLinearColor LineBackColour;
+
+	//TODO: add Line Class here
 };
 
 /**
@@ -242,7 +244,7 @@ public:
 
 	//The minimum time (in seconds) any subtitle is on screen.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Timing")
-		float MinimumSubtitleTime = .85f;
+		float MinimumSubtitleTime = 1.f;
 
 	//The minimum time (in seconds) any caption is on screen.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Timing")
@@ -266,11 +268,11 @@ public:
 	
 	//TODO
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Style")
-		FLinearColor const& GetTextColour(FName SpeakerID);//TODO: custom logic
+		FLinearColor const& GetTextColour(FName Speaker);//TODO: custom logic
 
 	//TODO
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Style")
-		FCSLineStyle GetLineStyle(FName SpeakerID);//TODO: custom logic
+		FCSLineStyle GetLineStyle(FName Speaker);//TODO: custom logic
 
 private:
 	void iRecalculateLayout();

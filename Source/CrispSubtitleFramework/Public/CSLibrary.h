@@ -176,28 +176,28 @@ struct FGroupSubtitle : public FRawSubtitle
 public:
 	//Contains the information on who is speaking.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "CrispSubtitles")
-		FText Speaker;
+		FText SpeakerText;
 
 	//Contains the ID to identify the speaker, which may differ from the source.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "CrispSubtitles")
-		FName SpeakerID;
+		FName Speaker;
 
 	FGroupSubtitle()
 		: FRawSubtitle()
-		, Speaker(FText::FromString("error"))
-		, SpeakerID(FName("error"))
+		, SpeakerText(FText::FromString("error"))
+		, Speaker(FName("error"))
 	{};
 
 	FGroupSubtitle(FText const& description, const float displayDuration)
 		: FRawSubtitle(description, displayDuration)
+		, SpeakerText()
 		, Speaker()
-		, SpeakerID()
 	{};
 
 	FGroupSubtitle(FRawSubtitle const& raw, FText const& speaker, FName speakerID)
 		: FRawSubtitle(raw)
-		, Speaker(speaker)
-		, SpeakerID(speakerID)
+		, SpeakerText(speaker)
+		, Speaker(speakerID)
 	{};
 };
 

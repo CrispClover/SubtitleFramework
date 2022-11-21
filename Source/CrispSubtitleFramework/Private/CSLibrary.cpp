@@ -41,11 +41,11 @@ double UCSLibrary::AngleConversion(const double angle, const int32 segments, con
 
 FCrispSubtitle UCSLibrary::FrySubtitle(FFullSubtitle const& sub, const int32 id, UCSUserSettings const* settings)
 {
-	bool excludeSpeaker = settings->GetShowSpeaker(sub.SpeakerID) || sub.Speaker.IsEmpty();
+	bool excludeSpeaker = settings->GetShowSpeaker(sub.Speaker) || sub.SpeakerText.IsEmpty();
 	bool excludeDescription = !settings->bShowSubtitleDescriptions || sub.Description.IsEmpty();
 
 	if (excludeSpeaker && excludeDescription)
-		return FCrispSubtitle(FText(), sub.Lines, sub.SpeakerID, sub.Source, id);
+		return FCrispSubtitle(FText(), sub.Lines, sub.Speaker, sub.Source, id);
 
 	FText labelFormat;
 	if (excludeDescription)
@@ -57,9 +57,9 @@ FCrispSubtitle UCSLibrary::FrySubtitle(FFullSubtitle const& sub, const int32 id,
 
 	FText speakerM;
 	if (settings->bSpeakersAreUpperCase)
-		speakerM = sub.Speaker.ToUpper();
+		speakerM = sub.SpeakerText.ToUpper();
 	else
-		speakerM = sub.Speaker;
+		speakerM = sub.SpeakerText;
 
 	FFormatNamedArguments args;
 	args.Add("speaker", speakerM);
@@ -67,7 +67,7 @@ FCrispSubtitle UCSLibrary::FrySubtitle(FFullSubtitle const& sub, const int32 id,
 
 	FText label = FText::Format(labelFormat, args);
 
-	return FCrispSubtitle(label, sub.Lines, sub.SpeakerID, sub.Source, id);
+	return FCrispSubtitle(label, sub.Lines, sub.Speaker, sub.Source, id);
 }
 
 FVector2D UCSLibrary::LocalPositionToNDC(FVector2D const& localPos, FIntPoint const& viewportSize)

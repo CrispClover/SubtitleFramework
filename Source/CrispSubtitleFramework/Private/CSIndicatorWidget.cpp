@@ -67,7 +67,7 @@ void UCSIndicatorWidget::Register_Implementation(FCSSoundID const& id)
 	if (!oCSS)
 		return;
 
-	CSIndicatorDelegates* delegates = oCSS->RegisterIndicator(FCSRegisterArgs(iSoundID, iWidgetData), GetOwningLocalPlayer());
+	CSIndicatorDelegates* delegates = oCSS->rRegisterIndicator(FCSRegisterArgs(iSoundID, iWidgetData), GetOwningLocalPlayer());
 	
 	if (!delegates)
 		return;

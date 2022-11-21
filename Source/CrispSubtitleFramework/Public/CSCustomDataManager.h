@@ -17,4 +17,7 @@ class CRISPSUBTITLEFRAMEWORK_API UCSCustomDataManager : public UObject
 public:
 	UFUNCTION(BlueprintImplementableEvent, Category = "CrispSubtitles|CustomData")
 		void RemoveData(const int32 ID);
+	
+	UFUNCTION(BlueprintImplementableEvent, Category = "CrispSubtitles|CustomData")
+		void SaveDump();
 };

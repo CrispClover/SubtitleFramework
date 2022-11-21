@@ -21,11 +21,16 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Settings")
 		static FORCEINLINE int32 GetMaxSubtitles()
 			{ return GetDefault<UCSProjectSettings>()->MaximumSubtitles; };
-
+	
 	//Returns the maximum subtitles lines per container. Defined in the plugin's project settings.
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Settings")
 		static FORCEINLINE int32 GetMaxSubtitleLines()
 			{ return GetDefault<UCSProjectSettings>()->MaximumSubtitleLines; };
+
+	//Returns whether the subsystem should pause all queued subtitles when a permanent subtitle starts being displayed.
+	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Settings")
+		static FORCEINLINE int32 ShouldPauseOnPermanentSubtitle()
+			{ return GetDefault<UCSProjectSettings>()->bPauseOnPermanentSubtitle; };
 
 	//Returns the default settings. Defined in the plugin's project settings.
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Settings")
@@ -35,11 +40,16 @@ public:
 	//Returns the default settings for design-time. Defined in the plugin's project settings.
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Settings")
 		static UCSUserSettings* GetDesignSettings();
-
+	
 	//Returns whether the project should support splitscreen direction indicators. Defined in the plugin's project settings.
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Settings")
 		static FORCEINLINE bool SupportSplitscreen()
 			{ return GetDefault<UCSProjectSettings>()->bSupportSplitscreen; };
+
+	//Returns the default FName used to track speech for direction indicators.
+	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Settings")
+		static FORCEINLINE FName GetSoundNameForSpeech()
+			{ return GetDefault<UCSProjectSettings>()->DefaultSoundNameForSpeech; };
 
 	//Returns whether the project should calculate direction indicator data on tick. Defined in the plugin's project settings.
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Settings")

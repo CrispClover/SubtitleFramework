@@ -5,12 +5,12 @@
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "CSProjectSettingFunctions.h"
 #include "CSUserSettings.h"
+#include "CSCustomDataManager.h"//TODO: move?
 #include "CSSourcesManager.h"//TODO: move?
 #include "Engine/ObjectLibrary.h"//TODO: move once inlines are gone
 #include "Engine/AssetManager.h"//TODO: move?
 #include "CSS_SubtitleGISS.generated.h"
 
-class UCSCustomDataManager;
 class UObjectLibrary;
 
 template<typename DataElement>
@@ -60,7 +60,7 @@ private:
 template<typename DataElement>
 struct TCSTimedData
 {
-	inline TArray<DataElement> const& Elements() const
+	inline TArray<DataElement> const& Get() const
 	{ return iDataElements; };
 
 	inline TArray<FTimerHandle> const& Handles() const
@@ -93,6 +93,15 @@ struct TCSTimedData
 		}
 
 		return DataElement();
+	};
+
+	DataElement* rAccess(const int32 id)
+	{
+		for (int32 i = 0; i < iIDs.Num(); i++)
+			if (iIDs[i] == id)
+				return &iDataElements[i];
+
+		return nullptr;
 	};
 
 	FTimerHandle Remove(int32 id)
@@ -203,7 +212,7 @@ template<typename DataElement>
 struct TCSCurrentData
 {
 	inline TArray<DataElement> const& Get() const
-	{ return iTimedData.Elements(); };
+	{ return iTimedData.Get(); };
 
 	inline TArray<FTimerHandle> const& Handles() const
 	{ return iTimedData.Handles(); };
@@ -226,6 +235,21 @@ struct TCSCurrentData
 			{
 				uRemoveAt(i);
 				return;
+			}
+		}
+	};
+
+	//Removes all permanent data and copies the removed TimerHandles and IDs.
+	inline void RemovePermanents(TArray<FTimerHandle>& handles, TArray<int32>& ids)
+	{
+		for (auto it = GetReverseIterator(); it; --it)
+		{
+			if (it.IsPermanent())
+			{
+				handles.Add(it.Handle());
+				ids.Add(it.ID());
+				
+				uRemoveAt(it.xCurrent());
 			}
 		}
 	};
@@ -265,7 +289,7 @@ public:
 
 	struct Iterator
 	{
-		Iterator(TCSTimedData<DataElement> const& timedData, const int32 startIndex = 0)
+		Iterator(TCSCurrentData<DataElement> const& timedData, const int32 startIndex = 0)
 			: iData(timedData)
 			, iIndex(startIndex)
 		{};
@@ -283,19 +307,19 @@ public:
 		}
 		
 		FORCEINLINE explicit operator bool() const
-		{ return iData.iDataElements.IsValidIndex(iIndex); };
+		{ return iData.iTimedData.iDataElements.IsValidIndex(iIndex); };
 		
 		inline void Reset()
 		{ iIndex = 0; };
 
 		FORCEINLINE DataElement Data() const
-		{ return iData.iDataElements[iIndex]; };
+		{ return iData.iTimedData.iDataElements[iIndex]; };
 
 		FORCEINLINE FTimerHandle Handle() const
-		{ return iData.iTimerHandles[iIndex]; };
+		{ return iData.iTimedData.iTimerHandles[iIndex]; };
 
 		FORCEINLINE int32 ID() const
-		{ return iData.iIDs[iIndex]; };
+		{ return iData.iTimedData.iIDs[iIndex]; };
 
 		FORCEINLINE int32 IsPermanent() const
 		{ return iData.iArePermanent[iIndex]; };
@@ -304,12 +328,15 @@ public:
 		{ return iIndex; };
 
 	private:
-		TCSTimedData<DataElement> const& iData;
+		TCSCurrentData<DataElement> const& iData;
 		int32 iIndex = 0;
 	};
 
 	inline Iterator GetIterator() const
-	{ return Iterator(iTimedData); };
+	{ return Iterator(*this); };
+
+	inline Iterator GetReverseIterator() const
+	{ return Iterator(*this, Num() - 1); };
 };
 
 //Bundles the data of subtitles and their number of lines. Ensures maximum number of subtitles and lines are not exceeded.
@@ -370,12 +397,32 @@ struct FCSCurrentSubtitleData
 		}
 	}
 
+	//Removes all permanent subtitles and copies the removed TimerHandles and IDs.
+	inline void RemovePermanents(TArray<FTimerHandle>& handles, TArray<int32>& ids)
+	{
+		for (auto it = iCurrentData.GetReverseIterator(); it; --it)
+		{
+			if (it.IsPermanent())
+			{
+				icLines -= it.Data().Lines.Num();
+				handles.Add(it.Handle());
+				ids.Add(it.ID());
+				
+				iCurrentData.uRemoveAt(it.xCurrent());
+			}
+		}
+	};
+
 	//Copies the TimerHandle and ID at index 0, then removes all data at index 0.
 	inline void Kick(FTimerHandle& handle, int32& id)
 	{
-		icLines -= iCurrentData.iTimedData.Elements()[0].Lines.Num();
-		handle = iCurrentData.iTimedData.Handles()[0];
+		if (!Num())
+			return;
+
+		icLines -= iCurrentData.Get()[0].Lines.Num();
+		handle = iCurrentData.Handles()[0];
 		id = iCurrentData.iTimedData.IDs()[0];
+
 		iCurrentData.uRemoveAt(0);
 	};
 
@@ -495,17 +542,20 @@ private:
 //Delegate for the subtitle trigger.
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FSubtitleTrigger, FCrispSubtitle const&, Subtitle);
 
-//Delegate for the subtitle trigger.
+//Delegate for the subtitle reconstruct trigger.
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FReconstructSubtitlesTrigger, TArray<FCrispSubtitle> const&, Subtitles);
 
 //Delegate for the caption trigger.
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FCaptionTrigger, FCrispCaption const&, Caption);
 
-//Delegate for the subtitle trigger.
+//Delegate for the caption reconstruct trigger.
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FReconstructCaptionsTrigger, TArray<FCrispCaption> const&, Captions);
 
 //Delegate for triggering destruction.
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FDestructTrigger, const int32, Index);
+
+//Delegate to notify on permanent subtitle broadcast.
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FPermanentSubtitleNotify);
 
 #pragma endregion
 
@@ -522,25 +572,42 @@ public:
 	virtual void Deinitialize() override;
 
 private:
+	inline void uPlayerAdded(ULocalPlayer* player)
+	{
+		iRecalculateLayout(player->ViewportClient);
+		iSourcesManager.AddPlayer(player);
+	}
+
+	inline void iPlayerRemoved(ULocalPlayer* player)
+	{ iSourcesManager.RemovePlayer(player); }
+
 	inline void iManageRemoval(FTimerHandle& handle, const int32 id)
 	{
 		iIDManager.Delete(id);
 
-		if (iTimerManager)
-			iTimerManager->ClearTimer(handle);
+		if (CustomData)
+			CustomData->RemoveData(id);
+
+		if (uTimerManager)
+			uTimerManager->ClearTimer(handle);
 	}
 
 	inline void iManageRemoval(TArray<FTimerHandle>& handles, TArray<int32> const& ids)
 	{
 		for (const int32 id : ids)
+		{
 			iIDManager.Delete(id);
 
-		if (iTimerManager)
+			if (CustomData)
+				CustomData->RemoveData(id);
+		}
+
+		if (uTimerManager)
 			for (FTimerHandle& handle : handles)
-				iTimerManager->ClearTimer(handle);
+				uTimerManager->ClearTimer(handle);
 	}
 
-	FTimerManager* iTimerManager = nullptr;
+	FTimerManager* uTimerManager = nullptr;
 	FCSIDManager iIDManager = FCSIDManager();
 
 #pragma region SUBTITLES
@@ -548,6 +615,14 @@ public:
 	//Called when a subtitle should begin to be displayed.
 	UPROPERTY(BlueprintAssignable, Category = "CrispSubtitles|Events")
 		FSubtitleTrigger ConstructSubtitleEvent;
+	
+	//Called when a subtitle with infinite duration starts being displayed.
+	UPROPERTY(BlueprintAssignable, Category = "CrispSubtitles|Events")
+		FPermanentSubtitleNotify PermanentSubtitleAdded;
+
+	//Called when all subtitles with infinite duration were removed.
+	UPROPERTY(BlueprintAssignable, Category = "CrispSubtitles|Events")
+		FPermanentSubtitleNotify PermanentSubtitlesRemoved;
 	
 	//Called when a subtitle should stop being displayed.
 	UPROPERTY(BlueprintAssignable, Category = "CrispSubtitles|Events")
@@ -560,13 +635,46 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "CrispSubtitles|Events")
 		FReconstructSubtitlesTrigger ReconstructSubtitlesEvent;
 
+	//Returns the data for the subtitles currently displayed in the UI.
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Subtitles")
 		FORCEINLINE TArray<FFullSubtitle> const& GetCurrentSubtitles() const
 			{ return iCurrentSubtitles.Get(); };
 
+	//Returns the data for subtitles that are waiting for the flicker protection to run out.
+	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Subtitles")
+		FORCEINLINE TArray<FFullSubtitle> GetDelayedSubtitles() const
+	{ 
+		TArray<FFullSubtitle> delayed;
+		iDelayedSubtitles.GenerateValueArray(delayed);
+		return delayed;
+	};
+
+	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Subtitles")
+		FORCEINLINE TArray<FFullSubtitle> const& GetQueuedSubtitles() const
+			{ return iQueuedSubtitles.Get(); };
+	
+	//Returns whether a subtitle with infinite duration exists.
+	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Subtitles")
+		bool HasPermanentSubtitle();
+
+	/**
+	 * This function allows you to change the source of a subtitle after it has already been queued.
+	 * Use-case example: The player walks away from a talking character. Beyond a certain distance the character might be heard over a radio.
+	 * @param IDs The IDs assigned to the subtitles.
+	 * @param NewSourceName The new source.
+	 * @param NewDescription the new description. (optional)
+	 * @param bShouldChangeDescription Whether the description should be updated.
+	 */
+	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Subtitles")
+		void ModifyQueuedSubtitles(TArray<int32> const& IDs, const FName NewSourceName, FText const& NewDescription, const bool bShouldChangeDescription = false);
+
 	//Removes the oldest subtitle from the UI.
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Subtitles")
 		void KickSubtitle();
+
+	//Removes the oldest permanent subtitle from the UI.
+	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Subtitles")
+		void RemovePermanents();
 
 	//Removes all current subtitles from the UI.
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Subtitles")
@@ -576,9 +684,17 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Subtitles")
 		void PauseSubtitles();
 	
+	//Pauses all timers for all queued subtitles.
+	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Subtitles")
+		void PauseQueuedSubtitles();
+	
 	//Resumes all timers for all subtitles controlled by the subsystem.
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Subtitles")
 		void UnpauseSubtitles();
+	
+	//Resumes all timers for all queued subtitles.
+	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Subtitles")
+		void UnpauseQueuedSubtitles();
 
 	/**
 	 * Queues a subtitle with the subsystem.
@@ -591,13 +707,13 @@ public:
 	/**
 	 * Queues an array of raw subtitles with the subsystem.
 	 * @param Subtitles The raw subtitles.
-	 * @param Speaker The speaker.
-	 * @param SpeakerID The speaker's ID.
+	 * @param SpeakerText The speaker.
+	 * @param Speaker The speaker's ID.
 	 * @param SourceName The ID of the source used for registration.
 	 * @return The IDs of the subtitles.
 	 */
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Queue")
-		TArray<int32> QueueRawSubtitles(TArray<FRawSubtitle> const& Subtitles, FText const& Speaker, const FName SpeakerID, const FName SourceName);
+		TArray<int32> QueueRawSubtitles(TArray<FRawSubtitle> const& Subtitles, FText const& SpeakerText, const FName Speaker, const FName SourceName);
 	
 	/**
 	 * Queues an array of group subtitles with the subsystem.
@@ -647,6 +763,15 @@ private:
 	void iDelayedDestroySubtitles();
 	void uReconstructSubtitles() const;
 
+	inline void iPauseOnPermanentSubtitle()
+	{ 
+		if (!UCSProjectSettingFunctions::ShouldPauseOnPermanentSubtitle())
+			return;
+
+		PauseQueuedSubtitles();
+		PermanentSubtitleAdded.Broadcast();
+	};
+
 	FCSCurrentSubtitleData iCurrentSubtitles = FCSCurrentSubtitleData();
 	TMap<int32, FFullSubtitle> iDelayedSubtitles = TMap<int32, FFullSubtitle>();
 	TCSTimedData<FFullSubtitle> iQueuedSubtitles = TCSTimedData<FFullSubtitle>();
@@ -675,17 +800,43 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "CrispSubtitles|Events")
 		FReconstructCaptionsTrigger ReconstructCaptionsEvent;
 
+	//Returns the data for the captions currently displayed in the UI.
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Captions")
 		FORCEINLINE TArray<FFullCaption> const& GetCurrentCaptions() const
 			{ return iCurrentCaptions.Get(); };
+
+	//Returns the data for captions that are waiting for the flicker protection to run out.
+	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Captions")
+		FORCEINLINE TArray<FFullCaption> GetDelayedCaptions() const
+	{ 
+		TArray<FFullCaption> delayed;
+		iDelayedCaptions.GenerateValueArray(delayed);
+		return delayed;
+	};
+
+	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Captions")
+		FORCEINLINE TArray<FFullCaption> const& GetQueuedCaptions() const
+			{ return iQueuedCaptions.Get(); };
 	
+	//Returns whether a caption with infinite duration exists.
+	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Captions")
+		bool HasPermanentCaption();
+
 	//Pauses all timers for all captions controlled by the subsystem.
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Captions")
 		void PauseCaptions();
 	
+	//Pauses all timers for all queued captions.
+	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Subtitles")
+		void PauseQueuedCaptions();
+	
 	//Resumes all timers for all captions controlled by the subsystem.
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Captions")
 		void UnpauseCaptions();
+	
+	//Resumes all timers for all queued captions.
+	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Subtitles")
+		void UnpauseQueuedCaptions();
 	
 	/**
 	 * Queues a caption with the subsystem.
@@ -759,10 +910,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Data")
 		float GetBusyDuration() const;
 
-	//Returns whether a subtitle without infinite duration exists.
-	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Data")
-		bool HasPermanentSubtitle() const;
-
 	//The object that will manage the custom data for subtitles.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "CrispSubtitles|CustomData")
 		UCSCustomDataManager* CustomData = nullptr;
@@ -831,7 +978,7 @@ public:
 	/**
 	 * @param SoundID The ID used at registration.
 	 * @param SourceLocation The currently registered position of the source.
-	 * @param Player TODO
+	 * @param Player The player to get the tracked sound position for. Can be left blank if splitscreen is not supported.
 	 * @return false if the source isn't tracked/registered.
 	 */
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Sources")
@@ -855,10 +1002,6 @@ public:
 	
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Sources")
 		void EmptySources();
-
-	//Removes all sources from the subsystem. TODO
-	//UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Sources")
-		//void ClearSources();
 
 	/**
 	 * @param SoundID The ID of the sound.
@@ -914,7 +1057,7 @@ public:
 	 * @param Player The player the indicator widget belongs to.
 	 * @return The delegates to subscribe to for updates, can be null.
 	 */
-	CSIndicatorDelegates* RegisterIndicator(FCSRegisterArgs Args, ULocalPlayer const* Player = nullptr);
+	CSIndicatorDelegates* rRegisterIndicator(FCSRegisterArgs Args, ULocalPlayer const* Player = nullptr);
 	
 	/**
 	 * Removes an indicator from the list of registered indicators.
@@ -927,53 +1070,6 @@ public:
 
 #pragma endregion
 
-//TODO: remove inlines, make public
-#pragma region SAVING
-	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|TODO")
-		inline void ResumeFromSaveDump(TArray<FFullSubtitle> const& current, TArray<FFullSubtitle> const& queued)//TODO
-	{
-		TArray<FCrispSubtitle> subtitles;
-		//TODO: restore sources
-		TArray<FTimerHandle> removedHandles = TArray<FTimerHandle>();
-		TArray<int32> removedIDs = TArray<int32>();
-		const float now = itNow();
-		for (int32 i = 0; i < current.Num(); i++)
-		{
-			int32 id = iIDManager.New();
-			FTimerHandle& handle = iCurrentSubtitles.Add(current[i], id, false/*TODO*/, removedHandles, removedIDs);
-			iSetTimer(&UCSS_SubtitleGISS::iDestroySubtitle, handle, id, current[i].ReadDuration);
-
-			subtitles.Add(UCSLibrary::FrySubtitle(current[i], id, iCurrentSettings));
-		}
-		//TODO: clear removed handles
-
-		ReconstructSubtitlesEvent.Broadcast(subtitles);
-		iSubtitleBroadcastData.LogBroadcast(now, current.Last().ReadDuration);
-
-		QueueFullSubtitles(queued);
-	};
-
-	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|TODO")
-		inline void SaveDump(TArray<FFullSubtitle>& current, TArray<FFullSubtitle>& queued)//TODO
-	{
-		//TODO: dump sources?
-		FTimerManager& tm = GetGameInstance()->GetTimerManager();
-		TArray<FFullSubtitle> delayed;
-		iDelayedSubtitles.GenerateValueArray(delayed);
-
-		current = GetCurrentSubtitles();
-		current.Append(delayed);
-
-		TArray<FTimerHandle> const& cHandles = iCurrentSubtitles.Handles();
-		for (int32 i = 0; i < cHandles.Num(); i++)
-			current[i].ReadDuration = tm.GetTimerRemaining(cHandles[i]);
-
-		for (auto it = iQueuedSubtitles.GetIterator(); it; ++it)//override each subtitle's StartDelay with TimerRemaining
-			queued.Add(FFullSubtitle(it.Data(), tm.GetTimerRemaining(it.Handle())));
-	};
-	
-#pragma endregion
-
 #pragma region SETTINGS
 public:
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Settings")
@@ -982,7 +1078,7 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Settings")
 		FORCEINLINE void RecalculateLayout(const FIntPoint ViewportSize)
-			{ iCurrentSettings->RecalculateLayout(ViewportSize); };//TODO: call on player added
+			{ iCurrentSettings->RecalculateLayout(ViewportSize); };
 
 	//Synchronously loads the user settings from the specified path.
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Settings")
@@ -1006,7 +1102,7 @@ public:
 	inline TArray<UCSUserSettings*> uGetSettingsList()//TODO
 	{
 		TArray<FAssetData> aDataList;
-		iSettingsLibrary->GetAssetDataList(aDataList);
+		uSettingsLibrary->GetAssetDataList(aDataList);
 
 		TArray<UCSUserSettings*> settingsList;
 		settingsList.Reserve(aDataList.Num());
@@ -1050,34 +1146,22 @@ private:
 
 		iCurrentSettings = settings;
 		uReconstructSubtitles();
-		iSettingsLibrary = nullptr;
+
+		iAssignedTextColours = settings->AssignedTextColours;
+		iShownSpeakers.Empty();
+
+		uSettingsLibrary = nullptr;
 	};
 
 	TSet<FName> iShownSpeakers = TSet<FName>();
+	TMap<FName, FLinearColor> iAssignedTextColours = TMap<FName, FLinearColor>();
 
 	UPROPERTY()
-		UObjectLibrary* iSettingsLibrary = nullptr;
+		UObjectLibrary* uSettingsLibrary = nullptr;
 
 	UPROPERTY()
 		UCSUserSettings* iCurrentSettings = UCSProjectSettingFunctions::GetDefaultSettings();
 	
-#pragma endregion
-
-//TODO
-#pragma region SPLITSCREEN SUPPORT
-private:
-	inline void uPlayerAdded(ULocalPlayer* player)
-	{
-		iRecalculateLayout(player->ViewportClient);
-
-		iSourcesManager.AddPlayer(player);
-	}
-
-	inline void iPlayerRemoved(ULocalPlayer* player)
-	{
-		iSourcesManager.RemovePlayer(player);
-	}
-
 #pragma endregion
 
 #pragma region QOL FUNCTIONS 
@@ -1088,22 +1172,22 @@ private:
 	//Sets a timer with the timer-manager and binds it to a function.
 	inline void iSetTimer(CSSvFunction func, const float dt)
 	{
-		if (!iTimerManager)
+		if (!uTimerManager)
 			return;
 
 		FTimerHandle dropped;
 		FTimerDelegate del = FTimerDelegate::CreateUObject(this, func);
-		iTimerManager->SetTimer(dropped, del, dt, false);
+		uTimerManager->SetTimer(dropped, del, dt, false);
 	};
 
 	//Sets a timer with the timer-manager and binds it to a function.
 	inline void iSetTimer(CSSIDFunction func, FTimerHandle& handle, const int32 id, const float dt)
 	{
-		if (!iTimerManager)
+		if (!uTimerManager)
 			return;
 
 		FTimerDelegate del = FTimerDelegate::CreateUObject<UCSS_SubtitleGISS, int32>(this, func, id);
-		iTimerManager->SetTimer(handle, del, dt, false);
+		uTimerManager->SetTimer(handle, del, dt, false);
 	};
 
 	inline float itNow() const

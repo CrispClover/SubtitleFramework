@@ -10,8 +10,8 @@ UCSProjectSettings::UCSProjectSettings(const FObjectInitializer& ObjectInitializ
 	, MaximumSubtitleLines(5)
 	, bSupportSplitscreen(false)
 	, bCalculateIndicatorsOnTick(true)
-	, bMergedSubtitlesExist(false)
-	, MergedSubtitlePrefix("- ")
+	, bPauseOnPermanentSubtitle(false)
+	, DefaultSoundNameForSpeech(FName("speech"))
 	, ExampleSubtitle
 	(
 		  FRawSubtitle

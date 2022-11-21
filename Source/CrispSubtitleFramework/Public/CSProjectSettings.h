@@ -51,16 +51,12 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Project", meta = (ConfigRestartRequired = true))
 		bool bCalculateIndicatorsOnTick;
 
-	//Whether single subtitles with multiple speakers exist in the project
-	UPROPERTY(EditAnywhere, config, Category = "Project")//TODO?
-		bool bMergedSubtitlesExist;
-
-	/*
-	 * If merged subtitles exist, this tells the subsystem how to spot them.
-	 * (The subtitle lines in question should begin with these characters.)
-	 */
+	//Whether the subsystem should pause all queued subtitles when a permanent subtitle starts being displayed.
 	UPROPERTY(EditAnywhere, config, Category = "Project")
-		FString MergedSubtitlePrefix;//TODO
+		bool bPauseOnPermanentSubtitle;
+
+	UPROPERTY(EditAnywhere, config, Category = "Project")
+		FName DefaultSoundNameForSpeech;
 
 	UPROPERTY(EditAnywhere, config, Category = "Examples")
 		FFullSubtitle ExampleSubtitle;

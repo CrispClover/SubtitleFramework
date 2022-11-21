@@ -3,6 +3,7 @@
 #include "CSLetterboxWidget.h"
 #include "CSProjectSettingFunctions.h"
 #include "CSLineWidget.h"
+#include "CSIndicatorWidget.h"
 #include "Components/Border.h"
 #include "Components/BorderSlot.h"
 #include "Components/VerticalBox.h"
@@ -48,4 +49,7 @@ void UCSLetterboxWidget::ConstructFromSubtitle_Implementation(FCrispSubtitle con
 		if (hasLabel || i > 0)
 			slot->SetPadding(layout.LinePadding);
 	}
+
+	if (Indicator)
+		Indicator->Register(FCSSoundID(subtitle.Source, UCSProjectSettingFunctions::GetSoundNameForSpeech()));
 }
