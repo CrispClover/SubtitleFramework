@@ -1,6 +1,8 @@
 // Copyright Crisp Clover.
 
 #include "CSIndicatorWidget.h"
+#include "CSS_SubtitleGISS.h"
+#include "CSUserSettings.h"
 #include "Kismet/GameplayStatics.h"
 #include "Slate/SGameLayerManager.h"
 
@@ -20,7 +22,7 @@ void UCSIndicatorWidget::NativeTick(FGeometry const& myGeometry, float deltaTime
 
 void UCSIndicatorWidget::NativeDestruct()
 {
-	if (iWidgetData)
+	if (uWidgetData)
 		oCSS->UnregisterIndicator(iSoundID, GetOwningLocalPlayer(), this);
 
 	Super::NativeDestruct();
@@ -28,10 +30,10 @@ void UCSIndicatorWidget::NativeDestruct()
 
 bool UCSIndicatorWidget::GetIndicatorData(FCSIndicatorWidgetData& WidgetData) const
 {
-	if (!iWidgetData)
+	if (!uWidgetData)
 		return false;
 
-	WidgetData = *iWidgetData;
+	WidgetData = *uWidgetData;
 	return true;
 }
 
@@ -49,38 +51,38 @@ void UCSIndicatorWidget::UpdateCenterPosition(FGeometry const& myGeometry)//TODO
 
 void UCSIndicatorWidget::OnUpdateIndicators_Implementation()
 {
-	if (!iWidgetData)
+	if (!uWidgetData)
 		return;
 
-	Image->SetRenderTransformAngle(UCSLibrary::AngleConversion(iWidgetData->Angle, Segments));
+	Image->SetRenderTransformAngle(UCSLibrary::AngleConversion(uWidgetData->Angle, Segments));
 
-	if (iWidgetData < 0)
+	if (uWidgetData->OpacityDriver < 0)
 		Image->SetRenderOpacity(1);
 	else
-		Image->SetRenderOpacity(iWidgetData->OpacityDriver * 10 - .75f);//TODO: move to BPs?
+		Image->SetRenderOpacity(uWidgetData->OpacityDriver * 10 - .75f);//TODO: move to BPs?
 }
 
-void UCSIndicatorWidget::Register_Implementation(FCSSoundID const& id)
+void UCSIndicatorWidget::Register_Implementation(FCSSoundID const& id, float scaling)
 {
 	iSoundID = id;
-	
+
 	if (!oCSS)
 		return;
 
-	CSIndicatorDelegates* delegates = oCSS->rRegisterIndicator(FCSRegisterArgs(iSoundID, iWidgetData), GetOwningLocalPlayer());
+	CSIndicatorDelegates* delegates = oCSS->rRegisterIndicator(FCSRegisterArgs(iSoundID, uWidgetData), GetOwningLocalPlayer());
 	
 	if (!delegates)
 		return;
-	
+
 	delegates->UpdateIDataEvent.AddUObject(this, &UCSIndicatorWidget::OnUpdateIndicators);
 	delegates->SwapIDataEvent.AddUObject(this, &UCSIndicatorWidget::iUpdateDataPtr);
 
-	Image->SetDesiredSizeOverride(oCSS->GetCurrentSettings()->GetLayout().IndicatorSize);//TODO: move?
+	Image->SetDesiredSizeOverride(oCSS->GetCurrentSettings()->GetLayout().IndicatorSize * scaling);//TODO: move?
 }
 
 void UCSIndicatorWidget::iUpdateOffset() const
 {
-	if (!iWidgetData)
+	if (!uWidgetData)
 		return;
 
 	ULocalPlayer* const player = GetOwningLocalPlayer();
@@ -95,7 +97,7 @@ void UCSIndicatorWidget::iUpdateOffset() const
 		return;
 
 	FGeometry const& viewportGeo = gameLayerManager->GetViewportWidgetHostGeometry();
-	iWidgetData->Offset = UCSLibrary::LocalPositionToNDC(viewportGeo.AbsoluteToLocal(iCenterPos), viewportSize.IntPoint());
+	uWidgetData->Offset = UCSLibrary::LocalPositionToNDC(viewportGeo.AbsoluteToLocal(iCenterPos), viewportSize.IntPoint());
 }
 
 void UCSIndicatorWidget::iUpdateDataPtr(FCSSwapArgs const& swapArgs)
@@ -103,5 +105,5 @@ void UCSIndicatorWidget::iUpdateDataPtr(FCSSwapArgs const& swapArgs)
 	if (swapArgs.ID != iSoundID)
 		return;
 
-	iWidgetData = swapArgs.WidgetDataPtr;
+	uWidgetData = swapArgs.WidgetDataPtr;
 }

@@ -1,7 +1,6 @@
 // Copyright Crisp Clover.
 
 #include "CSLineWidget.h"
-#include "CSUserSettings.h"
 #include "Components/TextBlock.h"
 #include "Components/Border.h"
 #include "Components/BorderSlot.h"

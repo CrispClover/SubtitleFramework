@@ -1,16 +1,22 @@
 // Copyright Crisp Clover.
 
 #include "CSProjectSettingFunctions.h"
+#include "CSUserSettings.h"
 #include "Engine/UserInterfaceSettings.h"
+
+UCSUserSettings* UCSProjectSettingFunctions::GetDesignSettings()//TODO: move to editor tools once they exist.
+{
+	UCSUserSettings* settings = GetDefaultSettings();
+	settings->RecalculateDesignLayout(GetDefault<UUserInterfaceSettings>()->DesignScreenSize);
+	return settings;
+};
 
 FCrispSubtitle UCSProjectSettingFunctions::GetExampleSubtitle(UCSUserSettings const* settings)
 {
 	return UCSLibrary::FrySubtitle(GetDefault<UCSProjectSettings>()->ExampleSubtitle, INDEX_NONE, settings);
 }
 
-UCSUserSettings* UCSProjectSettingFunctions::GetDesignSettings()
+FCrispCaption UCSProjectSettingFunctions::GetExampleCaption()
 {
-	UCSUserSettings* settings = GetDefault<UCSProjectSettings>()->DefaultSettings.LoadSynchronous();
-	settings->RecalculateLayout(GetDefault<UUserInterfaceSettings>()->DesignScreenSize);
-	return settings;
-};
+	return FCrispCaption(GetDefault<UCSProjectSettings>()->ExampleCaption, INDEX_NONE);
+}

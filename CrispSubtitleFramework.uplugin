@@ -1,7 +1,7 @@
 {
 	"FileVersion": 3,
 	"Version": 1,
-	"VersionName": "0.9.1",
+	"VersionName": "0.9.2",
 	"FriendlyName": "CrispSubtitleFramework",
 	"Description": "This plugin provides subtitles in accordance with broadcasting industry standards.",
 	"Category": "Other",

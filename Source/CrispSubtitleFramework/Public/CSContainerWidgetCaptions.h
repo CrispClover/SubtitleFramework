@@ -8,7 +8,7 @@
 
 class UCSCaptionWidget;
 
-/*
+/**
  * 
  */
 UCLASS(Blueprintable, Abstract)
@@ -21,12 +21,6 @@ protected:
 	virtual void NativeDestruct() override;
 
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "CrispSubtitles|UI")
-		TSubclassOf<UCSCaptionWidget> CaptionClass;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "CrispSubtitles|UI")
-		TSubclassOf<UCSCaptionWidget> IndicatorCaptionClass;
-
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Events")
 		UVerticalBoxSlot* GetSlot(const int32 ID);
 

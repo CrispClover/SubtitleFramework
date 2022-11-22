@@ -29,13 +29,10 @@ public:
 		UBorder* Background = nullptr;
 
 	UPROPERTY(BlueprintReadOnly, Category = "CrispSubtitles|UI", meta = (BindWidgetOptional))
-		UInvalidationBox* InvalidationBox = nullptr;
-
-	UPROPERTY(BlueprintReadOnly, Category = "CrispSubtitles|UI", meta = (BindWidgetOptional))
 		UCSIndicatorWidget* Indicator = nullptr;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "CrispSubtitles|UI")
-		TSubclassOf<UCSIndicatorWidget> IndicatorClass;
+	UPROPERTY(BlueprintReadOnly, Category = "CrispSubtitles|UI", meta = (BindWidgetOptional))
+		UInvalidationBox* InvalidationBox = nullptr;
 
 	UPROPERTY(BlueprintReadOnly, Category = "CrispSubtitles|UI", meta = (BindWidget))
 		UTextBlock* Text = nullptr;

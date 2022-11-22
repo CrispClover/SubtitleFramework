@@ -13,7 +13,7 @@ class UCSS_SubtitleGISS;
 template <typename ChildType>
 struct FCSChildWidgetData
 {
-	inline int32 xFind(const int32 id)
+	inline int32 rxFind(const int32 id)
 	{ return IDs.Find(id); };
 
 	inline int32 Num()
@@ -27,16 +27,17 @@ struct FCSChildWidgetData
 	};
 
 	inline void Remove(const int32 id)
-	{ iRemoveAt(xFind(id));	};
+	{ iRemoveAt(rxFind(id));	};
 
-	inline ChildType* Consume(const int32 id)
+	inline ChildType* rConsume(const int32 id)
 	{
-		const int32 index = xFind(id);
+		const int32 rx = rxFind(id);
 
-		ChildType* ptrCopy = Children[index];
-
-		iRemoveAt(index);
-
+		if (rx == INDEX_NONE)
+			return nullptr;
+		
+		ChildType* ptrCopy = Children[rx];
+		iRemoveAt(rx);
 		return ptrCopy;
 	};
 

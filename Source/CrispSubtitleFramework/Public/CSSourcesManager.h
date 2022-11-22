@@ -79,7 +79,7 @@ private:
 	CSTrackingManager const* iGetManager(ULocalPlayer const* player = nullptr) const;
 	CSTrackingManager* iAccessManager(ULocalPlayer const* player = nullptr);
 
-	CSTrackingManager* iTrackingManager = nullptr;
+	CSTrackingManager* uTrackingManager = nullptr;
 	TArray<CSTrackingManager*> iSplitscreenTrackingManagers = TArray<CSTrackingManager*>();
 
 	TSet<FName> iSources = TSet<FName>();

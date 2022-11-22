@@ -1,6 +1,7 @@
 // Copyright Crisp Clover.
 
 #include "CSS_SubtitleGISS.h"
+#include "CSUserSettings.h"//TODO: move?
 
 void UCSS_SubtitleGISS::Initialize(FSubsystemCollectionBase& collection)
 {
@@ -9,14 +10,14 @@ void UCSS_SubtitleGISS::Initialize(FSubsystemCollectionBase& collection)
 	UGameInstance* gi = GetGameInstance();
 
 	uTimerManager = gi->TimerManager;
-	
-	gi->OnLocalPlayerAddedEvent.AddUObject(this, &UCSS_SubtitleGISS::uPlayerAdded);
+	gi->OnLocalPlayerAddedEvent.AddUObject(this, &UCSS_SubtitleGISS::iPlayerAdded);
 	gi->OnLocalPlayerRemovedEvent.AddUObject(this, &UCSS_SubtitleGISS::iPlayerRemoved);
 }
 
 void UCSS_SubtitleGISS::Deinitialize()
 {
 	UGameInstance* gi = GetGameInstance();
+
 	gi->OnLocalPlayerAddedEvent.RemoveAll(this);
 	gi->OnLocalPlayerRemovedEvent.RemoveAll(this);
 
@@ -830,6 +831,16 @@ void UCSS_SubtitleGISS::UnregisterIndicator(FCSSoundID const& soundID, ULocalPla
 #pragma endregion
 
 #pragma region SETTINGS
+void UCSS_SubtitleGISS::RecalculateDesignLayout(const FIntPoint ViewportSize)//TODO
+{
+	iCurrentSettings->RecalculateDesignLayout(ViewportSize);
+}
+
+void UCSS_SubtitleGISS::RecalculateLayout()//TODO
+{
+	if (UGameViewportClient* viewportClient = GetGameInstance()->GetGameViewportClient())
+		iCurrentSettings->RecalculateLayout(viewportClient);
+}
 
 void UCSS_SubtitleGISS::LoadSettings(FString const& path)
 {
@@ -869,18 +880,43 @@ bool UCSS_SubtitleGISS::LoadSettingsAsync(FStreamableDelegate delegateToCall)
 TArray<UCSUserSettings*> UCSS_SubtitleGISS::GetSettingsList()
 {
 	if (!uSettingsLibrary)
-		LoadSettings(GetDefault<UCSProjectSettings>()->SettingsPath.Path);
+		LoadSettings(UCSProjectSettingFunctions::GetSettingsPath());
 
-	return uGetSettingsList();
-}
+	TArray<FAssetData> aDataList;
+	uSettingsLibrary->GetAssetDataList(aDataList);
+
+	TArray<UCSUserSettings*> settingsList;
+	settingsList.Reserve(aDataList.Num());
+
+	for (FAssetData aData : aDataList)
+	{
+		UCSUserSettings* settings = Cast<UCSUserSettings>(aData.GetAsset());
+		
+		//if (UGameViewportClient* viewportClient = GetGameInstance()->GetGameViewportClient())
+			//settings->RecalculateLayout(viewportClient);TODO
+
+		settingsList.Add(settings);
+	}
+
+	return settingsList;
+};
 
 void UCSS_SubtitleGISS::SetSettings(UCSUserSettings* settings)
 {
 	if (!settings || iCurrentSettings->ID == settings->ID)
 		return;//We don't want to assign nullptr. Neither do we want to force UI updates when nothing has changed.
 
-	uSetSettings(settings);
-	//TODO: need to calculate layout.
+	iCurrentSettings = settings;
+
+	/*if (UGameViewportClient* viewportClient = GetGameInstance()->GetGameViewportClient())
+		iCurrentSettings->RecalculateLayout(viewportClient);TODO*/
+
+	iAssignedTextColours = settings->AssignedTextColours;
+	iShownSpeakers.Empty();
+
+	uSettingsLibrary = nullptr;
+
+	uReconstructSubtitles();
 }
 
 void UCSS_SubtitleGISS::ChangeSettingsAsync(FName settingsID)
@@ -888,7 +924,18 @@ void UCSS_SubtitleGISS::ChangeSettingsAsync(FName settingsID)
 	if (iCurrentSettings->ID == settingsID)
 		return;//We don't want to force UI updates when nothing has changed.
 
-	LoadSettingsAsync(FStreamableDelegate::CreateUObject(this, &UCSS_SubtitleGISS::uSetSettingsByID, settingsID));
+//TODO	LoadSettingsAsync(FStreamableDelegate::CreateUObject(this, &UCSS_SubtitleGISS::SetSettingsByID, settingsID));
 }
 
+void UCSS_SubtitleGISS::iRecalculateLayout(UGameViewportClient const* viewportClient)//TODO?
+{
+	//iCurrentSettings->RecalculateLayout(viewportClient);
+}
+
+void UCSS_SubtitleGISS::SetSettingsByID(FName settingsID)
+{
+	for (UCSUserSettings* settings : GetSettingsList())
+		if (settings->ID == settingsID)
+			SetSettings(settings);
+}
 #pragma endregion

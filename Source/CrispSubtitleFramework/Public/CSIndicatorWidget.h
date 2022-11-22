@@ -7,6 +7,7 @@
 #include "Components/Border.h"
 #include "Components/Image.h"
 #include "CSIndicatorWidget.generated.h"
+
 /*
  * 
  */
@@ -34,7 +35,7 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Data")
 		FORCEINLINE float GetOpacityDriver() const
-	{ return iWidgetData ? iWidgetData->OpacityDriver : 0; };
+	{ return uWidgetData ? uWidgetData->OpacityDriver : 0; };
 	
 	//Gets the ID for the sound this indicator points toward. ID is set using "Register".
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Data")
@@ -51,11 +52,11 @@ public:
 
 	//
 	UFUNCTION(BlueprintNativeEvent, Category = "CrispSubtitles|Events")
-		void Register(FCSSoundID const& SoundID);
+		void Register(FCSSoundID const& SoundID, float Scaling = 1.0);
 
 protected:
 	virtual void OnUpdateIndicators_Implementation();
-	void Register_Implementation(FCSSoundID const& id);
+	void Register_Implementation(FCSSoundID const& id, float scaling);
 	UCSS_SubtitleGISS* oCSS = nullptr;//TODO
 
 private:
@@ -64,5 +65,5 @@ private:
 	
 	FCSSoundID iSoundID;
 	FVector2D iCenterPos;
-	FCSIndicatorWidgetData* iWidgetData;
+	FCSIndicatorWidgetData* uWidgetData;
 };

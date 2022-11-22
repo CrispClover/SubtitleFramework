@@ -2,6 +2,7 @@
 
 #include "CSContainerWidgetCaptions.h"
 #include "CSS_SubtitleGISS.h"
+#include "CSUserSettings.h"
 #include "CSCaptionWidget.h"
 #include "Components/VerticalBox.h"
 #include "Components/VerticalBoxSlot.h"
@@ -13,6 +14,7 @@ void UCSContainerWidgetCaptions::NativeConstruct()
 	oCSS->ConstructCaptionEvent.AddDynamic(this, &UCSContainerWidgetCaptions::OnCaptionReceived);
 	oCSS->DestructCaptionEvent.AddDynamic(this, &UCSContainerWidgetCaptions::OnDestroy);
 	oCSS->ReconstructCaptionsEvent.AddDynamic(this, &UCSContainerWidgetCaptions::OnReconstruct);
+	oCSS->RecalculateLayout();
 }
 
 void UCSContainerWidgetCaptions::NativeDestruct()
@@ -26,7 +28,7 @@ void UCSContainerWidgetCaptions::NativeDestruct()
 
 UVerticalBoxSlot* UCSContainerWidgetCaptions::GetSlot(const int32 id)
 {
-	const int32 index = iChildrenData.xFind(id);
+	const int32 index = iChildrenData.rxFind(id);
 
 	if (index == INDEX_NONE)
 		return nullptr;
@@ -36,7 +38,7 @@ UVerticalBoxSlot* UCSContainerWidgetCaptions::GetSlot(const int32 id)
 
 UCSCaptionWidget* UCSContainerWidgetCaptions::GetCaptionWidget(const int32 id)
 {
-	const int32 index = iChildrenData.xFind(id);
+	const int32 index = iChildrenData.rxFind(id);
 
 	if (index == INDEX_NONE)
 		return nullptr;
@@ -48,13 +50,9 @@ void UCSContainerWidgetCaptions::OnCaptionReceived_Implementation(FCrispCaption 
 {
 	UCSUserSettings* settings = oCSS->GetCurrentSettings();
 
-	UCSCaptionWidget* captionWidget;
-	if (settings->bShowIndicators)
-		captionWidget = CreateWidget<UCSCaptionWidget>(GetWorld(), IndicatorCaptionClass);
-	else
-		captionWidget = CreateWidget<UCSCaptionWidget>(GetWorld(), CaptionClass);
-
+	UCSCaptionWidget* captionWidget = CreateWidget<UCSCaptionWidget>(GetWorld(), settings->CaptionClass.LoadSynchronous());
 	UVerticalBoxSlot* slot = Container->AddChildToVerticalBox(captionWidget);
+
 	slot->SetPadding(settings->GetLayout().CaptionPadding);
 	captionWidget->ConstructFromCaption(caption, settings);
 	iChildrenData.Add(caption.ID, captionWidget, slot);
@@ -62,7 +60,7 @@ void UCSContainerWidgetCaptions::OnCaptionReceived_Implementation(FCrispCaption 
 
 void UCSContainerWidgetCaptions::OnDestroy_Implementation(const int32 id)
 {
-	if (UCSCaptionWidget* captionWidget = iChildrenData.Consume(id))
+	if (UCSCaptionWidget* captionWidget = iChildrenData.rConsume(id))
 		captionWidget->RemoveFromParent();
 }
 

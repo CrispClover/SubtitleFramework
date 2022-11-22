@@ -13,11 +13,11 @@
 void UCSLetterboxWidget::SynchronizeProperties()
 {
 	Super::SynchronizeProperties();
-
-	if (!LineContainer || !Background || !LineClass)
-		return;
-
-	ConstructFromSubtitle(UCSProjectSettingFunctions::GetDefaultExampleSubtitle(), UCSProjectSettingFunctions::GetDesignSettings());
+		
+#if WITH_EDITOR
+	if (IsDesignTime() && Background && LineContainer)
+		ConstructFromSubtitle(UCSProjectSettingFunctions::GetDefaultExampleSubtitle(), UCSProjectSettingFunctions::GetDesignSettings());
+#endif
 }
 
 void UCSLetterboxWidget::ConstructFromSubtitle_Implementation(FCrispSubtitle const& subtitle, UCSUserSettings* settings)
@@ -31,9 +31,14 @@ void UCSLetterboxWidget::ConstructFromSubtitle_Implementation(FCrispSubtitle con
 	const bool hasLabel = !subtitle.Label.IsEmpty();
 	FCSLineStyle const& lineStyle = settings->GetLineStyle(subtitle.Speaker);
 
+	if (settings->LineClass.IsNull())
+		return;
+
+	TSubclassOf<UCSLineWidget> lineClass = settings->LineClass.LoadSynchronous();
+
 	if (hasLabel)//Create label
 	{
-		UCSLineWidget* lineW = CreateWidget<UCSLineWidget>(GetWorld(), LineClass);
+		UCSLineWidget* lineW = CreateWidget<UCSLineWidget>(GetWorld(), lineClass);
 		UVerticalBoxSlot* slot = LineContainer->AddChildToVerticalBox(lineW);
 		slot->SetHorizontalAlignment(EHorizontalAlignment::HAlign_Center);
 		lineW->ConstructLine(subtitle.Label, lineStyle);
@@ -41,7 +46,7 @@ void UCSLetterboxWidget::ConstructFromSubtitle_Implementation(FCrispSubtitle con
 
 	for (int32 i = 0; i < subtitle.Lines.Num(); i++)//Create lines
 	{
-		UCSLineWidget* lineW = CreateWidget<UCSLineWidget>(GetWorld(), LineClass);
+		UCSLineWidget* lineW = CreateWidget<UCSLineWidget>(GetWorld(), lineClass);
 		UVerticalBoxSlot* slot = LineContainer->AddChildToVerticalBox(lineW);
 		slot->SetHorizontalAlignment(EHorizontalAlignment::HAlign_Center);
 		lineW->ConstructLine(subtitle.Lines[i], lineStyle);

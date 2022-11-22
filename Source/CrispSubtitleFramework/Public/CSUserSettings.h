@@ -6,6 +6,10 @@
 #include "Engine/DataAsset.h"
 #include "CSUserSettings.generated.h"
 
+class UCSLineWidget;
+class UCSLetterboxWidget;
+class UCSCaptionWidget;
+
 UENUM(BlueprintType)
 enum class EShowSpeakerType : uint8
 {
@@ -60,22 +64,8 @@ USTRUCT(BlueprintType)
 struct FCSLineStyle
 {
 	GENERATED_BODY()
-
+		
 public:
-	FCSLineStyle()
-		: FontInfo()
-		, TextColour()
-		, TextPadding()
-		, LineBackColour()
-	{};
-
-	FCSLineStyle(FSlateFontInfo const& fontInfo, FLinearColor const& textColour, FMargin const& textPadding, FLinearColor const& lineBackColour)
-		: FontInfo(fontInfo)
-		, TextColour(textColour)
-		, TextPadding(textPadding)
-		, LineBackColour(lineBackColour)
-	{};
-
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "CrispSubtitles")
 		FSlateFontInfo FontInfo;
 
@@ -87,8 +77,6 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "CrispSubtitles")
 		FLinearColor LineBackColour;
-
-	//TODO: add Line Class here
 };
 
 /**
@@ -102,9 +90,6 @@ class CRISPSUBTITLEFRAMEWORK_API UCSUserSettings : public UPrimaryDataAsset
 public:
 	/** TODO
 	 * The name used to compare settings when calculating layout data.
-	 * If two settings have the same layout values you could use the same name for both, which will bypass the layout data being recalculated.
-	 * When using user-customisable settings it would be advisable to assing a new name to them based on whether the layout values were changed.
-	 * e.g. using BuildLayoutBasedName
 	 */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "CrispSubtitles")
 		FName ID = FName("constructed");
@@ -114,50 +99,65 @@ public:
 		FText DisplayName = FText::FromString("Default");
 
 	//Whether to show subtitles.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "CrispSubtitles")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Subtitles")
 		bool bShowSubtitles = true;
 
+	//Whether to show direction indicators on subtitles.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Subtitles")
+		bool bShowSubtitleIndicators = true;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Subtitles|Widgets")
+		TSoftClassPtr<UCSLetterboxWidget> LetterboxClass;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Subtitles|Widgets")
+		TSoftClassPtr<UCSLineWidget> LineClass;
+
 	//Whether to show captions.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "CrispSubtitles")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Captions")
 		bool bShowCaptions = true;
 
-	//Whether to show the direction indicators.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "CrispSubtitles")
-		bool bShowIndicators = true;
+	//Whether to show direction indicators on captions.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Captions")
+		bool bShowCaptionIndicators = true;//TODO
 
-	// --- LABEL --- //
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Captions|Widgets")
+		TSoftClassPtr<UCSCaptionWidget> CaptionClass;
+
+#pragma region LABEL
+public:
+	//TODO
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Subtitles|Label")
+		FText FullLabelFormat = FText::FromString("{speaker}: [{description}]");
 
 	//TODO
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "CrispSubtitles|Label")
-		FText FullLabelFormat = FText::FromString("{speaker}: ({description})");
-
-	//TODO
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "CrispSubtitles|Label")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Subtitles|Label")
 		FText SpeakerOnlyLabelFormat = FText::FromString("{speaker}:");
 
 	//TODO
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "CrispSubtitles|Label")
-		FText DescriptionOnlyLabelFormat = FText::FromString("({description})");
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Subtitles|Label")
+		FText DescriptionOnlyLabelFormat = FText::FromString("[{description}]");
 
 	//Whether to show the speaker's name.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "CrispSubtitles|Label")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Subtitles|Label")
 		EShowSpeakerType ShowSpeaker = EShowSpeakerType::Always;
 
 	//Whether to convert the speaker's name to uppercase letters.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "CrispSubtitles|Label")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Subtitles|Label")
 		bool bSpeakersAreUpperCase = true;
 
 	/**
 	 * Whether to show any potential additional information included in the subtitle.
 	 * This is intended for narration or speech heard over radio for example. TODO
 	 */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "CrispSubtitles|Label")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Subtitles|Label")
 		bool bShowSubtitleDescriptions = false;
 
-	// --- STYLE --- //
-
+#pragma endregion
+	
+#pragma region STYLE
+public:
 	//The padding in between lines. (in screen %)
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Layout")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Subtitles|Layout")
 		float LinePadding = 0.f;
 
 	/**
@@ -173,11 +173,11 @@ public:
 		float IndicatorSize = .1f;
 
 	//The padding between individual subtitles. (in screen %)
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Layout")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Subtitles|Layout")
 		float SubtitlePadding = .015f;
 
 	//The padding in between captions. (in screen %)
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Layout")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Captions|Layout")
 		float CaptionPadding = 0.01f;
 
 	//Which rules to follow when colour coding the subtitles.
@@ -218,8 +218,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Style")
 		FLinearColor CaptionBackColour;
 
-	// --- FONT --- //
-
+#pragma endregion
+	
+#pragma region FONT
+public:
 	//The font to use.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Font", meta = (AllowedClasses = "Font"))
 		TSoftObjectPtr<const UObject> Font;
@@ -235,9 +237,11 @@ public:
 	//The material to use when rendering this font, can be left blank.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Font", meta = (AllowedClasses = "MaterialInterface"))
 		TObjectPtr<UObject> FontMaterial;
-	
-	// --- TIME --- //
 
+#pragma endregion
+	
+#pragma region TIME
+public:
 	//The time gap (in seconds) between removing/adding subtitles to reduce flickering.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Timing")
 		float TimeGap = .16f;
@@ -260,7 +264,11 @@ public:
 	
 	//Recalculates the cached layout data if the smaller viewport dimension has changed.
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Layout")
-		void RecalculateLayout(const FIntPoint ViewportSize);
+		void RecalculateLayout(UGameViewportClient const* viewportClient);
+	
+	//Recalculates the cached layout data if the smaller dimension has changed.
+	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Layout")
+		void RecalculateDesignLayout(const FIntPoint ScreenSize);
 
 	//TODO
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Style")
@@ -268,11 +276,13 @@ public:
 	
 	//TODO
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Style")
-		FLinearColor const& GetTextColour(FName Speaker);//TODO: custom logic
+		FLinearColor const& GetTextColour(FName Speaker) const;//TODO: custom logic
 
 	//TODO
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Style")
 		FCSLineStyle GetLineStyle(FName Speaker);//TODO: custom logic
+
+#pragma endregion
 
 private:
 	void iRecalculateLayout();

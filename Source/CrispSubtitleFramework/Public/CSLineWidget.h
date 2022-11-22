@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "CSUserSettings.h"
 #include "CSLineWidget.generated.h"
 
 class UTextBlock;
@@ -26,4 +27,7 @@ public:
 
 	UFUNCTION(BlueprintNativeEvent, Category = "CrispSubtitles|Broadcast")
 		void ConstructLine(FText const& Content, FCSLineStyle const& LineStyle);
+
+private:
+	void ConstructLine_Implementation(FText const& content, FCSLineStyle const& lineStyle);
 };

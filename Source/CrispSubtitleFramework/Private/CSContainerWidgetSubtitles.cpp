@@ -2,6 +2,7 @@
 
 #include "CSContainerWidgetSubtitles.h"
 #include "CSS_SubtitleGISS.h"
+#include "CSUserSettings.h"
 #include "CSLetterboxWidget.h"
 #include "Components/VerticalBox.h"
 #include "Components/VerticalBoxSlot.h"
@@ -13,6 +14,7 @@ void UCSContainerWidgetSubtitles::NativeConstruct()
 	oCSS->ConstructSubtitleEvent.AddDynamic(this, &UCSContainerWidgetSubtitles::OnSubtitleReceived);
 	oCSS->DestroySubtitleEvent.AddDynamic(this, &UCSContainerWidgetSubtitles::OnDestroy);
 	oCSS->ReconstructSubtitlesEvent.AddDynamic(this, &UCSContainerWidgetSubtitles::OnReconstruct);
+	oCSS->RecalculateLayout();
 }
 
 void UCSContainerWidgetSubtitles::NativeDestruct()
@@ -26,7 +28,7 @@ void UCSContainerWidgetSubtitles::NativeDestruct()
 
 UVerticalBoxSlot* UCSContainerWidgetSubtitles::GetSlot(const int32 id)
 {
-	const int32 index = iChildrenData.xFind(id);
+	const int32 index = iChildrenData.rxFind(id);
 
 	if (index == INDEX_NONE)
 		return nullptr;
@@ -36,7 +38,7 @@ UVerticalBoxSlot* UCSContainerWidgetSubtitles::GetSlot(const int32 id)
 
 UCSLetterboxWidget* UCSContainerWidgetSubtitles::GetLetterbox(const int32 id)
 {
-	const int32 index = iChildrenData.xFind(id);
+	const int32 index = iChildrenData.rxFind(id);
 
 	if (index == INDEX_NONE)
 		return nullptr;
@@ -48,7 +50,7 @@ void UCSContainerWidgetSubtitles::OnSubtitleReceived_Implementation(FCrispSubtit
 {
 	UCSUserSettings* settings = oCSS->GetCurrentSettings();
 
-	UCSLetterboxWidget* letterbox = CreateWidget<UCSLetterboxWidget>(GetWorld(), LetterboxClass);
+	UCSLetterboxWidget* letterbox = CreateWidget<UCSLetterboxWidget>(GetWorld(), settings->LetterboxClass.LoadSynchronous());
 	UVerticalBoxSlot* slot = Container->AddChildToVerticalBox(letterbox);
 	slot->SetHorizontalAlignment(EHorizontalAlignment::HAlign_Center);
 	slot->SetPadding(settings->GetLayout().SubtitlePadding);
@@ -58,7 +60,7 @@ void UCSContainerWidgetSubtitles::OnSubtitleReceived_Implementation(FCrispSubtit
 
 void UCSContainerWidgetSubtitles::OnDestroy_Implementation(const int32 id)
 {
-	if (UCSLetterboxWidget* letterbox = iChildrenData.Consume(id))
+	if (UCSLetterboxWidget* letterbox = iChildrenData.rConsume(id))
 		letterbox->RemoveFromParent();
 }
 

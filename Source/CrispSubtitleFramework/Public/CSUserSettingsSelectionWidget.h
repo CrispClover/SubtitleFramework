@@ -6,9 +6,10 @@
 #include "UObject/ObjectMacros.h"
 #include "Components/Widget.h"
 #include "Widgets/Input/SComboBox.h"
-#include "CSS_SubtitleGISS.h"
 #include "CSUserSettingsSelectionWidget.generated.h"
 
+class UCSS_SubtitleGISS;
+class UCSUserSettings;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FSelectionChanged, UCSUserSettings*, SelectedOption, ESelectInfo::Type, SelectionType);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOpening);

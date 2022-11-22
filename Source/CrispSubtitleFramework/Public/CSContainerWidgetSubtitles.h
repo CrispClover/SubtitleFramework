@@ -8,7 +8,7 @@
 
 class UCSLetterboxWidget;
 
-/*
+/**
  * 
  */
 UCLASS(Blueprintable, Abstract)
@@ -21,9 +21,6 @@ protected:
 	virtual void NativeDestruct() override;
 
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "CrispSubtitles|UI")
-		TSubclassOf<UCSLetterboxWidget> LetterboxClass;
-
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Events")
 		UVerticalBoxSlot* GetSlot(const int32 ID);
 

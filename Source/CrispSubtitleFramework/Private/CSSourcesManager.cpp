@@ -32,10 +32,10 @@ void FCSSourcesManager::Clear()
 	}
 	else
 	{
-		if (iTrackingManager)
+		if (uTrackingManager)
 		{
-			delete iTrackingManager;
-			iTrackingManager = nullptr;
+			delete uTrackingManager;
+			uTrackingManager = nullptr;
 		}
 	}
 }
@@ -49,8 +49,8 @@ void FCSSourcesManager::EmptySources()
 		for (int32 i = 1; i < iSplitscreenTrackingManagers.Num(); i++)
 			iSplitscreenTrackingManagers[i]->Empty();
 	else
-		if (iTrackingManager)
-			iTrackingManager->Empty();
+		if (uTrackingManager)
+			uTrackingManager->Empty();
 }
 
 void FCSSourcesManager::RebuildPlayers(TArray<ULocalPlayer*> const& players)
@@ -80,8 +80,8 @@ void FCSSourcesManager::Shrink()
 		for (CSTrackingManager* manager : iSplitscreenTrackingManagers)
 			manager->Shrink();
 	else
-		if (iTrackingManager)
-			iTrackingManager->Shrink();
+		if (uTrackingManager)
+			uTrackingManager->Shrink();
 
 	iSources.Compact();
 	iSourcesOverride.Compact();
@@ -177,12 +177,12 @@ void FCSSourcesManager::AddPlayer(ULocalPlayer const* player)
 		else
 			iSplitscreenTrackingManagers.Add(new CSTrackingManager(player));
 	}
-	else if (!iTrackingManager)
+	else if (!uTrackingManager)
 	{
 		if (UCSProjectSettingFunctions::CalculateIndicatorsOnTick())
-			iTrackingManager = new CSTrackingManagerTick(player);
+			uTrackingManager = new CSTrackingManagerTick(player);
 		else
-			iTrackingManager = new CSTrackingManager(player);
+			uTrackingManager = new CSTrackingManager(player);
 	}
 }
 
@@ -202,10 +202,10 @@ void FCSSourcesManager::RemovePlayer(ULocalPlayer const* player)
 	}
 	else
 	{
-		if (iTrackingManager)
+		if (uTrackingManager)
 		{
-			delete iTrackingManager;
-			iTrackingManager = nullptr;
+			delete uTrackingManager;
+			uTrackingManager = nullptr;
 		}
 	}
 }
@@ -229,7 +229,7 @@ CSTrackingManager const* FCSSourcesManager::iGetManager(ULocalPlayer const* play
 			if (manager->Player == player)
 				return manager;
 
-	return iTrackingManager;
+	return uTrackingManager;
 }
 
 CSTrackingManager* FCSSourcesManager::iAccessManager(ULocalPlayer const* player)
@@ -239,5 +239,5 @@ CSTrackingManager* FCSSourcesManager::iAccessManager(ULocalPlayer const* player)
 			if (manager->Player == player)
 				return manager;
 
-	return iTrackingManager;
+	return uTrackingManager;
 }

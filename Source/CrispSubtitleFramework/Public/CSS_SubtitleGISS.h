@@ -4,20 +4,19 @@
 
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "CSProjectSettingFunctions.h"
-#include "CSUserSettings.h"
-#include "CSCustomDataManager.h"//TODO: move?
-#include "CSSourcesManager.h"//TODO: move?
+#include "CSCustomDataManager.h"
+#include "CSSourcesManager.h"
 #include "Engine/ObjectLibrary.h"//TODO: move once inlines are gone
 #include "Engine/AssetManager.h"//TODO: move?
 #include "CSS_SubtitleGISS.generated.h"
 
 class UObjectLibrary;
+class UCSUserSettings;
 
 template<typename DataElement>
 struct TCSCurrentData;
 
 #pragma region STRUCTS
-
 //Manages IDs
 struct FCSIDManager
 {
@@ -572,14 +571,11 @@ public:
 	virtual void Deinitialize() override;
 
 private:
-	inline void uPlayerAdded(ULocalPlayer* player)
-	{
-		iRecalculateLayout(player->ViewportClient);
-		iSourcesManager.AddPlayer(player);
-	}
+	inline void iPlayerAdded(ULocalPlayer* player)
+		{ iSourcesManager.AddPlayer(player); };
 
 	inline void iPlayerRemoved(ULocalPlayer* player)
-	{ iSourcesManager.RemovePlayer(player); }
+		{ iSourcesManager.RemovePlayer(player); };
 
 	inline void iManageRemoval(FTimerHandle& handle, const int32 id)
 	{
@@ -1077,8 +1073,10 @@ public:
 			{ return iCurrentSettings; };
 
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Settings")
-		FORCEINLINE void RecalculateLayout(const FIntPoint ViewportSize)
-			{ iCurrentSettings->RecalculateLayout(ViewportSize); };
+		void RecalculateDesignLayout(const FIntPoint ViewportSize);
+
+	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Settings")
+		void RecalculateLayout();
 
 	//Synchronously loads the user settings from the specified path.
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Settings")
@@ -1098,60 +1096,11 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Settings")
 		void ChangeSettingsAsync(FName SettingsID);//TODO
 
-	//Only use after loading settings first. (e.g. binding the streamable delegate using LoadSettingsAsync)
-	inline TArray<UCSUserSettings*> uGetSettingsList()//TODO
-	{
-		TArray<FAssetData> aDataList;
-		uSettingsLibrary->GetAssetDataList(aDataList);
-
-		TArray<UCSUserSettings*> settingsList;
-		settingsList.Reserve(aDataList.Num());
-
-		for (FAssetData aData : aDataList)
-		{
-			UCSUserSettings* settings = Cast<UCSUserSettings>(aData.GetAsset());
-
-			if (GetGameInstance() && GetGameInstance()->GetGameViewportClient() && GetGameInstance()->GetGameViewportClient()->Viewport)
-				iCurrentSettings->RecalculateLayout(GetGameInstance()->GetGameViewportClient()->Viewport->GetSizeXY());
-
-			settingsList.Add(settings);
-		}
-		return settingsList;
-	}
+	//TArray<UCSUserSettings*> iGetSettingsList();
 
 private:
-	inline void iRecalculateLayout(UGameViewportClient* viewportClient)
-	{
-		if (!viewportClient)
-			return;
-
-		FVector2D viewportSize;
-		viewportClient->GetViewportSize(viewportSize);
-		const FVector2D scaledSize = viewportSize / viewportClient->GetDPIScale();
-		iCurrentSettings->RecalculateLayout(scaledSize.IntPoint());
-	};
-
-	//Only use after loading settings first. (e.g. binding the streamable delegate)
-	inline void uSetSettingsByID(FName settingsID)
-	{
-		for (UCSUserSettings* settings : uGetSettingsList())
-			if (settings->ID == settingsID)
-				uSetSettings(settings);
-	};
-
-	inline void uSetSettings(UCSUserSettings* settings)
-	{
-		if (GetGameInstance()->GetGameViewportClient() && GetGameInstance()->GetGameViewportClient()->Viewport)//TODO: test
-			iCurrentSettings->RecalculateLayout(GetGameInstance()->GetGameViewportClient()->Viewport->GetSizeXY());
-
-		iCurrentSettings = settings;
-		uReconstructSubtitles();
-
-		iAssignedTextColours = settings->AssignedTextColours;
-		iShownSpeakers.Empty();
-
-		uSettingsLibrary = nullptr;
-	};
+	void iRecalculateLayout(UGameViewportClient const* viewportClient);
+	void SetSettingsByID(FName settingsID);
 
 	TSet<FName> iShownSpeakers = TSet<FName>();
 	TMap<FName, FLinearColor> iAssignedTextColours = TMap<FName, FLinearColor>();

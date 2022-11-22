@@ -3,10 +3,12 @@
 #include "CSUserSettingsSelectionWidget.h"
 #include "Kismet/GameplayStatics.h"
 #include "Styling/UMGCoreStyle.h"
-//#include "UObject/ConstructorHelpers.h"
+//#include "UObject/ConstructorHelpers.h" TODO->
 //#include "Widgets/Layout/SBox.h"
 //#include "Widgets/Text/STextBlock.h"
 //#include "Widgets/SNullWidget.h"
+#include "CSS_SubtitleGISS.h"
+#include "CSUserSettings.h"
 
 UCSUserSettingsSelectionWidget::UCSUserSettingsSelectionWidget()
 {
@@ -23,15 +25,13 @@ UCSUserSettingsSelectionWidget::UCSUserSettingsSelectionWidget()
 	bEnableGamepadNavigationMode = true;
 	bIsFocusable = true;
 
-	oSelectedSettings = GetDefault<UCSProjectSettings>()->DefaultSettings.LoadSynchronous();
+	oSelectedSettings = UCSProjectSettingFunctions::GetDefaultSettings();
+	SettingsOptions.Add(oSelectedSettings);
 }
 
 void UCSUserSettingsSelectionWidget::Construct()
 {
 	oCSS = UGameplayStatics::GetGameInstance(GetWorld())->GetSubsystem<UCSS_SubtitleGISS>();
-
-	oSelectedSettings = oCSS->GetCurrentSettings();
-	SettingsOptions.Add(oSelectedSettings);
 
 	const bool settingsNeedLoading = oCSS->LoadSettingsAsync(FStreamableDelegate::CreateUObject(this, &UCSUserSettingsSelectionWidget::oOnSettingsLoaded));
 
@@ -41,15 +41,12 @@ void UCSUserSettingsSelectionWidget::Construct()
 
 void UCSUserSettingsSelectionWidget::oOnSettingsLoaded()
 {
-	SettingsOptions = oCSS->uGetSettingsList();
-
-	for (UCSUserSettings* settings : SettingsOptions)
-		settings->RecalculateLayout(GetOwningLocalPlayer()->ViewportClient->Viewport->GetSizeXY());//TODO: oops
+	SettingsOptions = oCSS->GetSettingsList();
 
 	if (iComboBox)
 		iComboBox->RefreshOptions();
 
-	//SetSelectedSettings(SelectedSettings);//TODO:remove?
+	SetSelectedSettings(oCSS->GetCurrentSettings());
 }
 
 void UCSUserSettingsSelectionWidget::GenerateContent()

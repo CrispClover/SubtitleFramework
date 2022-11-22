@@ -4,13 +4,13 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "CSUserSettings.h"
 #include "CSLetterboxWidget.generated.h"
 
 class UInvalidationBox;
 class UBorder;
 class UVerticalBox;
-class UCSLineWidget;
-class CSIndicatorWidget;
+class UCSIndicatorWidget;
 
 /*
  * 
@@ -22,8 +22,6 @@ class CRISPSUBTITLEFRAMEWORK_API UCSLetterboxWidget : public UUserWidget
 
 protected:
 	virtual void SynchronizeProperties() override;
-
-	void ConstructFromSubtitle_Implementation(FCrispSubtitle const& subtitle, UCSUserSettings* settings);//TODO: remove
 
 public:
 	UPROPERTY(BlueprintReadOnly, Category = "CrispSubtitles|UI", meta = (BindWidgetOptional))
@@ -38,9 +36,9 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = "CrispSubtitles|UI", meta = (BindWidget))
 		UVerticalBox* LineContainer = nullptr;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "CrispSubtitles|UI")
-		TSubclassOf<UCSLineWidget> LineClass;
-
 	UFUNCTION(BlueprintNativeEvent, Category = "CrispSubtitles|Broadcast")
 		void ConstructFromSubtitle(FCrispSubtitle const& Subtitle, UCSUserSettings* Settings);
+
+private:
+	void ConstructFromSubtitle_Implementation(FCrispSubtitle const& subtitle, UCSUserSettings* settings);
 };

@@ -2,9 +2,25 @@
 
 #include "CSUserSettings.h"
 
-void UCSUserSettings::RecalculateLayout(const FIntPoint viewportSize)
+void UCSUserSettings::RecalculateLayout(UGameViewportClient const* viewportClient)
 {
+	if (!viewportClient)
+		return;
+
+	FVector2D viewportSize;
+	viewportClient->GetViewportSize(viewportSize);
 	const int32 size = FMath::Min(viewportSize.X, viewportSize.Y);
+
+	if (iCachedLayout.Size == size)
+		return;
+
+	iCachedLayout.Size = size;
+	iRecalculateLayout();
+}
+
+void UCSUserSettings::RecalculateDesignLayout(const FIntPoint screenSize)
+{
+	const int32 size = FMath::Min(screenSize.X, screenSize.Y);
 
 	if (iCachedLayout.Size == size)
 		return;
@@ -45,7 +61,7 @@ bool UCSUserSettings::GetShowSpeaker(const FName speakerID) const
 	}
 }
 
-FLinearColor const& UCSUserSettings::GetTextColour(FName speakerID)
+FLinearColor const& UCSUserSettings::GetTextColour(FName speakerID) const
 {
 	switch (ColourCoding)
 	{
@@ -90,7 +106,14 @@ FLinearColor const& UCSUserSettings::GetTextColour(FName speakerID)
 	return FLinearColor::White;
 }
 
-FCSLineStyle UCSUserSettings::GetLineStyle(FName speakerID)
+FCSLineStyle UCSUserSettings::GetLineStyle(FName speaker)
 {
-	return FCSLineStyle(iCachedLayout.FontInfo, GetTextColour(speakerID), iCachedLayout.TextPadding, LineBackColour);
+	FCSLineStyle lineStyle = FCSLineStyle();
+
+	lineStyle.FontInfo = iCachedLayout.FontInfo;
+	lineStyle.TextColour = GetTextColour(speaker);//TODO
+	lineStyle.TextPadding = iCachedLayout.TextPadding;
+	lineStyle.LineBackColour = LineBackColour;
+
+	return lineStyle;
 }
