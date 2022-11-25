@@ -13,48 +13,53 @@
 void UCSLetterboxWidget::SynchronizeProperties()
 {
 	Super::SynchronizeProperties();
-		
+
 #if WITH_EDITOR
-	if (IsDesignTime() && Background && LineContainer)
-		ConstructFromSubtitle(UCSProjectSettingFunctions::GetDefaultExampleSubtitle(), UCSProjectSettingFunctions::GetDesignSettings());
+	if (!IsDesignTime() || !Background || !LineContainer)
+		return;
+	
+	FCrispSubtitle const& subtitle = UCSProjectSettingFunctions::GetDefaultExampleSubtitle();
+	FCSLetterboxStyle const& style = UCSUILibrary::GetDesignLetterboxStyle(subtitle.Speaker);
+	ConstructFromSubtitle(subtitle, style);
 #endif
 }
 
-void UCSLetterboxWidget::ConstructFromSubtitle_Implementation(FCrispSubtitle const& subtitle, UCSUserSettings* settings)
+void UCSLetterboxWidget::ConstructFromSubtitle_Implementation(FCrispSubtitle const& subtitle, FCSLetterboxStyle const& style)
 {
 	LineContainer->ClearChildren();
 
-	FLayoutCacheData const& layout = settings->GetLayout();
-	Cast<UBorderSlot>(Background->GetContentSlot())->SetPadding(layout.BoxPadding);
-	Background->SetBrushColor(settings->LetterboxColour);
+	Cast<UBorderSlot>(Background->GetContentSlot())->SetPadding(style.BoxPadding);
+	Background->SetBrushColor(style.LetterboxColour);
 
 	const bool hasLabel = !subtitle.Label.IsEmpty();
-	FCSLineStyle const& lineStyle = settings->GetLineStyle(subtitle.Speaker);
 
-	if (settings->LineClass.IsNull())
+	if (!style.LineClass)
 		return;
-
-	TSubclassOf<UCSLineWidget> lineClass = settings->LineClass.LoadSynchronous();
 
 	if (hasLabel)//Create label
 	{
-		UCSLineWidget* lineW = CreateWidget<UCSLineWidget>(GetWorld(), lineClass);
+		UCSLineWidget* lineW = CreateWidget<UCSLineWidget>(GetWorld(), style.LineClass);
 		UVerticalBoxSlot* slot = LineContainer->AddChildToVerticalBox(lineW);
 		slot->SetHorizontalAlignment(EHorizontalAlignment::HAlign_Center);
-		lineW->ConstructLine(subtitle.Label, lineStyle);
+		lineW->ConstructLine(subtitle.Label, style.LineStyle);
 	}
 
 	for (int32 i = 0; i < subtitle.Lines.Num(); i++)//Create lines
 	{
-		UCSLineWidget* lineW = CreateWidget<UCSLineWidget>(GetWorld(), lineClass);
+		UCSLineWidget* lineW = CreateWidget<UCSLineWidget>(GetWorld(), style.LineClass);
 		UVerticalBoxSlot* slot = LineContainer->AddChildToVerticalBox(lineW);
 		slot->SetHorizontalAlignment(EHorizontalAlignment::HAlign_Center);
-		lineW->ConstructLine(subtitle.Lines[i], lineStyle);
+		lineW->ConstructLine(subtitle.Lines[i], style.LineStyle);
 
 		if (hasLabel || i > 0)
-			slot->SetPadding(layout.LinePadding);
+			slot->SetPadding(style.LinePadding);
 	}
+	
+	if (!Indicator)
+		return;
 
-	if (Indicator)
+	if (style.bShowIndicator)
 		Indicator->Register(FCSSoundID(subtitle.Source, UCSProjectSettingFunctions::GetSoundNameForSpeech()));
+	else
+		Indicator->RemoveFromParent();
 }

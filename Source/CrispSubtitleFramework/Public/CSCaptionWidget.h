@@ -4,7 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "CSLibrary.h"
+#include "CSCoreLibrary.h"
+#include "CSUILibrary.h"
 #include "CSCaptionWidget.generated.h"
 
 class UBorder;
@@ -38,5 +39,8 @@ public:
 		UTextBlock* Text = nullptr;
 
 	UFUNCTION(BlueprintNativeEvent, Category = "CrispSubtitles|Broadcast")
-		void ConstructFromCaption(FCrispCaption const& Caption, UCSUserSettings* settings);
+		void ConstructFromCaption(FCrispCaption const& Caption, FCSCaptionStyle const& Style);
+
+private:
+	void ConstructFromCaption_Implementation(FCrispCaption const & caption, FCSCaptionStyle const & style);
 };

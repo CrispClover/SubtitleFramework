@@ -3,6 +3,7 @@
 #include "CSContainerWidgetSubtitles.h"
 #include "CSS_SubtitleGISS.h"
 #include "CSUserSettings.h"
+#include "CSUILibrary.h"
 #include "CSLetterboxWidget.h"
 #include "Components/VerticalBox.h"
 #include "Components/VerticalBoxSlot.h"
@@ -28,22 +29,22 @@ void UCSContainerWidgetSubtitles::NativeDestruct()
 
 UVerticalBoxSlot* UCSContainerWidgetSubtitles::GetSlot(const int32 id)
 {
-	const int32 index = iChildrenData.rxFind(id);
+	const int32 ux = iChildrenData.rxFind(id);
 
-	if (index == INDEX_NONE)
+	if (ux == INDEX_NONE)
 		return nullptr;
 	else
-		return iChildrenData.Slots[index];
+		return iChildrenData.Slots[ux];
 }
 
 UCSLetterboxWidget* UCSContainerWidgetSubtitles::GetLetterbox(const int32 id)
 {
-	const int32 index = iChildrenData.rxFind(id);
+	const int32 ux = iChildrenData.rxFind(id);
 
-	if (index == INDEX_NONE)
+	if (ux == INDEX_NONE)
 		return nullptr;
 	else
-		return iChildrenData.Children[index];
+		return iChildrenData.Children[ux];
 }
 
 void UCSContainerWidgetSubtitles::OnSubtitleReceived_Implementation(FCrispSubtitle const& subtitle)
@@ -54,7 +55,7 @@ void UCSContainerWidgetSubtitles::OnSubtitleReceived_Implementation(FCrispSubtit
 	UVerticalBoxSlot* slot = Container->AddChildToVerticalBox(letterbox);
 	slot->SetHorizontalAlignment(EHorizontalAlignment::HAlign_Center);
 	slot->SetPadding(settings->GetLayout().SubtitlePadding);
-	letterbox->ConstructFromSubtitle(subtitle, settings);
+	letterbox->ConstructFromSubtitle(subtitle, UCSUILibrary::GetLetterboxStyle(settings, subtitle.Speaker));
 	iChildrenData.Add(subtitle.ID, letterbox, slot);
 }
 
@@ -76,7 +77,7 @@ void UCSContainerWidgetSubtitles::OnReconstruct_Implementation(TArray<FCrispSubt
 		iChildrenData.Children[cWidgets - i]->RemoveFromParent();
 
 	for (int32 i = 0; i < cWidgets; i++)//Reconstruct existing
-		iChildrenData.Children[i]->ConstructFromSubtitle(subtitles[i], settings);
+		iChildrenData.Children[i]->ConstructFromSubtitle(subtitles[i], UCSUILibrary::GetLetterboxStyle(settings, subtitles[i].Speaker));
 
 	for (UVerticalBoxSlot* slot : iChildrenData.Slots)
 		slot->SetPadding(settings->SubtitlePadding);

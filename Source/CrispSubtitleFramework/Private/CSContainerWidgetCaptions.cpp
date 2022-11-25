@@ -4,6 +4,7 @@
 #include "CSS_SubtitleGISS.h"
 #include "CSUserSettings.h"
 #include "CSCaptionWidget.h"
+#include "CSUILibrary.h"
 #include "Components/VerticalBox.h"
 #include "Components/VerticalBoxSlot.h"
 
@@ -28,33 +29,35 @@ void UCSContainerWidgetCaptions::NativeDestruct()
 
 UVerticalBoxSlot* UCSContainerWidgetCaptions::GetSlot(const int32 id)
 {
-	const int32 index = iChildrenData.rxFind(id);
+	const int32 ux = iChildrenData.rxFind(id);
 
-	if (index == INDEX_NONE)
+	if (ux == INDEX_NONE)
 		return nullptr;
 	else
-		return iChildrenData.Slots[index];
+		return iChildrenData.Slots[ux];
 }
 
 UCSCaptionWidget* UCSContainerWidgetCaptions::GetCaptionWidget(const int32 id)
 {
-	const int32 index = iChildrenData.rxFind(id);
+	const int32 ux = iChildrenData.rxFind(id);
 
-	if (index == INDEX_NONE)
+	if (ux == INDEX_NONE)
 		return nullptr;
 	else
-		return iChildrenData.Children[index];
+		return iChildrenData.Children[ux];
 }
 
 void UCSContainerWidgetCaptions::OnCaptionReceived_Implementation(FCrispCaption const& caption)
 {
 	UCSUserSettings* settings = oCSS->GetCurrentSettings();
 
+	const FCSCaptionStyle style = UCSUILibrary::GetCaptionStyle(settings, caption.SoundID.Source);
+
 	UCSCaptionWidget* captionWidget = CreateWidget<UCSCaptionWidget>(GetWorld(), settings->CaptionClass.LoadSynchronous());
 	UVerticalBoxSlot* slot = Container->AddChildToVerticalBox(captionWidget);
 
 	slot->SetPadding(settings->GetLayout().CaptionPadding);
-	captionWidget->ConstructFromCaption(caption, settings);
+	captionWidget->ConstructFromCaption(caption, style);
 	iChildrenData.Add(caption.ID, captionWidget, slot);
 }
 
@@ -76,7 +79,7 @@ void UCSContainerWidgetCaptions::OnReconstruct_Implementation(TArray<FCrispCapti
 		iChildrenData.Children[cWidgets - i]->RemoveFromParent();
 
 	for (int32 i = 0; i < cWidgets; i++)//Reconstruct existing
-		iChildrenData.Children[i]->ConstructFromCaption(captions[i], settings);
+		iChildrenData.Children[i]->ConstructFromCaption(captions[i], UCSUILibrary::GetCaptionStyle(settings, captions[i].SoundID.Source));
 
 	for (UVerticalBoxSlot* slot : iChildrenData.Slots)//Apply padding to existing
 		slot->SetPadding(settings->CaptionPadding);

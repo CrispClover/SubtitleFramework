@@ -5,7 +5,7 @@
 #include "CoreMinimal.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "CSProjectSettings.h"
-#include "CSLibrary.h"
+#include "CSCoreLibrary.h"
 #include "CSProjectSettingFunctions.generated.h"
 
 class UCSUserSettings;

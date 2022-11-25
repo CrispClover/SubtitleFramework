@@ -36,16 +36,16 @@ public:
 	};
 
 	inline void SetSourcesOverride(TSet<FName> const& Override)
-	{ iSourcesOverride = Override.Intersect(iSources); };
+		{ iSourcesOverride = Override.Intersect(iSources); };
 
 	inline void ClearSourcesOverride()
-	{ iSourcesOverride.Empty(); };
+		{ iSourcesOverride.Empty(); };
 
 	inline bool HasOverride() const
-	{ return !iSourcesOverride.IsEmpty(); };
+		{ return !iSourcesOverride.IsEmpty(); };
 
 	inline bool IsRegistered(const FName source) const
-	{ return iSources.Contains(source); };
+		{ return iSources.Contains(source); };
 
 	inline bool AddSource(const FName name)
 	{

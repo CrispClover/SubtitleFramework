@@ -14,10 +14,10 @@ template <typename ChildType>
 struct FCSChildWidgetData
 {
 	inline int32 rxFind(const int32 id)
-	{ return IDs.Find(id); };
+		{ return IDs.Find(id); };
 
 	inline int32 Num()
-	{ return IDs.Num(); };
+		{ return IDs.Num(); };
 
 	inline void Add(const int32 id, ChildType* child, UVerticalBoxSlot* slot)
 	{
@@ -27,7 +27,7 @@ struct FCSChildWidgetData
 	};
 
 	inline void Remove(const int32 id)
-	{ iRemoveAt(rxFind(id));	};
+		{ iRemoveAt(rxFind(id));	};
 
 	inline ChildType* rConsume(const int32 id)
 	{
@@ -54,7 +54,7 @@ private:
 	};
 };
 
-/*
+/**
  * 
  */
 UCLASS(Abstract)

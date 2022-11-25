@@ -58,15 +58,11 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitleTools")
 		static TArray<FRawSubtitle> ConvertSRT(TSoftObjectPtr<UBasicOverlays> Overlays);
 
-	/*
-	 * Sorts an array of captions by StartDelay.
-	 */
+	//Sorts an array of captions by StartDelay.
 	UFUNCTION(BlueprintPure, meta = (DisplayName = "Sort Captions", CompactNodeTitle = "sort"), Category = "CrispSubtitleTools")
 		static TArray<FSoundCaption> SortCapByStartTime(TArray<FSoundCaption> const& Captions);
 
-	/*
-	 * Sorts an array of raw subtitles by StartDelay.
-	 */
+	//Sorts an array of raw subtitles by StartDelay.
 	UFUNCTION(BlueprintPure, meta = (DisplayName = "Sort Raw Subtitles", CompactNodeTitle = "sort"), Category = "CrispSubtitleTools")
 		static TArray<FRawSubtitle> SortRawByStartTime(TArray<FRawSubtitle> const& Subtitles);
 

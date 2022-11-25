@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "CSUserSettings.h"
+#include "CSUILibrary.h"
 #include "CSLineWidget.generated.h"
 
 class UTextBlock;

@@ -52,11 +52,11 @@ public:
 
 	//
 	UFUNCTION(BlueprintNativeEvent, Category = "CrispSubtitles|Events")
-		void Register(FCSSoundID const& SoundID, float Scaling = 1.0);
+		void Register(FCSSoundID const& SoundID);
 
 protected:
 	virtual void OnUpdateIndicators_Implementation();
-	void Register_Implementation(FCSSoundID const& id, float scaling);
+	void Register_Implementation(FCSSoundID const& id);
 	UCSS_SubtitleGISS* oCSS = nullptr;//TODO
 
 private:

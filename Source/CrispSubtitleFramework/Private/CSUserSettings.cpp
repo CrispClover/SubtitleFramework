@@ -1,6 +1,54 @@
 // Copyright Crisp Clover.
 
 #include "CSUserSettings.h"
+#include "Engine/Font.h"
+
+UCSUserSettings::UCSUserSettings()
+	//Core:
+	: DisplayName(FText::FromString("Default"))
+	, LetterboxClass(nullptr)
+	, LineClass(nullptr)
+	, CaptionClass(nullptr)
+	, bShowSubtitles(true)
+	, bShowSubtitleIndicators(false)
+	, bShowCaptions(false)
+	, bShowCaptionIndicators(true)
+	//Label:
+	, FullLabelFormat(FText::FromString("{speaker}: [{description}]"))
+	, SpeakerOnlyLabelFormat(FText::FromString("{speaker}:"))
+	, DescriptionOnlyLabelFormat(FText::FromString("[{description}]"))
+	, ShowSpeaker(EShowSpeakerType::Always)
+	, bSpeakersAreUpperCase(true)
+	, bShowSubtitleDescriptions(false)
+	//Font:
+	, Font(nullptr)
+	, RegularTypeface(FName("Regular"))
+	, ItalicTypeface(FName("Italic"))
+	, CaptionTypeface(FName("Regular"))
+	, Outline(FFontOutlineSettings())
+	, LetterSpacing(0)
+	, FontMaterial(nullptr)
+	, SubtitleTextSize(.04f)
+	, CaptionTextSize(.04f)
+	//Colours:
+	, ColourCoding(EColourCodeType::None)
+	, DefaultTextColour(FLinearColor::White)
+	, AssignedTextColours(TMap<FName, FLinearColor>())
+	, AvailableTextColours(TArray<FLinearColor>{FLinearColor::White, FLinearColor::Yellow, FLinearColor(0, 1, 1), FLinearColor::Green})
+	, LetterboxColour(FLinearColor::FLinearColor(0, 0, 0, .5f))
+	, LineBackColour(FLinearColor::Transparent)
+	, CaptionBackColour(FLinearColor::FLinearColor(0, 0, 0, .5f))
+	//Layout:
+	, SubtitlePadding(.015f)
+	, LinePadding(0.f)
+	, CaptionPadding(0.01f)
+	, IndicatorSize(1.0f)
+	//Timing:
+	, ReadingSpeed(1.f)
+	, TimeGap(.16f)
+	, MinimumSubtitleTime(1.f)
+	, MinimumCaptionTime(.85f)
+{};
 
 void UCSUserSettings::RecalculateLayout(UGameViewportClient const* viewportClient)
 {
@@ -11,10 +59,10 @@ void UCSUserSettings::RecalculateLayout(UGameViewportClient const* viewportClien
 	viewportClient->GetViewportSize(viewportSize);
 	const int32 size = FMath::Min(viewportSize.X, viewportSize.Y);
 
-	if (iCachedLayout.Size == size)
+	if (iCachedLayout.BaseSize == size)
 		return;
 
-	iCachedLayout.Size = size;
+	iCachedLayout.BaseSize = size;
 	iRecalculateLayout();
 }
 
@@ -22,10 +70,10 @@ void UCSUserSettings::RecalculateDesignLayout(const FIntPoint screenSize)
 {
 	const int32 size = FMath::Min(screenSize.X, screenSize.Y);
 
-	if (iCachedLayout.Size == size)
+	if (iCachedLayout.BaseSize == size)
 		return;
 
-	iCachedLayout.Size = size;
+	iCachedLayout.BaseSize = size;
 	iRecalculateLayout();
 }
 
@@ -35,15 +83,18 @@ void UCSUserSettings::iRecalculateLayout()
 	iCachedLayout.FontInfo.OutlineSettings = Outline;
 	iCachedLayout.FontInfo.LetterSpacing = LetterSpacing;
 	iCachedLayout.FontInfo.FontMaterial = FontMaterial;
-	iCachedLayout.FontInfo.Size = iCachedLayout.Size * TextSize;
+	iCachedLayout.FontInfo.Size = iCachedLayout.BaseSize * SubtitleTextSize;
+	iCachedLayout.FontInfo.TypefaceFontName = RegularTypeface;//TODO?
+
+	iCachedLayout.CaptionTextSize = iCachedLayout.BaseSize * CaptionTextSize;
 
 	iCachedLayout.TextPadding = FMargin(iCachedLayout.FontInfo.Size * .5f, iCachedLayout.FontInfo.Size * .25f);
-	iCachedLayout.LinePadding = FMargin(0, iCachedLayout.Size * LinePadding, 0, 0);
-	iCachedLayout.SubtitlePadding = FMargin(0, iCachedLayout.Size * SubtitlePadding, 0, 0);
-	iCachedLayout.BoxPadding = FMargin(iCachedLayout.Size * .03f, iCachedLayout.Size * .01f);
-	iCachedLayout.CaptionPadding = FMargin(0, iCachedLayout.Size * CaptionPadding, 0, 0);
+	iCachedLayout.LinePadding = FMargin(0, iCachedLayout.BaseSize * LinePadding, 0, 0);
+	iCachedLayout.SubtitlePadding = FMargin(0, iCachedLayout.BaseSize * SubtitlePadding, 0, 0);
+	iCachedLayout.BoxPadding = FMargin(iCachedLayout.BaseSize * .03f, iCachedLayout.BaseSize * .01f);
+	iCachedLayout.CaptionPadding = FMargin(0, iCachedLayout.BaseSize * CaptionPadding, 0, 0);
 
-	iCachedLayout.IndicatorSize = FVector2D(iCachedLayout.Size * IndicatorSize);
+	iCachedLayout.IndicatorSize = FVector2D(iCachedLayout.CaptionTextSize * IndicatorSize);
 }
 
 bool UCSUserSettings::GetShowSpeaker(const FName speakerID) const
@@ -106,14 +157,13 @@ FLinearColor const& UCSUserSettings::GetTextColour(FName speakerID) const
 	return FLinearColor::White;
 }
 
-FCSLineStyle UCSUserSettings::GetLineStyle(FName speaker)
+TArray<FName> UCSUserSettings::GetTypefaceOptions() const
 {
-	FCSLineStyle lineStyle = FCSLineStyle();
+	TArray<FName> options = TArray<FName>();
 
-	lineStyle.FontInfo = iCachedLayout.FontInfo;
-	lineStyle.TextColour = GetTextColour(speaker);//TODO
-	lineStyle.TextPadding = iCachedLayout.TextPadding;
-	lineStyle.LineBackColour = LineBackColour;
+	if (UFont const* font = Cast<const UFont>(Font.LoadSynchronous()))
+		for (const FTypefaceEntry& typefaceEntry : font->CompositeFont.DefaultTypeface.Fonts)
+			options.Add(typefaceEntry.Name);
 
-	return lineStyle;
+	return options;
 }

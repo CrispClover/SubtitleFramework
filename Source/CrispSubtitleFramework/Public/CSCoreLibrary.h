@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
-#include "CSLibrary.generated.h"
+#include "CSCoreLibrary.generated.h"
 
 class UCSUserSettings;
 
@@ -41,19 +41,13 @@ public:
 	{};
 
     inline bool operator==(FCSSoundID const& other) const
-    {
-		return Equals(other);
-    }
+		{ return Equals(other); }
 
     inline bool operator!=(FCSSoundID const& other) const
-    {
-		return !Equals(other);
-    }
+		{ return !Equals(other); }
 
     inline bool Equals(FCSSoundID const& other) const
-    {
-		return Source == other.Source && Sound == other.Sound;
-    }
+		{ return Source == other.Source && Sound == other.Sound; }
 };
 
 FORCEINLINE uint32 GetTypeHash(FCSSoundID const& id)//TODO
@@ -142,8 +136,8 @@ public:
 		float ReadDuration;
 
 	/**
-	 * The lines to be displayed as a subtitle. For better accessibility you should not display more than two lines in one subtitle, three are possible as an exception.
-	 * Additional information can be stored in additional indeces using a prefix and should be consumed before displaying the subtitle.
+	 * The lines to be displayed as a subtitle. For better accessibility
+	 * you should not display more than two lines in one subtitle, three are permissable as an exception.
 	 */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "CrispSubtitles")
 		TArray<FText> Lines;
@@ -178,7 +172,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "CrispSubtitles")
 		FText SpeakerText;
 
-	//Contains the ID to identify the speaker, which may differ from the source.
+	//The ID to identify the speaker, which may differ from the source.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "CrispSubtitles")
 		FName Speaker;
 
@@ -294,7 +288,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "CrispSubtitles")
 		FName Speaker;
 
-	//Another ID ... TODO
+	//The ID of the source. Used together with Speaker to determine whether the speaker is heard directly.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "CrispSubtitles")
 		FName Source;
 
@@ -328,7 +322,7 @@ public:
  * 
  */
 UCLASS()
-class CRISPSUBTITLEFRAMEWORK_API UCSLibrary : public UBlueprintFunctionLibrary
+class CRISPSUBTITLEFRAMEWORK_API UCSCoreLibrary : public UBlueprintFunctionLibrary
 {
 	GENERATED_BODY()
 	

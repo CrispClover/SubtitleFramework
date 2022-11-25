@@ -13,7 +13,7 @@ UCSUserSettings* UCSProjectSettingFunctions::GetDesignSettings()//TODO: move to 
 
 FCrispSubtitle UCSProjectSettingFunctions::GetExampleSubtitle(UCSUserSettings const* settings)
 {
-	return UCSLibrary::FrySubtitle(GetDefault<UCSProjectSettings>()->ExampleSubtitle, INDEX_NONE, settings);
+	return UCSCoreLibrary::FrySubtitle(GetDefault<UCSProjectSettings>()->ExampleSubtitle, INDEX_NONE, settings);
 }
 
 FCrispCaption UCSProjectSettingFunctions::GetExampleCaption()

@@ -6,7 +6,7 @@
 #include "Engine/DataAsset.h"
 #include "CSLanguageData.generated.h"
 
-/*
+/**
  * 
  */
 UCLASS(BlueprintType)
@@ -15,7 +15,6 @@ class CRISPSUBTITLEFRAMEWORK_API UCSLanguageData : public UDataAsset
 	GENERATED_BODY()
 
 public:
-
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "CrispSubtitles")
 		float MinSubtitleTime = .85f;//TODO: global?
 

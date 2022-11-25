@@ -54,15 +54,15 @@ void UCSIndicatorWidget::OnUpdateIndicators_Implementation()
 	if (!uWidgetData)
 		return;
 
-	Image->SetRenderTransformAngle(UCSLibrary::AngleConversion(uWidgetData->Angle, Segments));
+	Image->SetRenderTransformAngle(UCSCoreLibrary::AngleConversion(uWidgetData->Angle, Segments));
 
-	if (uWidgetData->OpacityDriver < 0)
+	if (uWidgetData->OpacityDriver < 0)//TODO: move to BPs!
 		Image->SetRenderOpacity(1);
 	else
-		Image->SetRenderOpacity(uWidgetData->OpacityDriver * 10 - .75f);//TODO: move to BPs?
+		Image->SetRenderOpacity(uWidgetData->OpacityDriver * 10 - .75f);
 }
 
-void UCSIndicatorWidget::Register_Implementation(FCSSoundID const& id, float scaling)
+void UCSIndicatorWidget::Register_Implementation(FCSSoundID const& id)
 {
 	iSoundID = id;
 
@@ -77,7 +77,7 @@ void UCSIndicatorWidget::Register_Implementation(FCSSoundID const& id, float sca
 	delegates->UpdateIDataEvent.AddUObject(this, &UCSIndicatorWidget::OnUpdateIndicators);
 	delegates->SwapIDataEvent.AddUObject(this, &UCSIndicatorWidget::iUpdateDataPtr);
 
-	Image->SetDesiredSizeOverride(oCSS->GetCurrentSettings()->GetLayout().IndicatorSize * scaling);//TODO: move?
+	Image->SetDesiredSizeOverride(oCSS->GetCurrentSettings()->GetLayout().IndicatorSize);//TODO: move?
 }
 
 void UCSIndicatorWidget::iUpdateOffset() const
@@ -97,7 +97,7 @@ void UCSIndicatorWidget::iUpdateOffset() const
 		return;
 
 	FGeometry const& viewportGeo = gameLayerManager->GetViewportWidgetHostGeometry();
-	uWidgetData->Offset = UCSLibrary::LocalPositionToNDC(viewportGeo.AbsoluteToLocal(iCenterPos), viewportSize.IntPoint());
+	uWidgetData->Offset = UCSCoreLibrary::LocalPositionToNDC(viewportGeo.AbsoluteToLocal(iCenterPos), viewportSize.IntPoint());
 }
 
 void UCSIndicatorWidget::iUpdateDataPtr(FCSSwapArgs const& swapArgs)

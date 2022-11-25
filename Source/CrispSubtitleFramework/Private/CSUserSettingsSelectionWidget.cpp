@@ -3,114 +3,72 @@
 #include "CSUserSettingsSelectionWidget.h"
 #include "Kismet/GameplayStatics.h"
 #include "Styling/UMGCoreStyle.h"
-//#include "UObject/ConstructorHelpers.h" TODO->
-//#include "Widgets/Layout/SBox.h"
-//#include "Widgets/Text/STextBlock.h"
-//#include "Widgets/SNullWidget.h"
+#include "Engine/ObjectLibrary.h"
 #include "CSS_SubtitleGISS.h"
 #include "CSUserSettings.h"
 
-UCSUserSettingsSelectionWidget::UCSUserSettingsSelectionWidget()
+void UCSUserSettingsSelectionWidget::SynchronizeProperties()
 {
-	if (!IsRunningDedicatedServer())
-	{
-		WidgetStyle = FUMGCoreStyle::Get().GetWidgetStyle<FComboBoxStyle>("ComboBox");
-		ItemStyle = FUMGCoreStyle::Get().GetWidgetStyle<FTableRowStyle>("TableView.Row");
-	}
+	Super::SynchronizeProperties();
 
-	ContentPadding = FMargin(4.0, 2.0);
-	ForegroundColor = ItemStyle.TextColor;
-	MaxListHeight = 450.0f;
-	bHasDownArrow = true;
-	bEnableGamepadNavigationMode = true;
-	bIsFocusable = true;
+#if WITH_EDITOR
+	if (IsDesignTime())
+		return;
+#endif
 
-	oSelectedSettings = UCSProjectSettingFunctions::GetDefaultSettings();
-	SettingsOptions.Add(oSelectedSettings);
-}
-
-void UCSUserSettingsSelectionWidget::Construct()
-{
 	oCSS = UGameplayStatics::GetGameInstance(GetWorld())->GetSubsystem<UCSS_SubtitleGISS>();
 
-	const bool settingsNeedLoading = oCSS->LoadSettingsAsync(FStreamableDelegate::CreateUObject(this, &UCSUserSettingsSelectionWidget::oOnSettingsLoaded));
+	const bool settingsNeedLoading = iLoadSettingsAsync(DefaultLoadPath, &UCSUserSettingsSelectionWidget::oOnSettingsLoaded);
 
 	if (!settingsNeedLoading)
 		oOnSettingsLoaded();
 }
 
-void UCSUserSettingsSelectionWidget::oOnSettingsLoaded()
+UCSUserSettingsSelectionWidget::UCSUserSettingsSelectionWidget()
 {
-	SettingsOptions = oCSS->GetSettingsList();
+	if (!IsRunningDedicatedServer())
+	{
+		ComboboxStyle = FUMGCoreStyle::Get().GetWidgetStyle<FComboBoxStyle>("ComboBox");
+		ItemRowStyle = FUMGCoreStyle::Get().GetWidgetStyle<FTableRowStyle>("TableView.Row");
+	}
 
-	if (iComboBox)
-		iComboBox->RefreshOptions();
+	ContentPadding = FMargin(4.0, 2.0);
+	ForegroundColor = ItemRowStyle.TextColor;
+	MaxDropdownHeight = 450.0f;
+	bDisplayDropdownHintArrow = true;
+	bEnableGamepadNavigationMode = true;
+	bIsFocusable = true;
 
-	SetSelectedSettings(oCSS->GetCurrentSettings());
+#if WITH_EDITOR
+	oSelectedSettings = UCSProjectSettingFunctions::GetDefaultSettings();
+	SettingsOptions.Add(oSelectedSettings);
+#endif
 }
 
-void UCSUserSettingsSelectionWidget::GenerateContent()
+void UCSUserSettingsSelectionWidget::LoadSettings(FString const& path)
 {
-	iContentBox->SetContent
-	(
-		SNew(STextBlock)
-		.Text(oSelectedSettings->DisplayName)
-		.Font(FontInfo)
-	);
+	if (!uSettingsLibrary)
+		uSettingsLibrary = UObjectLibrary::CreateLibrary(UCSUserSettings::StaticClass(), false, GIsEditor);
+
+	uSettingsLibrary->LoadAssetDataFromPath(path);
+	uSettingsLibrary->LoadAssetsFromAssetData();
 }
 
-TSharedRef<SWidget> UCSUserSettingsSelectionWidget::GenerateOptionWidget(UCSUserSettings* option)
+TArray<UCSUserSettings*> UCSUserSettingsSelectionWidget::GetSettingsList()
 {
-	return SNew(STextBlock)
-		.Text(option->DisplayName)
-		.Font(FontInfo);
-}
+	if (!uSettingsLibrary)
+		LoadSettings(DefaultLoadPath);
 
-void UCSUserSettingsSelectionWidget::iOnSelectionChanged(UCSUserSettings* option, ESelectInfo::Type selectionType)
-{
-	if (oSelectedSettings == option)
-		return;
+	TArray<FAssetData> aDataList;
+	uSettingsLibrary->GetAssetDataList(aDataList);
 
-	oSelectedSettings = option;
+	TArray<UCSUserSettings*> settingsList;
+	settingsList.Reserve(aDataList.Num());
 
-	if (!IsDesignTime())
-		SelectionChangedEvent.Broadcast(option, selectionType);
+	for (FAssetData aData : aDataList)
+		settingsList.Add(Cast<UCSUserSettings>(aData.GetAsset()));
 
-	GenerateContent();
-}
-
-void UCSUserSettingsSelectionWidget::ReleaseSlateResources(bool bReleaseChildren)
-{
-	Super::ReleaseSlateResources(bReleaseChildren);
-
-	iComboBox.Reset();
-	iContentBox.Reset();
-}
-
-TSharedRef<SWidget> UCSUserSettingsSelectionWidget::RebuildWidget()
-{
-	iComboBox =
-		SNew(SComboBox<UCSUserSettings*>)
-		.OptionsSource(&SettingsOptions)
-		.InitiallySelectedItem(oSelectedSettings)
-		.OnGenerateWidget_UObject(this, &UCSUserSettingsSelectionWidget::GenerateOptionWidget)
-		.OnSelectionChanged_UObject(this, &UCSUserSettingsSelectionWidget::iOnSelectionChanged)
-		.OnComboBoxOpening_UObject(this, &UCSUserSettingsSelectionWidget::OnOpening)
-		.ComboBoxStyle(&WidgetStyle)
-		.ItemStyle(&ItemStyle)
-		.ForegroundColor(ForegroundColor)
-		.ContentPadding(ContentPadding)
-		.MaxListHeight(MaxListHeight)
-		.HasDownArrow(bHasDownArrow)
-		.EnableGamepadNavigationMode(bEnableGamepadNavigationMode)
-		.IsFocusable(bIsFocusable)
-		[
-			SAssignNew(iContentBox, SBox)
-		];
-
-	GenerateContent();
-
-	return iComboBox.ToSharedRef();
+	return settingsList;
 }
 
 void UCSUserSettingsSelectionWidget::SetSelectedSettings(UCSUserSettings* option)
@@ -134,10 +92,87 @@ bool UCSUserSettingsSelectionWidget::IsOpen() const
 	return iComboBox && iComboBox->IsOpen();
 }
 
-void UCSUserSettingsSelectionWidget::OnOpening()
+TSharedRef<SWidget> UCSUserSettingsSelectionWidget::GenerateOptionWidget(UCSUserSettings* option)
+{
+	return SNew(STextBlock)
+		.Text(option->DisplayName)
+		.Font(FontInfo);
+}
+
+void UCSUserSettingsSelectionWidget::oOnSettingsLoaded()
+{
+	SettingsOptions = GetSettingsList();
+
+	if (iComboBox)
+		iComboBox->RefreshOptions();
+
+	SetSelectedSettings(oCSS->GetCurrentSettings());
+}
+
+bool UCSUserSettingsSelectionWidget::iLoadSettingsAsync(FString const& path, SelectWidgetVFunction function)
+{
+	if (!uSettingsLibrary)
+		uSettingsLibrary = UObjectLibrary::CreateLibrary(UCSUserSettings::StaticClass(), false, GIsEditor);
+
+	const int32 numSettings = uSettingsLibrary->LoadAssetDataFromPath(path);
+
+	TArray<FSoftObjectPath> settingsPaths;
+	settingsPaths.Reserve(numSettings);
+
+	TArray<FAssetData> assetDataList;
+	uSettingsLibrary->GetAssetDataList(assetDataList);
+
+	for (FAssetData assetData : assetDataList)
+		if (!assetData.IsAssetLoaded())
+			settingsPaths.Add(assetData.ToSoftObjectPath());
+
+	if (!settingsPaths.Num())
+		return false;
+
+	UAssetManager::GetStreamableManager().RequestAsyncLoad
+	(
+		  settingsPaths
+		, FStreamableDelegate::CreateUObject(this, function)
+	);
+
+	return true;
+}
+
+void UCSUserSettingsSelectionWidget::iOnSelectionChanged(UCSUserSettings* option, ESelectInfo::Type selectionType)
+{
+	if (oSelectedSettings == option)
+		return;
+
+	oSelectedSettings = option;
+
+	if (!IsDesignTime())
+		SelectionChangedEvent.Broadcast(option, selectionType);
+
+	iGenerateContent();
+}
+
+void UCSUserSettingsSelectionWidget::iGenerateContent()
+{
+	iContentBox->SetContent
+	(
+		SNew(STextBlock)
+		.Text(oSelectedSettings->DisplayName)
+		.Font(FontInfo)
+	);
+}
+
+void UCSUserSettingsSelectionWidget::iOnOpening()
 {
 	if (!IsDesignTime())
 		OpeningEvent.Broadcast();
+}
+
+void UCSUserSettingsSelectionWidget::ReleaseSlateResources(bool releaseChildren)
+{
+	Super::ReleaseSlateResources(releaseChildren);
+
+	iComboBox.Reset();
+	iContentBox.Reset();
 }
 
 #if WITH_EDITOR
@@ -146,3 +181,29 @@ const FText UCSUserSettingsSelectionWidget::GetPaletteCategory()
 	return NSLOCTEXT("CrispSubtitles", "CSInput", "CSInput");
 }
 #endif
+
+TSharedRef<SWidget> UCSUserSettingsSelectionWidget::RebuildWidget()
+{
+	iComboBox =
+		SNew(SComboBox<UCSUserSettings*>)
+		.OptionsSource(&SettingsOptions)
+		.InitiallySelectedItem(oSelectedSettings)
+		.OnGenerateWidget_UObject(this, &UCSUserSettingsSelectionWidget::GenerateOptionWidget)
+		.OnSelectionChanged_UObject(this, &UCSUserSettingsSelectionWidget::iOnSelectionChanged)
+		.OnComboBoxOpening_UObject(this, &UCSUserSettingsSelectionWidget::iOnOpening)
+		.ComboBoxStyle(&ComboboxStyle)
+		.ItemStyle(&ItemRowStyle)
+		.ForegroundColor(ForegroundColor)
+		.ContentPadding(ContentPadding)
+		.MaxListHeight(MaxDropdownHeight)
+		.HasDownArrow(bDisplayDropdownHintArrow)
+		.EnableGamepadNavigationMode(bEnableGamepadNavigationMode)
+		.IsFocusable(bIsFocusable)
+		[
+			SAssignNew(iContentBox, SBox)
+		];
+
+	iGenerateContent();
+
+	return iComboBox.ToSharedRef();
+}

@@ -25,10 +25,7 @@ struct FCSSwapArgs
 	FCSSoundID ID;
 	FCSIndicatorWidgetData* WidgetDataPtr;
 
-	FCSSwapArgs() = delete;/*
-		: ID()
-		, WidgetDataPtr(nullptr)
-	{};*/
+	FCSSwapArgs() = delete;
 
 	FCSSwapArgs(FCSSoundID const& id, FCSIndicatorWidgetData* dataPtr)//TODO
 		: ID(id)
@@ -101,19 +98,19 @@ struct FCSTrackingData
 	};
 
 	inline bool NeedsCalc(const int32 index)
-	{ return index < inIndicators;	}
+		{ return index < inIndicators;	}
 
 	inline int32 Num() const
-	{ return iSoundIDs.Num(); }
+		{ return iSoundIDs.Num(); }
 
 	inline FCSSoundIndicatorData& AccessItem(const int32 index)
-	{ return iSoundData[index]; }
+		{ return iSoundData[index]; }
 
 	inline FCSSoundIndicatorData const& GetItem(const int32 index) const
-	{ return iSoundData[index]; }
+		{ return iSoundData[index]; }
 
 	inline FCSSoundID const& GetID(const int32 index) const
-	{ return iSoundIDs[index]; }
+		{ return iSoundIDs[index]; }
 
 	inline FCSSoundIndicatorData const* Find(FCSSoundID const& id) const
 	{
@@ -258,7 +255,7 @@ public:
 	void Calculate();
 
 	inline bool Contains(FCSSoundID const& soundID) const//TODO?
-	{ return nullptr != iData.Find(soundID); };
+		{ return nullptr != iData.Find(soundID); };
 	
 	CSTrackingManager() = delete;
 
@@ -276,19 +273,19 @@ public:
 	};
 
 	inline void Empty()
-	{ iData.Empty(); };
+		{ iData.Empty(); };
 
 	//We can expect memory usage to plateau, so we only shrink upon request.
 	inline void Shrink()
-	{ iData.Shrink(); };
+		{ iData.Shrink(); };
 
 	inline void TrackSound(FCSSoundID const& id, FVector const& data)
-	{ iData.TrackSound(id, data); };
+		{ iData.TrackSound(id, data); };
 
 	bool GetSoundData(FCSSoundID const& id, FVector& data) const;
 
 	inline void RemoveSource(FName const& source)
-	{ return iData.RemoveSource(source); };
+		{ return iData.RemoveSource(source); };
 
 	//TODO?
 	CSIndicatorDelegates* RegisterIndicator(FCSRegisterArgs args);

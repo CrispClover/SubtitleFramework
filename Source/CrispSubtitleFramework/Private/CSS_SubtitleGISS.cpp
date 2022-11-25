@@ -339,7 +339,7 @@ void UCSS_SubtitleGISS::uBroadcastSubtitle(FFullSubtitle const& subtitle, const 
 	if (removedHandles.Num())
 		uReconstructSubtitles();
 	else
-		ConstructSubtitleEvent.Broadcast(UCSLibrary::FrySubtitle(subtitle, id, iCurrentSettings));
+		ConstructSubtitleEvent.Broadcast(UCSCoreLibrary::FrySubtitle(subtitle, id, iCurrentSettings));
 }
 
 void UCSS_SubtitleGISS::iDelaySubtitle(FFullSubtitle const& subtitle, const int32 id, const float dtMissing)
@@ -413,7 +413,7 @@ void UCSS_SubtitleGISS::uReconstructSubtitles() const
 	subtitles.Reserve(iCurrentSubtitles.Num());
 
 	for (auto it = iCurrentSubtitles.GetIterator(); it; ++it)
-		subtitles.Add(UCSLibrary::FrySubtitle(it.Data(), it.ID(), iCurrentSettings));
+		subtitles.Add(UCSCoreLibrary::FrySubtitle(it.Data(), it.ID(), iCurrentSettings));
 
 	ReconstructSubtitlesEvent.Broadcast(subtitles);
 }
@@ -842,68 +842,10 @@ void UCSS_SubtitleGISS::RecalculateLayout()//TODO
 		iCurrentSettings->RecalculateLayout(viewportClient);
 }
 
-void UCSS_SubtitleGISS::LoadSettings(FString const& path)
-{
-	if (!uSettingsLibrary)
-		uSettingsLibrary = UObjectLibrary::CreateLibrary(UCSUserSettings::StaticClass(), false, GIsEditor);
-
-	uSettingsLibrary->LoadAssetDataFromPath(path);
-	uSettingsLibrary->LoadAssetsFromAssetData();
-}
-
-bool UCSS_SubtitleGISS::LoadSettingsAsync(FStreamableDelegate delegateToCall)
-{
-	if (!uSettingsLibrary)
-		uSettingsLibrary = UObjectLibrary::CreateLibrary(UCSUserSettings::StaticClass(), false, GIsEditor);
-
-	const int32 numSettings = uSettingsLibrary->LoadAssetDataFromPath(GetDefault<UCSProjectSettings>()->SettingsPath.Path);
-
-	TArray<FSoftObjectPath> settingsPaths;
-	settingsPaths.Reserve(numSettings);
-
-	TArray<FAssetData> assetDataList;
-	uSettingsLibrary->GetAssetDataList(assetDataList);
-
-	for (FAssetData assetData : assetDataList)
-		if (!assetData.IsAssetLoaded())
-			settingsPaths.Add(assetData.ToSoftObjectPath());
-
-	if (!settingsPaths.Num())
-		return false;
-
-	FStreamableManager& streamable = UAssetManager::GetStreamableManager();
-	streamable.RequestAsyncLoad(settingsPaths, delegateToCall);
-
-	return true;
-}
-
-TArray<UCSUserSettings*> UCSS_SubtitleGISS::GetSettingsList()
-{
-	if (!uSettingsLibrary)
-		LoadSettings(UCSProjectSettingFunctions::GetSettingsPath());
-
-	TArray<FAssetData> aDataList;
-	uSettingsLibrary->GetAssetDataList(aDataList);
-
-	TArray<UCSUserSettings*> settingsList;
-	settingsList.Reserve(aDataList.Num());
-
-	for (FAssetData aData : aDataList)
-	{
-		UCSUserSettings* settings = Cast<UCSUserSettings>(aData.GetAsset());
-		
-		//if (UGameViewportClient* viewportClient = GetGameInstance()->GetGameViewportClient())
-			//settings->RecalculateLayout(viewportClient);TODO
-
-		settingsList.Add(settings);
-	}
-
-	return settingsList;
-};
 
 void UCSS_SubtitleGISS::SetSettings(UCSUserSettings* settings)
 {
-	if (!settings || iCurrentSettings->ID == settings->ID)
+	if (!settings || iCurrentSettings == settings)
 		return;//We don't want to assign nullptr. Neither do we want to force UI updates when nothing has changed.
 
 	iCurrentSettings = settings;
@@ -914,17 +856,7 @@ void UCSS_SubtitleGISS::SetSettings(UCSUserSettings* settings)
 	iAssignedTextColours = settings->AssignedTextColours;
 	iShownSpeakers.Empty();
 
-	uSettingsLibrary = nullptr;
-
 	uReconstructSubtitles();
-}
-
-void UCSS_SubtitleGISS::ChangeSettingsAsync(FName settingsID)
-{
-	if (iCurrentSettings->ID == settingsID)
-		return;//We don't want to force UI updates when nothing has changed.
-
-//TODO	LoadSettingsAsync(FStreamableDelegate::CreateUObject(this, &UCSS_SubtitleGISS::SetSettingsByID, settingsID));
 }
 
 void UCSS_SubtitleGISS::iRecalculateLayout(UGameViewportClient const* viewportClient)//TODO?
@@ -932,10 +864,4 @@ void UCSS_SubtitleGISS::iRecalculateLayout(UGameViewportClient const* viewportCl
 	//iCurrentSettings->RecalculateLayout(viewportClient);
 }
 
-void UCSS_SubtitleGISS::SetSettingsByID(FName settingsID)
-{
-	for (UCSUserSettings* settings : GetSettingsList())
-		if (settings->ID == settingsID)
-			SetSettings(settings);
-}
 #pragma endregion

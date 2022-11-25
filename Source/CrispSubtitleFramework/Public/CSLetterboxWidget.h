@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "CSUserSettings.h"
+#include "CSUILibrary.h"
 #include "CSLetterboxWidget.generated.h"
 
 class UInvalidationBox;
@@ -12,7 +13,7 @@ class UBorder;
 class UVerticalBox;
 class UCSIndicatorWidget;
 
-/*
+/**
  * 
  */
 UCLASS(Blueprintable, Abstract)
@@ -37,8 +38,8 @@ public:
 		UVerticalBox* LineContainer = nullptr;
 
 	UFUNCTION(BlueprintNativeEvent, Category = "CrispSubtitles|Broadcast")
-		void ConstructFromSubtitle(FCrispSubtitle const& Subtitle, UCSUserSettings* Settings);
+		void ConstructFromSubtitle(FCrispSubtitle const& Subtitle, FCSLetterboxStyle const& Style);
 
 private:
-	void ConstructFromSubtitle_Implementation(FCrispSubtitle const& subtitle, UCSUserSettings* settings);
+	void ConstructFromSubtitle_Implementation(FCrispSubtitle const& subtitle, FCSLetterboxStyle const& style);
 };

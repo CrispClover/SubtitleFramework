@@ -6,8 +6,6 @@
 #include "CSProjectSettingFunctions.h"
 #include "CSCustomDataManager.h"
 #include "CSSourcesManager.h"
-#include "Engine/ObjectLibrary.h"//TODO: move once inlines are gone
-#include "Engine/AssetManager.h"//TODO: move?
 #include "CSS_SubtitleGISS.generated.h"
 
 class UObjectLibrary;
@@ -553,7 +551,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FReconstructCaptionsTrigger, TArray<
 //Delegate for triggering destruction.
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FDestructTrigger, const int32, Index);
 
-//Delegate to notify on permanent subtitle broadcast.
+//Delegate to notify about permanent subtitle changes.
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FPermanentSubtitleNotify);
 
 #pragma endregion
@@ -1078,35 +1076,15 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Settings")
 		void RecalculateLayout();
 
-	//Synchronously loads the user settings from the specified path.
-	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Settings")
-		void LoadSettings(FString const& Path);
-
-	//Returns false if all settings assets are already loaded.
-	bool LoadSettingsAsync(FStreamableDelegate DelegateToCall);
-
-	//Returns the list of loaded user settings. Loads the settings from the default settings path if no settings are currently loaded.
-	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Settings")
-		TArray<UCSUserSettings*> GetSettingsList();
-
-	//Call after saving the user settings. Automatically called by the User Settings Widget.
+	//Call after saving the user settings. Automatically called by UserSettingsWidget.
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Settings")
 		void SetSettings(UCSUserSettings* Settings/*, const bool bInvalidateColors = true*/);//TODO
 
-	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Settings")
-		void ChangeSettingsAsync(FName SettingsID);//TODO
-
-	//TArray<UCSUserSettings*> iGetSettingsList();
-
 private:
 	void iRecalculateLayout(UGameViewportClient const* viewportClient);
-	void SetSettingsByID(FName settingsID);
 
 	TSet<FName> iShownSpeakers = TSet<FName>();
 	TMap<FName, FLinearColor> iAssignedTextColours = TMap<FName, FLinearColor>();
-
-	UPROPERTY()
-		UObjectLibrary* uSettingsLibrary = nullptr;
 
 	UPROPERTY()
 		UCSUserSettings* iCurrentSettings = UCSProjectSettingFunctions::GetDefaultSettings();

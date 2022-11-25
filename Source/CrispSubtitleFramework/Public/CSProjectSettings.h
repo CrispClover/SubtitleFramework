@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
-#include "CSLibrary.h"
+#include "CSCoreLibrary.h"
 #include "CSProjectSettings.generated.h"
 
 class UCSCustomDataManager;

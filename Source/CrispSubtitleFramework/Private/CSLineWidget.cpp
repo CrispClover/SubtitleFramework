@@ -12,5 +12,5 @@ void UCSLineWidget::ConstructLine_Implementation(FText const& content, FCSLineSt
 	Text->SetColorAndOpacity(lineStyle.TextColour);
 
 	Cast<UBorderSlot>(Background->GetContentSlot())->SetPadding(lineStyle.TextPadding);
-	Background->SetBrushColor(lineStyle.LineBackColour);
+	Background->SetBrushColor(lineStyle.BackColour);
 }

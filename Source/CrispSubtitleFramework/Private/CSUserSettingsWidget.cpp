@@ -8,14 +8,16 @@
 
 void UCSUserSettingsWidget::SynchronizeProperties()
 {
-	CurrentSettings = UCSProjectSettingFunctions::GetDefaultSettings();
+	Super::SynchronizeProperties();
 
-	if (!SubtitlePreview)
+#if WITH_EDITOR
+	if (!IsDesignTime() || !SubtitlePreview)
 		return;
 
-	ReconstructExample();
+	CurrentSettings = UCSProjectSettingFunctions::GetDefaultSettings();
 
-	Super::SynchronizeProperties();
+	ReconstructExample();
+#endif
 }
 
 void UCSUserSettingsWidget::NativeConstruct()
@@ -25,11 +27,10 @@ void UCSUserSettingsWidget::NativeConstruct()
 	CurrentSettings = oCSS->GetCurrentSettings();
 
 	if (SettingsSelector)
-	{
-		SettingsSelector->Construct();
 		SettingsSelector->SelectionChangedEvent.AddDynamic(this, &UCSUserSettingsWidget::OnSettingsSelected);
-		//TODO?
-	}
+	
+	if (ULocalPlayer* player = GetOwningLocalPlayer())
+		CurrentSettings->RecalculateLayout(player->ViewportClient);
 
 	ReconstructExample();
 
@@ -45,12 +46,17 @@ void UCSUserSettingsWidget::NativeDestruct()
 void UCSUserSettingsWidget::OnSettingsSelected_Implementation(UCSUserSettings* selectedSettings, ESelectInfo::Type selectionType)
 {
 	CurrentSettings = selectedSettings;
+
+	if (ULocalPlayer* player = GetOwningLocalPlayer())
+		CurrentSettings->RecalculateLayout(player->ViewportClient);
+
 	ReconstructExample();
 }
 
 void UCSUserSettingsWidget::ReconstructExample_Implementation()
 {
-	SubtitlePreview->ConstructFromSubtitle(UCSProjectSettingFunctions::GetExampleSubtitle(CurrentSettings), CurrentSettings);
+	const FCrispSubtitle sub = UCSProjectSettingFunctions::GetExampleSubtitle(CurrentSettings);
+	SubtitlePreview->ConstructFromSubtitle(sub, UCSUILibrary::GetLetterboxStyle(CurrentSettings, sub.Speaker));
 }
 
 void UCSUserSettingsWidget::Save_Implementation()

@@ -6,8 +6,10 @@
 #include "UObject/ObjectMacros.h"
 #include "Components/Widget.h"
 #include "Widgets/Input/SComboBox.h"
+#include "Engine/AssetManager.h"
 #include "CSUserSettingsSelectionWidget.generated.h"
 
+class UObjectLibrary;
 class UCSS_SubtitleGISS;
 class UCSUserSettings;
 
@@ -21,17 +23,66 @@ UCLASS()
 class CRISPSUBTITLEFRAMEWORK_API UCSUserSettingsSelectionWidget : public UWidget
 {
 	GENERATED_BODY()
+		
+protected:
+	virtual void SynchronizeProperties() override;
 
 public:
 	UCSUserSettingsSelectionWidget();
 
-	virtual void Construct();//Call on NativeConstruct
+	//Called when a new setting is selected.
+	UPROPERTY(BlueprintAssignable, Category = Events)
+		FSelectionChanged SelectionChangedEvent;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "CrispSubtitles|Data")
+	//Called when the selection widget is opening
+	UPROPERTY(BlueprintAssignable, Category = Events)
+		FOpening OpeningEvent;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Style", meta = (ContentDir))
+		FString DefaultLoadPath = UCSProjectSettingFunctions::GetSettingsPath();
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "CrispSubtitles")
 		TArray<UCSUserSettings*> SettingsOptions;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "CrispSubtitles|Data")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Style")
 		FSlateFontInfo FontInfo;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Style")
+		FComboBoxStyle ComboboxStyle;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Style")
+		FTableRowStyle ItemRowStyle;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Style", meta = (DesignerRebuild))
+		FSlateColor ForegroundColor;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Style")
+		FMargin ContentPadding;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Style", AdvancedDisplay)
+		float MaxDropdownHeight;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Style", AdvancedDisplay)
+		bool bDisplayDropdownHintArrow;
+
+	/**
+	 * When false, directional keys will change the selection.
+	 * When true, ComboBox must be activated to capture directional key input.
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Navigation", AdvancedDisplay)
+		bool bEnableGamepadNavigationMode;
+
+	//Should the ComboBox receive keyboard focus?
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Navigation")
+		bool bIsFocusable;
+
+	//Synchronously loads user settings from the specified path.
+	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Settings")
+		void LoadSettings(FString const& Path);
+
+	//Returns the list of loaded user settings. Loads the settings from DefaultLoadPath if no settings are currently loaded.
+	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles")
+		TArray<UCSUserSettings*> GetSettingsList();
 
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles")
 		void SetSelectedSettings(UCSUserSettings* Option);
@@ -42,88 +93,37 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles")
 		bool IsOpen() const;
 	
-	TSharedRef<SWidget> GenerateOptionWidget(UCSUserSettings* Option);
-
-	// Called when a new setting is selected.
-	UPROPERTY(BlueprintAssignable, Category = Events)
-		FSelectionChanged SelectionChangedEvent;
-
-	// Called when the selection widget is opening
-	UPROPERTY(BlueprintAssignable, Category = Events)
-		FOpening OpeningEvent;
+	TSharedRef<SWidget> GenerateOptionWidget(UCSUserSettings* option);
 
 protected:
-	UCSUserSettings* oSelectedSettings;
-
 	UCSS_SubtitleGISS* oCSS = nullptr;
+	UCSUserSettings* oSelectedSettings;
 
 	virtual void oOnSettingsLoaded();
 
 private:
+	typedef TMemFunPtrType<false, UCSUserSettingsSelectionWidget, void()>::Type SelectWidgetVFunction;
+
+	//Returns false if all settings assets are already loaded.
+	bool iLoadSettingsAsync(FString const& path, SelectWidgetVFunction function);
+	void iOnSelectionChanged(UCSUserSettings* item, ESelectInfo::Type selectionType);
+	void iGenerateContent();
+	void iOnOpening();
+
+	UPROPERTY()
+		UObjectLibrary* uSettingsLibrary = nullptr;
+
 	TSharedPtr<SComboBox<UCSUserSettings*>> iComboBox;
 	TSharedPtr<SBox> iContentBox;
 
-	void iOnSelectionChanged(UCSUserSettings* Item, ESelectInfo::Type SelectionType);
-
-// Copied from ComboBoxKey.h || Copyright Epic Games, Inc. All Rights Reserved. -->
+//Overrides
 public:
-	/* The combobox style. */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Style, meta = (DisplayName = "Style"))
-		FComboBoxStyle WidgetStyle;
-
-	/* The item row style. */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Style)
-		FTableRowStyle ItemStyle;
-
-	/* The foreground color to pass through the hierarchy. */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Style, meta = (DesignerRebuild))
-		FSlateColor ForegroundColor;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Style)
-		FMargin ContentPadding;
-
-	/* The max height of the combobox list that opens */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Style, AdvancedDisplay)
-		float MaxListHeight;
-
-	/*
-	 * When false, the down arrow is not generated and it is up to the API consumer
-	 * to make their own visual hint that this is a drop down.
-	 */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Style, AdvancedDisplay)
-		bool bHasDownArrow;
-
-	/*
-	 * When false, directional keys will change the selection. When true, ComboBox
-	 * must be activated and will only capture arrow input while activated.
-	 */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Style, AdvancedDisplay)
-		bool bEnableGamepadNavigationMode;
-
-	/* When true, allows the combo box to receive keyboard focus */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Style)
-		bool bIsFocusable;
-
-public:
-
-	//~ Begin UVisual Interface
-	virtual void ReleaseSlateResources(bool bReleaseChildren) override;
-	//~ End UVisual Interface
+	virtual void ReleaseSlateResources(bool releaseChildren) override;
 
 #if WITH_EDITOR
 	virtual const FText GetPaletteCategory() override;
 #endif
 
 private:
-	/* Called by slate when it needs to generate the widget in the content box */
-	void GenerateContent();
-
-	/* Called by slate when the underlying combobox is opening */
-	void OnOpening();
-
-	//~ Begin UWidget Interface
 	virtual TSharedRef<SWidget> RebuildWidget() override;
-	//~ End UWidget Interface
-
-// <-- Copied from ComboBoxKey.h || Copyright Epic Games, Inc. All Rights Reserved.
 };

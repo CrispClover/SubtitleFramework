@@ -1,10 +1,10 @@
 // Copyright Crisp Clover.
 
-#include "CSLibrary.h"
+#include "CSCoreLibrary.h"
 #include "CSUserSettings.h"
 #include "Engine/UserInterfaceSettings.h"
 
-double UCSLibrary::AngleConversion(const double angle, const int32 segments, const EAngleUnit unit)
+double UCSCoreLibrary::AngleConversion(const double angle, const int32 segments, const EAngleUnit unit)
 {
 	const float twoPi = 6.2831855f;
 
@@ -39,7 +39,7 @@ double UCSLibrary::AngleConversion(const double angle, const int32 segments, con
 	}
 }
 
-FCrispSubtitle UCSLibrary::FrySubtitle(FFullSubtitle const& sub, const int32 id, UCSUserSettings const* settings)
+FCrispSubtitle UCSCoreLibrary::FrySubtitle(FFullSubtitle const& sub, const int32 id, UCSUserSettings const* settings)
 {
 	bool excludeSpeaker = settings->GetShowSpeaker(sub.Speaker) || sub.SpeakerText.IsEmpty();
 	bool excludeDescription = !settings->bShowSubtitleDescriptions || sub.Description.IsEmpty();
@@ -70,7 +70,7 @@ FCrispSubtitle UCSLibrary::FrySubtitle(FFullSubtitle const& sub, const int32 id,
 	return FCrispSubtitle(label, sub.Lines, sub.Speaker, sub.Source, id);
 }
 
-FVector2D UCSLibrary::LocalPositionToNDC(FVector2D const& localPos, FIntPoint const& viewportSize)
+FVector2D UCSCoreLibrary::LocalPositionToNDC(FVector2D const& localPos, FIntPoint const& viewportSize)
 {
 	static TFrameValue<float> scaleCache;
 	if (!scaleCache.IsSet() || WITH_EDITOR)

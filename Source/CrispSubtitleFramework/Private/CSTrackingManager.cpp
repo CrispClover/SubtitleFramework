@@ -1,7 +1,7 @@
 // Copyright Crisp Clover.
 
 #include "CSTrackingManager.h"
-#include "CSLibrary.h"
+#include "CSCoreLibrary.h"
 
 void CSTrackingManager::Calculate()
 {
@@ -33,7 +33,7 @@ void CSTrackingManager::Calculate()
 	{
 		FCSSoundData<FVector2D>& sound2D = data2D.AccessItem(i);
 
-		//UCSLibrary::LocalPositionToNDC(source2D.SoundPosition, rectangle);//TODO: how to convert specific splitscreen viewport?
+		//UCSCoreLibrary::LocalPositionToNDC(source2D.SoundPosition, rectangle);//TODO: how to convert specific splitscreen viewport?
 
 		const FVector2f offsetNDC = FVector2f(sound2D.SoundData.X - sound2D.Offset.X, -sound2D.SoundData.Y - sound2D.Offset.Y);//TODO: behaviour splitscreen?
 
