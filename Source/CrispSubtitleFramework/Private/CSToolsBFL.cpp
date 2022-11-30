@@ -1,6 +1,8 @@
 // Copyright Crisp Clover.
 
 #include "CSToolsBFL.h"
+#include "CSLanguageData.h"
+#include "Overlay/Public/BasicOverlays.h"
 
 float UCSToolsBFL::CalculateDisplayTime(const int32 unitCount, UCSLanguageData const* languageData, const bool unitIsWords, const float minSubTime)
 {
@@ -143,4 +145,32 @@ TArray<FRawSubtitle> UCSToolsBFL::SortRawByStartTime(TArray<FRawSubtitle> const&
 TArray<FGroupSubtitle> UCSToolsBFL::SortGroupByStartTime(TArray<FGroupSubtitle> const& subtitles)
 {
 	return SortByStartTime(subtitles);
+}
+
+template <>
+TArray<FSoundCaption> UCSToolsBFL::SortByStartTime<FSoundCaption>(TArray<FSoundCaption> const& captions)
+{
+	TArray<FSoundCaption> sorted;
+	sorted.Reserve(captions.Num());
+
+	for (int32 i = 0; i < captions.Num(); i++)
+	{
+		const FSoundCaption cap = captions[i];
+		bool inserted = false;
+
+		for (int32 n = 0; n < sorted.Num(); n++)
+		{
+			if (sorted[n].StartDelay > cap.StartDelay)
+			{
+				sorted.Insert(cap, n);
+				inserted = true;
+				break;
+			}
+		}
+
+		if (!inserted)
+			sorted.Add(cap);
+	}
+
+	return sorted;
 }

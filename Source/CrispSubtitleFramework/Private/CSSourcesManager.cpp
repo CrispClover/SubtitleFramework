@@ -2,6 +2,7 @@
 
 #include "CSSourcesManager.h"
 #include "CSProjectSettingFunctions.h"
+#include "CSTrackingManagerTick.h"
 
 FCSSourcesManager::~FCSSourcesManager()
 {
@@ -117,9 +118,19 @@ bool FCSSourcesManager::TrackSound(FCSSoundID const& soundID, FVector const& loc
 	return true;
 }
 
+void FCSSourcesManager::StopTrackingSound(FCSSoundID const& soundID, ULocalPlayer const* player)
+{
+	if (UCSProjectSettingFunctions::SupportSplitscreen() && !player)
+		for (CSTrackingManager* manager : iSplitscreenTrackingManagers)
+			manager->RemoveSound(soundID);
+	else
+		if (CSTrackingManager* manager = iAccessManager(player))
+			manager->RemoveSound(soundID);
+}
+
 void FCSSourcesManager::StopTrackingSource(const FName name, ULocalPlayer const* player)
 {
-	if (UCSProjectSettingFunctions::SupportSplitscreen() && !iSplitscreenTrackingManagers.IsEmpty() && !player)
+	if (UCSProjectSettingFunctions::SupportSplitscreen() && !player)
 		for (CSTrackingManager* manager : iSplitscreenTrackingManagers)
 			manager->RemoveSource(name);
 	else
@@ -129,7 +140,7 @@ void FCSSourcesManager::StopTrackingSource(const FName name, ULocalPlayer const*
 
 bool FCSSourcesManager::IsSoundTracked(FCSSoundID const& soundID, ULocalPlayer const* player) const
 {
-	if (UCSProjectSettingFunctions::SupportSplitscreen() && !iSplitscreenTrackingManagers.IsEmpty() && !player)
+	if (UCSProjectSettingFunctions::SupportSplitscreen() && !player)
 	{
 		for (CSTrackingManager const* manager : iSplitscreenTrackingManagers)
 			if (manager->Contains(soundID))
@@ -154,10 +165,10 @@ bool FCSSourcesManager::GetSoundData(FCSSoundID const& soundID, FVector& locatio
 		return false;
 }
 
-CSIndicatorDelegates* FCSSourcesManager::RegisterIndicator(FCSRegisterArgs args, ULocalPlayer const* player)
+CSIndicatorDelegates* FCSSourcesManager::rRegisterIndicator(FCSRegisterArgs args, ULocalPlayer const* player)
 {
 	if (CSTrackingManager* manager = iAccessManager(player))
-		return manager->RegisterIndicator(args);
+		return manager->rRegisterIndicator(args);
 	else
 		return nullptr;
 }

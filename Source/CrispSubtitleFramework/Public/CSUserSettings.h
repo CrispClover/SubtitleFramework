@@ -9,6 +9,7 @@
 class UCSLetterboxWidget;
 class UCSLineWidget;
 class UCSCaptionWidget;
+class UCSColourProfile;
 
 UENUM(BlueprintType)
 enum class EShowSpeakerType : uint8
@@ -16,15 +17,6 @@ enum class EShowSpeakerType : uint8
 	Always,
 	ColourCoded,
 	Never
-};
-
-UENUM(BlueprintType)
-enum class EColourCodeType : uint8
-{
-	Assigned,//TODO!
-	TODO,
-	None,
-	Custom
 };
 
 //The data used to cache the layout of the subtitles.
@@ -72,20 +64,24 @@ class CRISPSUBTITLEFRAMEWORK_API UCSUserSettings : public UPrimaryDataAsset
 
 public:
 	UCSUserSettings();
-	
+	/**
+	 * meta=(DisplayAfter="abc")
+	 * meta=(DisplayPriority=123)
+	 * meta=(NoResetToDefault)
+	 */
 #pragma region CORE
 public:
 	//The name to show to a user.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "CrispSubtitles")
 		FText DisplayName;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Widgets")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bShowSubtitles", EditConditionHides, NoResetToDefault), Category = "Subtitles")
 		TSoftClassPtr<UCSLetterboxWidget> LetterboxClass;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Widgets")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (EditCondition = "bShowSubtitles", EditConditionHides, NoResetToDefault), Category = "Subtitles")
 		TSoftClassPtr<UCSLineWidget> LineClass;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Widgets")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bShowCaptions", EditConditionHides, NoResetToDefault), Category = "Captions")
 		TSoftClassPtr<UCSCaptionWidget> CaptionClass;
 
 	//Whether to show subtitles.
@@ -93,7 +89,7 @@ public:
 		bool bShowSubtitles;
 
 	//Whether to show direction indicators on subtitles.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Subtitles")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bShowSubtitles", EditConditionHides), Category = "Subtitles")
 		bool bShowSubtitleIndicators;
 
 	//Whether to show captions.
@@ -101,7 +97,7 @@ public:
 		bool bShowCaptions;
 
 	//Whether to show direction indicators on captions.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Captions")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bShowCaptions", EditConditionHides), Category = "Captions")
 		bool bShowCaptionIndicators;
 	
 #pragma endregion
@@ -109,30 +105,27 @@ public:
 #pragma region LABEL
 public:
 	//The text format when speaker and description are both shown.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SubtitleLabel")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bShowSubtitles", EditConditionHides), Category = "SubtitleLabel")
 		FText FullLabelFormat;
 
 	//The text format when only the speaker is shown.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SubtitleLabel")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bShowSubtitles", EditConditionHides), Category = "SubtitleLabel")
 		FText SpeakerOnlyLabelFormat;
 
 	//The text format when only the description is shown.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SubtitleLabel")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bShowSubtitles", EditConditionHides), Category = "SubtitleLabel")
 		FText DescriptionOnlyLabelFormat;
 
 	//Whether to show the speaker's name.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SubtitleLabel")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bShowSubtitles", EditConditionHides), Category = "SubtitleLabel")
 		EShowSpeakerType ShowSpeaker;
 
 	//Whether to convert the speaker's name to uppercase letters.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SubtitleLabel")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bShowSubtitles", EditConditionHides), Category = "SubtitleLabel")
 		bool bSpeakersAreUpperCase;
 
-	/**
-	 * Whether to show any potential additional information included in the subtitle.
-	 * This is intended for narration or speech heard over radio for example. TODO
-	 */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SubtitleLabel")
+	//Whether to show the descriptive information included in the subtitles.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bShowSubtitles", EditConditionHides), Category = "SubtitleLabel")
 		bool bShowSubtitleDescriptions;
 
 #pragma endregion
@@ -140,19 +133,19 @@ public:
 #pragma region FONT
 public:
 	//The font to use.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Font", meta = (AllowedClasses = "Font"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bShowSubtitles||bShowCaptions", EditConditionHides, GetOptions = "GetTypefaceOptions"), Category = "Font")
 		TSoftObjectPtr<const UObject> Font;
 	
 	//The typeface to use for subtitles.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Font", meta = (GetOptions = "GetTypefaceOptions"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bShowCaptions", EditConditionHides, GetOptions = "GetTypefaceOptions"), Category = "Font")
 		FName RegularTypeface;
 	
 	//The typeface to use when a subtitle's source and speaker mismatch.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Font", meta = (GetOptions = "GetTypefaceOptions"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bShowCaptions", EditConditionHides, GetOptions = "GetTypefaceOptions"), Category = "Font")
 		FName ItalicTypeface;
 
 	//The typeface to use for captions.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Font", meta = (GetOptions = "GetTypefaceOptions"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bShowCaptions", EditConditionHides, GetOptions = "GetTypefaceOptions"), Category = "Font")
 		FName CaptionTypeface;
 
 	//The settings for the font outline.
@@ -160,11 +153,11 @@ public:
 		FFontOutlineSettings Outline;
 
 	//The uniform spacing (or tracking) between all characters in the text.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Font", meta = (ClampMin = -1000, ClampMax = 10000))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, AdvancedDisplay, meta = (ClampMin = -1000, ClampMax = 10000), Category = "Font")
 		int32 LetterSpacing;
 
 	//The material to use when rendering this font, can be left blank.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Font", meta = (AllowedClasses = "MaterialInterface"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, AdvancedDisplay, meta = (AllowedClasses = "MaterialInterface"), Category = "Font")
 		TObjectPtr<UObject> FontMaterial;
 
 	/**
@@ -172,11 +165,11 @@ public:
 	 * Smaller sizes will be a better fit for most games.
 	 * The default text size (4%) fits a 6% line height with the Roboto font. You might have to adjust this value when using other fonts.
 	 */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Font")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bShowSubtitles", EditConditionHides), Category = "Font")
 		float SubtitleTextSize;
 
-	//TODO
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Font")
+	//The text size of a caption. (In screen %)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bShowCaptions", EditConditionHides), Category = "Font")
 		float CaptionTextSize;
 
 	UFUNCTION()
@@ -186,76 +179,62 @@ public:
 		
 #pragma region COLOURS
 public:
-	//Which rules to follow when colour coding the subtitles.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Colours")
-		EColourCodeType ColourCoding;
-
-	//The default text colour.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Colours")
-		FLinearColor DefaultTextColour;
-
-	//This Map matches speakers to their text colours. This can be done dynamically (see: AvailableTextColours & TODO: function for matching)
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Colours")
-		TMap<FName, FLinearColor> AssignedTextColours;
-
-	/**
-	 * These colours can be assigned dynamically, based on priority. The last colour will always be used for all characters without assigned colours.
-	 * If you wish to assign colours before runtime, use "AssignedTextColours". (e.g. when the number of characters in your game is limited, 
-	 * or if you want an easy way to enforce main characters always using the same colours across gameplay sessions.)
-	 */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Colours")
-		TArray<FLinearColor> AvailableTextColours;
+	//Determines how colours are applied to the subtitles.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (ShowOnlyInnerProperties, EditCondition = "bShowSubtitles||bShowCaptions", EditConditionHides), Category = "Colours")
+		TSoftObjectPtr<UCSColourProfile> ColourProfile;
 
 	//The colour of the letterbox, should have a high contrast compared to the text colours.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Colours")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bShowSubtitles", EditConditionHides), Category = "Colours")
 		FLinearColor LetterboxColour;
 
 	//The colour of the background behind the individual lines, should have a high contrast compared to the text colours.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Colours")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bShowSubtitles", EditConditionHides), Category = "Colours")
 		FLinearColor LineBackColour;
 
 	//The colour of the background behind the captions, should have a high contrast compared to the text colours.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Colours")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bShowCaptions", EditConditionHides), Category = "Colours")
 		FLinearColor CaptionBackColour;
-
 #pragma endregion
 
 #pragma region LAYOUT
 public:
-	//The padding between individual subtitles. (in screen %)
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Layout")
+	//The padding between individual subtitles. (In screen %)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bShowSubtitles", EditConditionHides), Category = "Layout")
 		float SubtitlePadding;
 
-	//The padding in between lines. (in screen %)
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Layout")
+	//The padding in between lines. (In screen %)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bShowSubtitles", EditConditionHides), Category = "Layout")
 		float LinePadding;
 
-	//The padding in between captions. (in screen %)
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Layout")
+	//The padding in between captions. (In screen %)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bShowCaptions", EditConditionHides), Category = "Layout")
 		float CaptionPadding;
 
 	//The size of indicators. (relative to the text size)
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Layout")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bShowSubtitleIndicators||bShowCaptionIndicators", EditConditionHides), Category = "Layout")
 		float IndicatorSize;
 
 #pragma endregion
 	
 #pragma region TIMING
 public:
-	//Slow/fast readers could use this to adjust the time subtitles are displayed when you expose this to the user settings.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Timing")
+	/**
+	 * Slow/fast readers could use this to adjust the time for which subtitles are displayed when you expose this to the user settings.
+	 * Negative numbers cause all subtitles to be displayed indefinitely. @see TODO: link
+	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (UIMin = 1.f, UIMax = 2.f, EditCondition = "bShowSubtitles", EditConditionHides), Category = "Timing")
 		float ReadingSpeed;
 
 	//The time gap (in seconds) between removing/adding subtitles to reduce flickering. If you ever change this, please only increase the value.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Timing")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, AdvancedDisplay, meta = (UIMin = 0.16f, UIMax = 0.5f, EditCondition = "bShowSubtitles||bShowCaptions", EditConditionHides), Category = "Timing")
 		float TimeGap;
 
 	//The minimum time (in seconds) any subtitle is on screen. If you ever change this, please only increase the value.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Timing")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, AdvancedDisplay, meta = (UIMin = 1.f, UIMax = 1.5f, EditCondition = "bShowSubtitles", EditConditionHides), Category = "Timing")
 		float MinimumSubtitleTime;
 
 	//The minimum time (in seconds) any caption is on screen. If you ever change this, please only increase the value.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Timing")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, AdvancedDisplay, meta = (UIMin = 0.85f, UIMax = 1.f, EditCondition = "bShowCaptions", EditConditionHides), Category = "Timing")
 		float MinimumCaptionTime;
 
 #pragma endregion
@@ -274,14 +253,18 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Layout")
 		void RecalculateDesignLayout(const FIntPoint ScreenSize);
 
-	//TODO
-	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Style")
-		bool GetShowSpeaker(const FName speakerID) const;
-	
-	//TODO
-	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Style")
-		FLinearColor const& GetTextColour(FName Speaker) const;//TODO: custom logic
+	//Returns whether a subtitle should show the speaker's display-name.
+	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Label")
+		bool GetShowSpeaker(const FName Speaker) const;
 
+	//Logs when a speaker's display-name was shown to the user.
+	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Label")
+		void LogSpeakerShown(const FName Speaker) const;
+	
+	//Returns the text colour for subtitles defined by ColourProfile.
+	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Style")
+		FLinearColor const& GetTextColour(FName Speaker) const;
+	
 private:
 	void iRecalculateLayout();
 

@@ -180,7 +180,7 @@ public:
 		inline void Reset()
 		{ iIndex = 0; };
 
-		FORCEINLINE DataElement Data() const
+		FORCEINLINE DataElement& Data() const
 		{ return iData.iDataElements[iIndex]; };
 
 		FORCEINLINE FTimerHandle& Handle() const
@@ -281,8 +281,52 @@ private:
 
 	friend struct FCSCurrentSubtitleData;
 
-	// --- ITERATOR --- //
+	// --- ITERATORS --- //
 public:
+	struct VolatileIterator
+	{
+		VolatileIterator(TCSCurrentData<DataElement>& timedData, const int32 startIndex = 0)
+			: iData(timedData)
+			, iIndex(startIndex)
+		{};
+		
+		inline VolatileIterator& operator++()
+		{
+			iIndex++;
+			return *this;
+		};
+		
+		inline VolatileIterator& operator--()
+		{
+			iIndex--;
+			return *this;
+		}
+		
+		FORCEINLINE explicit operator bool() const
+		{ return iData.iTimedData.iDataElements.IsValidIndex(iIndex); };
+		
+		inline void Reset()
+		{ iIndex = 0; };
+
+		FORCEINLINE DataElement& Data() const
+		{ return iData.iTimedData.iDataElements[iIndex]; };
+
+		FORCEINLINE FTimerHandle& Handle() const
+		{ return iData.iTimedData.iTimerHandles[iIndex]; };
+
+		FORCEINLINE int32 ID() const
+		{ return iData.iTimedData.iIDs[iIndex]; };
+
+		FORCEINLINE int32 IsPermanent() const
+		{ return iData.iArePermanent[iIndex]; };
+
+		FORCEINLINE int32 xCurrent() const
+		{ return iIndex; };
+
+	private:
+		TCSCurrentData<DataElement>& iData;
+		int32 iIndex = 0;
+	};
 
 	struct Iterator
 	{
@@ -309,10 +353,10 @@ public:
 		inline void Reset()
 		{ iIndex = 0; };
 
-		FORCEINLINE DataElement Data() const
+		FORCEINLINE DataElement const& Data() const
 		{ return iData.iTimedData.iDataElements[iIndex]; };
 
-		FORCEINLINE FTimerHandle Handle() const
+		FORCEINLINE FTimerHandle const& Handle() const
 		{ return iData.iTimedData.iTimerHandles[iIndex]; };
 
 		FORCEINLINE int32 ID() const
@@ -334,6 +378,9 @@ public:
 
 	inline Iterator GetReverseIterator() const
 	{ return Iterator(*this, Num() - 1); };
+
+	inline VolatileIterator GetVolatileIterator()
+	{ return VolatileIterator(*this); };
 };
 
 //Bundles the data of subtitles and their number of lines. Ensures maximum number of subtitles and lines are not exceeded.
@@ -890,6 +937,8 @@ private:
 	void iDelayedDestroyCaptions();
 	void uReconstructCaptions() const;
 
+	bool iTryUpdateCaptionDuration(FCSSoundID const& soundID, const float dtDisplay, const bool isPermanent);
+
 	TCSCurrentData<FFullCaption> iCurrentCaptions = TCSCurrentData<FFullCaption>();
 	TMap<int32, FFullCaption> iDelayedCaptions = TMap<int32, FFullCaption>();
 	TCSTimedData<FFullCaption> iQueuedCaptions = TCSTimedData<FFullCaption>();
@@ -1078,13 +1127,10 @@ public:
 
 	//Call after saving the user settings. Automatically called by UserSettingsWidget.
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Settings")
-		void SetSettings(UCSUserSettings* Settings/*, const bool bInvalidateColors = true*/);//TODO
+		void SetSettings(UCSUserSettings* Settings);
 
 private:
 	void iRecalculateLayout(UGameViewportClient const* viewportClient);
-
-	TSet<FName> iShownSpeakers = TSet<FName>();
-	TMap<FName, FLinearColor> iAssignedTextColours = TMap<FName, FLinearColor>();
 
 	UPROPERTY()
 		UCSUserSettings* iCurrentSettings = UCSProjectSettingFunctions::GetDefaultSettings();

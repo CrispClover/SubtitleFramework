@@ -7,6 +7,7 @@
 #include "Components/Widget.h"
 #include "Widgets/Input/SComboBox.h"
 #include "Engine/AssetManager.h"
+#include "CSProjectSettingFunctions.h"
 #include "CSUserSettingsSelectionWidget.generated.h"
 
 class UObjectLibrary;

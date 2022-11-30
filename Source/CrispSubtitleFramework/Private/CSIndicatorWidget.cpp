@@ -55,11 +55,6 @@ void UCSIndicatorWidget::OnUpdateIndicators_Implementation()
 		return;
 
 	Image->SetRenderTransformAngle(UCSCoreLibrary::AngleConversion(uWidgetData->Angle, Segments));
-
-	if (uWidgetData->OpacityDriver < 0)//TODO: move to BPs!
-		Image->SetRenderOpacity(1);
-	else
-		Image->SetRenderOpacity(uWidgetData->OpacityDriver * 10 - .75f);
 }
 
 void UCSIndicatorWidget::Register_Implementation(FCSSoundID const& id)
@@ -95,9 +90,11 @@ void UCSIndicatorWidget::iUpdateOffset() const
 	TSharedPtr<IGameLayerManager> gameLayerManager = player->ViewportClient->GetGameLayerManager();
 	if (!gameLayerManager.IsValid())
 		return;
+	
+	FGeometry const& layerGeo = gameLayerManager->GetPlayerWidgetHostGeometry(player);
+	FVector2D layerSize = layerGeo.GetAbsoluteSize();
 
-	FGeometry const& viewportGeo = gameLayerManager->GetViewportWidgetHostGeometry();
-	uWidgetData->Offset = UCSCoreLibrary::LocalPositionToNDC(viewportGeo.AbsoluteToLocal(iCenterPos), viewportSize.IntPoint());
+	uWidgetData->Offset = UCSCoreLibrary::LocalPositionToNDC(layerGeo.AbsoluteToLocal(iCenterPos), viewportSize.IntPoint(), layerSize);
 }
 
 void UCSIndicatorWidget::iUpdateDataPtr(FCSSwapArgs const& swapArgs)

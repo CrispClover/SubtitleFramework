@@ -1,7 +1,7 @@
 // Copyright Crisp Clover.
 
 #include "CSTrackingManager.h"
-#include "CSCoreLibrary.h"
+#include "Slate/SGameLayerManager.h"
 
 void CSTrackingManager::Calculate()
 {
@@ -46,7 +46,7 @@ void CSTrackingManager::Calculate()
 
 bool CSTrackingManager::GetSoundData(FCSSoundID const& id, FVector& data) const
 {
-	FCSSoundIndicatorData const* ptr = iData.Find(id);
+	FCSSoundIndicatorData const* ptr = iData.rFind(id);
 
 	if (!ptr)
 		return false;
@@ -55,7 +55,7 @@ bool CSTrackingManager::GetSoundData(FCSSoundID const& id, FVector& data) const
 	return true;
 }
 
-CSIndicatorDelegates* CSTrackingManager::RegisterIndicator(FCSRegisterArgs args)
+CSIndicatorDelegates* CSTrackingManager::rRegisterIndicator(FCSRegisterArgs args)
 {
 	if (iData.Register(args.ID, args.WidgetDataPtrRef))
 		return &iDelegates;
@@ -67,7 +67,7 @@ void CSTrackingManager::UnregisterIndicator(FCSSoundID const& id, UObject* widge
 {
 	iDelegates.Remove(widget);
 
-	FCSSwapArgs args = FCSSwapArgs(id, nullptr);//TEST
+	FCSSwapArgs args = FCSSwapArgs(id, nullptr);
 
 	iData.Unregister(id, args);
 

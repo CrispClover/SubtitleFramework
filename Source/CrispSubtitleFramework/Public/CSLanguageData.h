@@ -16,7 +16,7 @@ class CRISPSUBTITLEFRAMEWORK_API UCSLanguageData : public UDataAsset
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "CrispSubtitles")
-		float MinSubtitleTime = .85f;//TODO: global?
+		float MinSubtitleTime = .85f;
 
 	/**
 	 * Estimates:

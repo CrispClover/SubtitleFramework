@@ -3,8 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "CSTrackingManager.h"//TODO: Move
-#include "CSTrackingManagerTick.h"//TODO: Move
+#include "CSTrackingManager.h"
 
 /**
  * 
@@ -58,6 +57,8 @@ public:
 
 	bool TrackSound(FCSSoundID const& soundID, FVector const& location, ULocalPlayer const* player);
 
+	void StopTrackingSound(FCSSoundID const& soundID, ULocalPlayer const* player);
+
 	void StopTrackingSource(const FName name, ULocalPlayer const* player);
 
 	bool IsSoundTracked(FCSSoundID const& soundID, ULocalPlayer const* player) const;
@@ -65,7 +66,7 @@ public:
 	bool GetSoundData(FCSSoundID const& soundID, FVector& location, ULocalPlayer const* player) const;
 
 	//Returns a pointer to the data for the indicator. Will be null if the source isn't tracked.
-	CSIndicatorDelegates* RegisterIndicator(FCSRegisterArgs args, ULocalPlayer const* player);
+	CSIndicatorDelegates* rRegisterIndicator(FCSRegisterArgs args, ULocalPlayer const* player);
 
 	void UnregisterIndicator(FCSSoundID const& soundID, ULocalPlayer const* player, UObject* widget);
 

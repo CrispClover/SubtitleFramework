@@ -53,10 +53,15 @@ public:
 		static FORCEINLINE bool SupportSplitscreen()
 			{ return GetDefault<UCSProjectSettings>()->bSupportSplitscreen; };
 
+	//Returns the default FName used to identify captions delivered to the subtitle UI.
+	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|ProjectSettings")
+		static FORCEINLINE FName GetSpeakerNameForCaptions()
+			{ return GetDefault<UCSProjectSettings>()->SpeakerNameForCaptions; };
+
 	//Returns the default FName used to track speech for direction indicators.
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|ProjectSettings")
 		static FORCEINLINE FName GetSoundNameForSpeech()
-			{ return GetDefault<UCSProjectSettings>()->DefaultSoundNameForSpeech; };
+			{ return GetDefault<UCSProjectSettings>()->SoundNameForSpeech; };
 
 	//Returns whether the project should calculate direction indicator data on tick. Defined in the plugin's project settings.
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|ProjectSettings")

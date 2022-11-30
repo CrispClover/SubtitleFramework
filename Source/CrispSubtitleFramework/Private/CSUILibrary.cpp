@@ -79,7 +79,7 @@ FCSCaptionStyle UCSUILibrary::GetCaptionStyle(UCSUserSettings* settings, const F
     style.FontInfo.Size = layout.CaptionTextSize;
     style.FontInfo.TypefaceFontName = settings->CaptionTypeface;
     style.BackColour = settings->CaptionBackColour;
-    style.TextColour = settings->GetTextColour(source);//TODO: caption colouring mode
+    style.TextColour = settings->GetTextColour(source);//TODO: caption colouring
     style.TextPadding = layout.TextPadding;
 
     return style;
@@ -133,9 +133,10 @@ FCSCaptionStyle UCSUILibrary::GetDesignCaptionStyle(const FName source)
     FLayoutCacheData const& layout = settings->GetLayout();
 
     FCSCaptionStyle style = FCSCaptionStyle();
-    style.FontInfo = layout.FontInfo;//TODO
+    style.FontInfo = layout.FontInfo;
+    style.FontInfo.TypefaceFontName = settings->CaptionTypeface;
     style.BackColour = settings->CaptionBackColour;
-    style.TextColour = settings->GetTextColour(source);//TODO: caption colouring mode
+    style.TextColour = settings->GetTextColour(source);//TODO: caption colouring
     style.TextPadding = layout.TextPadding;
 
     return style;

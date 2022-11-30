@@ -1,6 +1,7 @@
 // Copyright Crisp Clover.
 
 #include "CSUserSettings.h"
+#include "CSColourProfile.h"
 #include "Engine/Font.h"
 
 UCSUserSettings::UCSUserSettings()
@@ -31,10 +32,7 @@ UCSUserSettings::UCSUserSettings()
 	, SubtitleTextSize(.04f)
 	, CaptionTextSize(.04f)
 	//Colours:
-	, ColourCoding(EColourCodeType::None)
-	, DefaultTextColour(FLinearColor::White)
-	, AssignedTextColours(TMap<FName, FLinearColor>())
-	, AvailableTextColours(TArray<FLinearColor>{FLinearColor::White, FLinearColor::Yellow, FLinearColor(0, 1, 1), FLinearColor::Green})
+	, ColourProfile()
 	, LetterboxColour(FLinearColor::FLinearColor(0, 0, 0, .5f))
 	, LineBackColour(FLinearColor::Transparent)
 	, CaptionBackColour(FLinearColor::FLinearColor(0, 0, 0, .5f))
@@ -84,7 +82,7 @@ void UCSUserSettings::iRecalculateLayout()
 	iCachedLayout.FontInfo.LetterSpacing = LetterSpacing;
 	iCachedLayout.FontInfo.FontMaterial = FontMaterial;
 	iCachedLayout.FontInfo.Size = iCachedLayout.BaseSize * SubtitleTextSize;
-	iCachedLayout.FontInfo.TypefaceFontName = RegularTypeface;//TODO?
+	iCachedLayout.FontInfo.TypefaceFontName = RegularTypeface;
 
 	iCachedLayout.CaptionTextSize = iCachedLayout.BaseSize * CaptionTextSize;
 
@@ -97,12 +95,12 @@ void UCSUserSettings::iRecalculateLayout()
 	iCachedLayout.IndicatorSize = FVector2D(iCachedLayout.CaptionTextSize * IndicatorSize);
 }
 
-bool UCSUserSettings::GetShowSpeaker(const FName speakerID) const
+bool UCSUserSettings::GetShowSpeaker(const FName speaker) const
 {
 	switch (ShowSpeaker)
 	{
 	case EShowSpeakerType::ColourCoded:
-		return true/*TODO*/;
+		return ColourProfile.LoadSynchronous()->ColourWasMatched(speaker);
 
 	case EShowSpeakerType::Never:
 		return false;
@@ -112,49 +110,20 @@ bool UCSUserSettings::GetShowSpeaker(const FName speakerID) const
 	}
 }
 
-FLinearColor const& UCSUserSettings::GetTextColour(FName speakerID) const
+void UCSUserSettings::LogSpeakerShown(const FName speaker) const
 {
-	switch (ColourCoding)
-	{
-	case EColourCodeType::Assigned:
-		if (!AssignedTextColours.Contains(speakerID))
-		{
-			if (AvailableTextColours.Num() > 0)
-				return AvailableTextColours.Last();
-			else
-				return DefaultTextColour;
-		}
-		else if (AssignedTextColours.Contains(speakerID) /*&& shown.Contains(speakerID)*/)//TODO
-		{
-			return *AssignedTextColours.Find(speakerID);
-		}
-		else if (AssignedTextColours.Contains(speakerID) /*&& shown.Contains(speakerID)*/)//TODO
-		{
-			//shown.Add(speakerID);
-			return *AssignedTextColours.Find(speakerID);
-		}
-		else if (AvailableTextColours.Num() > 0)
-		{
-			return AvailableTextColours.Last();
-		}
-		else
-		{
-			return DefaultTextColour;
-		}
+	if (ColourProfile.IsNull())
+		return;
+	else
+		ColourProfile.LoadSynchronous()->LogMatch(speaker);
+}
 
-	case EColourCodeType::TODO:
-		//TODO
-		break;
-
-	case EColourCodeType::None:
-		if (AvailableTextColours.Num() > 0)
-			return AvailableTextColours[0];
-		break;
-
-	default:
+FLinearColor const& UCSUserSettings::GetTextColour(FName speaker) const
+{
+	if (ColourProfile.IsNull())
 		return FLinearColor::White;
-	}
-	return FLinearColor::White;
+	else
+		return ColourProfile.LoadSynchronous()->GetColour(speaker);
 }
 
 TArray<FName> UCSUserSettings::GetTypefaceOptions() const

@@ -53,7 +53,7 @@ void UCSContainerWidgetCaptions::OnCaptionReceived_Implementation(FCrispCaption 
 
 	const FCSCaptionStyle style = UCSUILibrary::GetCaptionStyle(settings, caption.SoundID.Source);
 
-	UCSCaptionWidget* captionWidget = CreateWidget<UCSCaptionWidget>(GetWorld(), settings->CaptionClass.LoadSynchronous());
+	UCSCaptionWidget* captionWidget = CreateWidget<UCSCaptionWidget>(this, settings->CaptionClass.LoadSynchronous());
 	UVerticalBoxSlot* slot = Container->AddChildToVerticalBox(captionWidget);
 
 	slot->SetPadding(settings->GetLayout().CaptionPadding);
@@ -78,12 +78,12 @@ void UCSContainerWidgetCaptions::OnReconstruct_Implementation(TArray<FCrispCapti
 	for (int32 i = 1; i <= dcCaptions; i++)//Remove excess
 		iChildrenData.Children[cWidgets - i]->RemoveFromParent();
 
-	for (int32 i = 0; i < cWidgets; i++)//Reconstruct existing
+	for (int32 i = 0; i < cCaptions; i++)//Reconstruct existing
 		iChildrenData.Children[i]->ConstructFromCaption(captions[i], UCSUILibrary::GetCaptionStyle(settings, captions[i].SoundID.Source));
 
 	for (UVerticalBoxSlot* slot : iChildrenData.Slots)//Apply padding to existing
 		slot->SetPadding(settings->CaptionPadding);
 
-	for (int32 i = dcCaptions; i < 0; i++)//Add missing
-		OnCaptionReceived(captions[cCaptions - i]);
+	for (int32 ni = dcCaptions; ni < 0; ni++)//Add missing
+		OnCaptionReceived(captions[cCaptions + ni]);
 }

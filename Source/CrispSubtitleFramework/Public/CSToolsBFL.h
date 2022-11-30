@@ -4,12 +4,13 @@
 
 #include "CoreMinimal.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
-#include "CSLanguageData.h"
-#include "CSS_SubtitleGISS.h"
-#include "Overlay/Public/BasicOverlays.h"
+#include "CSCoreLibrary.h"
 #include "CSToolsBFL.generated.h"
 
-/*
+class UBasicOverlays;
+class UCSLanguageData;
+
+/**
  * 
  */
 UCLASS()
@@ -77,30 +78,5 @@ public:
 
 	//Actual sorting template
 	template <>
-	static inline TArray<FSoundCaption> SortByStartTime<FSoundCaption>(TArray<FSoundCaption> const& captions)//TODO: remove inlining
-	{
-		TArray<FSoundCaption> sorted;
-		sorted.Reserve(captions.Num());
-
-		for (int32 i = 0; i < captions.Num(); i++)
-		{
-			const FSoundCaption cap = captions[i];
-			bool inserted = false;
-
-			for (int32 n = 0; n < sorted.Num(); n++)
-			{
-				if (sorted[n].StartDelay > cap.StartDelay)
-				{
-					sorted.Insert(cap, n);
-					inserted = true;
-					break;
-				}
-			}
-
-			if (!inserted)
-				sorted.Add(cap);
-		}
-
-		return sorted;
-	}
+	static TArray<FSoundCaption> SortByStartTime<FSoundCaption>(TArray<FSoundCaption> const& captions);
 };

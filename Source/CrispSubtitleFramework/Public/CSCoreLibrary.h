@@ -182,16 +182,16 @@ public:
 		, Speaker(FName("error"))
 	{};
 
-	FGroupSubtitle(FText const& description, const float displayDuration)
+	FGroupSubtitle(FText const& description, const float displayDuration, const FName speaker)
 		: FRawSubtitle(description, displayDuration)
 		, SpeakerText()
-		, Speaker()
+		, Speaker(speaker)
 	{};
 
-	FGroupSubtitle(FRawSubtitle const& raw, FText const& speaker, FName speakerID)
+	FGroupSubtitle(FRawSubtitle const& raw, FText const& speakerText, const FName speaker)
 		: FRawSubtitle(raw)
-		, SpeakerText(speaker)
-		, Speaker(speakerID)
+		, SpeakerText(speakerText)
+		, Speaker(speaker)
 	{};
 };
 
@@ -211,8 +211,8 @@ public:
 		, Source(FName("error"))
 	{};
 
-	FFullSubtitle(FRawSubtitle const& raw, FText speaker, FName speakerID,  const FName source)
-		: FGroupSubtitle(raw, speaker, speakerID)
+	FFullSubtitle(FRawSubtitle const& raw, FText speakerText, const FName speaker,  const FName source)
+		: FGroupSubtitle(raw, speakerText, speaker)
 		, Source(source)
 	{};
 
@@ -227,8 +227,8 @@ public:
 		StartDelay = startTimeOverride;
 	};
 
-	FFullSubtitle(FFullCaption const& caption)
-		: FGroupSubtitle(caption.Description, caption.DisplayDuration)
+	FFullSubtitle(FFullCaption const& caption, const FName speaker)
+		: FGroupSubtitle(caption.Description, caption.DisplayDuration, speaker)
 		, Source(FName(caption.SoundID.Source))
 	{};
 };
@@ -255,7 +255,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "CrispSubtitles")
 		int32 ID;
 	
-	//TODO: dur? max 2-2.5s dur (for calc)
 	FCrispCaption()
 		: Description()
 		, SoundID()
@@ -306,11 +305,19 @@ public:
 		, Source(FName())
 		, ID()
 	{};
+	
+	FCrispSubtitle(FText const& label, const FName source, const int32 id)
+		: Label(label)
+		, Lines()
+		, Speaker()
+		, Source(source)
+		, ID(id)
+	{};
 
-	FCrispSubtitle(FText const& label, TArray<FText> const& lines, const FName speakerID, const FName source, const int32 id)
+	FCrispSubtitle(FText const& label, TArray<FText> const& lines, const FName speaker, const FName source, const int32 id)
 		: Label(label)
 		, Lines(lines)
-		, Speaker(speakerID)
+		, Speaker(speaker)
 		, Source(source)
 		, ID(id)
 	{};
@@ -348,5 +355,5 @@ public:
 
 	//TODO
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|TODO")
-		static FVector2D LocalPositionToNDC(FVector2D const& LocalPosition, FIntPoint const& ViewportSize);
+		static FVector2D LocalPositionToNDC(FVector2D const& LocalPosition, FIntPoint const& ViewportSize, FVector2D const& LayerSize);
 };

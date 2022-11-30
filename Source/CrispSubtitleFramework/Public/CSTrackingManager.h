@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "CSCoreLibrary.h"
 #include "CSTrackingManager.generated.h"
 
 struct FCSSoundID;
@@ -27,7 +28,7 @@ struct FCSSwapArgs
 
 	FCSSwapArgs() = delete;
 
-	FCSSwapArgs(FCSSoundID const& id, FCSIndicatorWidgetData* dataPtr)//TODO
+	FCSSwapArgs(FCSSoundID const& id, FCSIndicatorWidgetData* dataPtr)
 		: ID(id)
 		, WidgetDataPtr(dataPtr)
 	{};
@@ -80,15 +81,15 @@ struct FCSTrackingData
 		iSoundIDs.Empty();
 		iDeletionScheduledIDs.Empty();
 		iSoundData.Empty();
-		inIndicators = 0;
+		icActiveSounds = 0;
 	};
 
 	inline void Empty()
 	{
 		//We keep all active indicators' data alive.
-		const int32 inactive = iSoundIDs.Num() - inIndicators;
-		iSoundIDs.RemoveAt(inIndicators, inactive, true);
-		iSoundData.RemoveAt(inIndicators, inactive, true);
+		const int32 inactive = iSoundIDs.Num() - icActiveSounds;
+		iSoundIDs.RemoveAt(icActiveSounds, inactive, true);
+		iSoundData.RemoveAt(icActiveSounds, inactive, true);
 	};
 
 	inline void Shrink()
@@ -98,7 +99,7 @@ struct FCSTrackingData
 	};
 
 	inline bool NeedsCalc(const int32 index)
-		{ return index < inIndicators;	}
+		{ return index < icActiveSounds;	}
 
 	inline int32 Num() const
 		{ return iSoundIDs.Num(); }
@@ -112,7 +113,7 @@ struct FCSTrackingData
 	inline FCSSoundID const& GetID(const int32 index) const
 		{ return iSoundIDs[index]; }
 
-	inline FCSSoundIndicatorData const* Find(FCSSoundID const& id) const
+	inline FCSSoundIndicatorData const* rFind(FCSSoundID const& id) const
 	{
 		const int32 i = iSoundIDs.Find(id);
 		if (i > 0)
@@ -131,10 +132,34 @@ struct FCSTrackingData
 			iSoundData.Add(FCSSoundIndicatorData(data));
 	};
 
-	inline void RemoveSource(const FName source)//TEST
+	inline void RemoveSound(FCSSoundID const& id)
 	{
 		int32 i = 0;
-		for (; i < inIndicators; i++)
+		for (; i < icActiveSounds; i++)
+		{
+			//Schedule deletion of active indicators' data.
+			if (iSoundIDs[i] == id)
+			{
+				iDeletionScheduledIDs.AddUnique(id);
+				return;
+			}
+		}
+
+		for (; i < iSoundIDs.Num(); i++)
+		{
+			//Remove inactive data.
+			if (iSoundIDs[i] == id)
+			{
+				uRemove(i);
+				return;
+			}
+		}
+	};
+
+	inline void RemoveSource(const FName source)
+	{
+		int32 i = 0;
+		for (; i < icActiveSounds; i++)
 		{
 			//Schedule deletion of active indicators' data.
 			FCSSoundID const& id = iSoundIDs[i];
@@ -147,63 +172,64 @@ struct FCSTrackingData
 		{
 			//Remove inactive data.
 			if (source == iSoundIDs[i].Source)
-				iRemove(i);
+				uRemove(i);
 		}
 	};
 
 	inline bool Register(FCSSoundID const& id, FCSIndicatorWidgetData*& dataPtr)
 	{
-		const int32 xToSwap = iSoundIDs.Find(id);
+		const int32 uxToSwap = iSoundIDs.Find(id);
 
-		if (xToSwap < 0)
-			return false;
+		if (uxToSwap < icActiveSounds)
+			return false;//catches INDEX_NONE and registering multiple indicators with the same sound ID 
 
-		if (xToSwap != inIndicators)
+		if (uxToSwap != icActiveSounds)
 		{
-			iSoundIDs.SwapMemory(xToSwap, inIndicators);
-			iSoundData.SwapMemory(xToSwap, inIndicators);
+			iSoundIDs.SwapMemory(uxToSwap, icActiveSounds);
+			iSoundData.SwapMemory(uxToSwap, icActiveSounds);
 		}
 
-		dataPtr = &iSoundData[inIndicators];
+		dataPtr = &iSoundData[icActiveSounds];
 
-		inIndicators++;
+		icActiveSounds++;
 
 		return true;
 	};
 
-	inline void Unregister(FCSSoundID const& id, FCSSwapArgs& args)//TEST
+	inline void Unregister(FCSSoundID const& id, FCSSwapArgs& args)
 	{
 		bool wasSwapped = false;
 
-		const int32 index = iSoundIDs.Find(id);//index of indicator to remove
+		const int32 ux = iSoundIDs.Find(id);//index of indicator to remove
 
-		if (index < 0)
+		if (ux < 0 || ux >= icActiveSounds)
 			return;
 
-		inIndicators--;//index of last indicator (for now)
+		icActiveSounds--;//index of last indicator (for now)
 
-		if (index > inIndicators)
-			return;//TODO: can be removed. probably?
-
-		if (index != inIndicators)
-			args = iSwap(index);
+		if (ux != icActiveSounds)
+			args = uSwapNotify(ux);
 		
 		if (iDeletionScheduledIDs.Remove(id))
-			iRemove(inIndicators);
+			uRemove(icActiveSounds);
 	};
 
 private:
-	inline void iRemove(const int32 index)
+	inline void uRemove(const int32 index)
 	{
 		iSoundIDs.RemoveAtSwap(index, 1, false);
 		iSoundData.RemoveAtSwap(index, 1, false);
 	}
 
-	inline FCSSwapArgs iSwap(const int32 index)
+	inline void uSwap(const int32 index)
 	{
-		iSoundIDs.SwapMemory(index, inIndicators);
-		iSoundData.SwapMemory(index, inIndicators);
+		iSoundIDs.SwapMemory(index, icActiveSounds);
+		iSoundData.SwapMemory(index, icActiveSounds);
+	}
 
+	inline FCSSwapArgs uSwapNotify(const int32 index)
+	{
+		uSwap(index);
 		return FCSSwapArgs(iSoundIDs[index], &iSoundData[index]);
 	}
 
@@ -211,7 +237,7 @@ private:
 	TArray<FCSSoundID> iDeletionScheduledIDs = TArray<FCSSoundID>();
 
 	TArray<FCSSoundIndicatorData> iSoundData = TArray<FCSSoundIndicatorData>();
-	int32 inIndicators = 0;
+	int32 icActiveSounds = 0;
 };
 
 //Delegate to update direction indicators after their data has been calculated.
@@ -250,12 +276,12 @@ struct CSIndicatorDelegates
 class CRISPSUBTITLEFRAMEWORK_API CSTrackingManager
 {
 public:
-	ULocalPlayer const* Player;//TODO
+	ULocalPlayer const* Player;
 	
 	void Calculate();
 
-	inline bool Contains(FCSSoundID const& soundID) const//TODO?
-		{ return nullptr != iData.Find(soundID); };
+	inline bool Contains(FCSSoundID const& soundID) const
+		{ return nullptr != iData.rFind(soundID); };
 	
 	CSTrackingManager() = delete;
 
@@ -284,13 +310,13 @@ public:
 
 	bool GetSoundData(FCSSoundID const& id, FVector& data) const;
 
+	inline void RemoveSound(FCSSoundID const& id)
+		{ return iData.RemoveSound(id); };
+
 	inline void RemoveSource(FName const& source)
 		{ return iData.RemoveSource(source); };
 
-	//TODO?
-	CSIndicatorDelegates* RegisterIndicator(FCSRegisterArgs args);
-
-	//TODO?
+	CSIndicatorDelegates* rRegisterIndicator(FCSRegisterArgs args);
 	void UnregisterIndicator(FCSSoundID const& id, UObject* widget);
 	
 	void Copy(CSTrackingManager const* manager);

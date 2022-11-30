@@ -11,7 +11,8 @@ UCSProjectSettings::UCSProjectSettings(const FObjectInitializer& ObjectInitializ
 	, bSupportSplitscreen(false)
 	, bCalculateIndicatorsOnTick(true)
 	, bPauseOnPermanentSubtitle(false)
-	, DefaultSoundNameForSpeech(FName("speech"))
+	, SpeakerNameForCaptions(FName("caption"))
+	, SoundNameForSpeech(FName("speech"))
 	, ExampleSubtitle
 	(
 		  FRawSubtitle

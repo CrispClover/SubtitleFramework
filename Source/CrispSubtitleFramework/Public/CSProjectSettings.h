@@ -20,7 +20,7 @@ class CRISPSUBTITLEFRAMEWORK_API UCSProjectSettings : public UObject
 
 public:
 	//The settings asset to use by default.
-	UPROPERTY(EditAnywhere, config, Category = "UserSettings")
+	UPROPERTY(EditAnywhere, NoClear, config, Category = "UserSettings")
 		TSoftObjectPtr<UCSUserSettings> DefaultSettings;
 
 	//The paths to search for settings assets.
@@ -56,7 +56,10 @@ public:
 		bool bPauseOnPermanentSubtitle;
 
 	UPROPERTY(EditAnywhere, config, Category = "Project")
-		FName DefaultSoundNameForSpeech;
+		FName SpeakerNameForCaptions;
+
+	UPROPERTY(EditAnywhere, config, Category = "Project")
+		FName SoundNameForSpeech;
 
 	UPROPERTY(EditAnywhere, config, Category = "Examples")
 		FFullSubtitle ExampleSubtitle;

@@ -51,7 +51,7 @@ void UCSContainerWidgetSubtitles::OnSubtitleReceived_Implementation(FCrispSubtit
 {
 	UCSUserSettings* settings = oCSS->GetCurrentSettings();
 
-	UCSLetterboxWidget* letterbox = CreateWidget<UCSLetterboxWidget>(GetWorld(), settings->LetterboxClass.LoadSynchronous());
+	UCSLetterboxWidget* letterbox = CreateWidget<UCSLetterboxWidget>(this, settings->LetterboxClass.LoadSynchronous());
 	UVerticalBoxSlot* slot = Container->AddChildToVerticalBox(letterbox);
 	slot->SetHorizontalAlignment(EHorizontalAlignment::HAlign_Center);
 	slot->SetPadding(settings->GetLayout().SubtitlePadding);
@@ -76,12 +76,12 @@ void UCSContainerWidgetSubtitles::OnReconstruct_Implementation(TArray<FCrispSubt
 	for (int32 i = 1; i <= dc; i++)//Remove excess
 		iChildrenData.Children[cWidgets - i]->RemoveFromParent();
 
-	for (int32 i = 0; i < cWidgets; i++)//Reconstruct existing
+	for (int32 i = 0; i < cSubtitles; i++)//Reconstruct existing
 		iChildrenData.Children[i]->ConstructFromSubtitle(subtitles[i], UCSUILibrary::GetLetterboxStyle(settings, subtitles[i].Speaker));
 
 	for (UVerticalBoxSlot* slot : iChildrenData.Slots)
 		slot->SetPadding(settings->SubtitlePadding);
 
-	for (int32 i = dc; i < 0; i++)//Add missing
-		OnSubtitleReceived(subtitles[cSubtitles - i]);
+	for (int32 ni = dc; ni < 0; ni++)//Add missing
+		OnSubtitleReceived(subtitles[cSubtitles + ni]);
 }

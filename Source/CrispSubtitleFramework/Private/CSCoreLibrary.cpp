@@ -3,6 +3,7 @@
 #include "CSCoreLibrary.h"
 #include "CSUserSettings.h"
 #include "Engine/UserInterfaceSettings.h"
+#include <CSProjectSettingFunctions.h>
 
 double UCSCoreLibrary::AngleConversion(const double angle, const int32 segments, const EAngleUnit unit)
 {
@@ -41,10 +42,22 @@ double UCSCoreLibrary::AngleConversion(const double angle, const int32 segments,
 
 FCrispSubtitle UCSCoreLibrary::FrySubtitle(FFullSubtitle const& sub, const int32 id, UCSUserSettings const* settings)
 {
-	bool excludeSpeaker = settings->GetShowSpeaker(sub.Speaker) || sub.SpeakerText.IsEmpty();
-	bool excludeDescription = !settings->bShowSubtitleDescriptions || sub.Description.IsEmpty();
+	if (sub.Speaker == UCSProjectSettingFunctions::GetSpeakerNameForCaptions())
+	{
+		FFormatNamedArguments args;
+		args.Add("description", sub.Description);
 
-	if (excludeSpeaker && excludeDescription)
+		const FText label = FText::Format(settings->DescriptionOnlyLabelFormat, args);
+
+		return FCrispSubtitle(label, sub.Source, id);
+	}
+
+	const bool excludeSpeaker = settings->GetShowSpeaker(sub.Speaker) || sub.SpeakerText.IsEmpty();
+	const bool excludeDescription = !settings->bShowSubtitleDescriptions || sub.Description.IsEmpty();
+
+	if (!excludeSpeaker)
+		settings->LogSpeakerShown(sub.Speaker);
+	else if (excludeSpeaker && excludeDescription)
 		return FCrispSubtitle(FText(), sub.Lines, sub.Speaker, sub.Source, id);
 
 	FText labelFormat;
@@ -65,12 +78,12 @@ FCrispSubtitle UCSCoreLibrary::FrySubtitle(FFullSubtitle const& sub, const int32
 	args.Add("speaker", speakerM);
 	args.Add("description", sub.Description);
 
-	FText label = FText::Format(labelFormat, args);
+	const FText label = FText::Format(labelFormat, args);
 
 	return FCrispSubtitle(label, sub.Lines, sub.Speaker, sub.Source, id);
 }
 
-FVector2D UCSCoreLibrary::LocalPositionToNDC(FVector2D const& localPos, FIntPoint const& viewportSize)
+FVector2D UCSCoreLibrary::LocalPositionToNDC(FVector2D const& localPos, FIntPoint const& viewportSize, FVector2D const& layerSize)
 {
 	static TFrameValue<float> scaleCache;
 	if (!scaleCache.IsSet() || WITH_EDITOR)
@@ -78,5 +91,5 @@ FVector2D UCSCoreLibrary::LocalPositionToNDC(FVector2D const& localPos, FIntPoin
 
 	const float scale = scaleCache.GetValue();
 
-	return 2 * scale * (localPos / viewportSize) - 1;
+	return 2 * scale * (localPos / layerSize) - 1;
 }

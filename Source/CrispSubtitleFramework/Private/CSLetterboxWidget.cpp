@@ -38,7 +38,7 @@ void UCSLetterboxWidget::ConstructFromSubtitle_Implementation(FCrispSubtitle con
 
 	if (hasLabel)//Create label
 	{
-		UCSLineWidget* lineW = CreateWidget<UCSLineWidget>(GetWorld(), style.LineClass);
+		UCSLineWidget* lineW = CreateWidget<UCSLineWidget>(this, style.LineClass);
 		UVerticalBoxSlot* slot = LineContainer->AddChildToVerticalBox(lineW);
 		slot->SetHorizontalAlignment(EHorizontalAlignment::HAlign_Center);
 		lineW->ConstructLine(subtitle.Label, style.LineStyle);
@@ -46,7 +46,7 @@ void UCSLetterboxWidget::ConstructFromSubtitle_Implementation(FCrispSubtitle con
 
 	for (int32 i = 0; i < subtitle.Lines.Num(); i++)//Create lines
 	{
-		UCSLineWidget* lineW = CreateWidget<UCSLineWidget>(GetWorld(), style.LineClass);
+		UCSLineWidget* lineW = CreateWidget<UCSLineWidget>(this, style.LineClass);
 		UVerticalBoxSlot* slot = LineContainer->AddChildToVerticalBox(lineW);
 		slot->SetHorizontalAlignment(EHorizontalAlignment::HAlign_Center);
 		lineW->ConstructLine(subtitle.Lines[i], style.LineStyle);
