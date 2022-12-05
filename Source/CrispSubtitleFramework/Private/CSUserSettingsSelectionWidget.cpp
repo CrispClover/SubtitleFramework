@@ -16,7 +16,7 @@ void UCSUserSettingsSelectionWidget::SynchronizeProperties()
 		return;
 #endif
 
-	oCSS = UGameplayStatics::GetGameInstance(GetWorld())->GetSubsystem<UCSS_SubtitleGISS>();
+	uCSS = UGameplayStatics::GetGameInstance(GetWorld())->GetSubsystem<UCSS_SubtitleGISS>();
 
 	const bool settingsNeedLoading = iLoadSettingsAsync(DefaultLoadPath, &UCSUserSettingsSelectionWidget::oOnSettingsLoaded);
 
@@ -106,7 +106,7 @@ void UCSUserSettingsSelectionWidget::oOnSettingsLoaded()
 	if (iComboBox)
 		iComboBox->RefreshOptions();
 
-	SetSelectedSettings(oCSS->GetCurrentSettings());
+	SetSelectedSettings(uCSS->GetCurrentSettings());
 }
 
 bool UCSUserSettingsSelectionWidget::iLoadSettingsAsync(FString const& path, SelectWidgetVFunction function)

@@ -8,7 +8,7 @@
 
 void UCSIndicatorWidget::NativeConstruct()
 {
-	oCSS = UGameplayStatics::GetGameInstance(GetWorld())->GetSubsystem<UCSS_SubtitleGISS>();
+	uCSS = UGameplayStatics::GetGameInstance(GetWorld())->GetSubsystem<UCSS_SubtitleGISS>();
 
 	Super::NativeConstruct();
 }
@@ -23,7 +23,9 @@ void UCSIndicatorWidget::NativeTick(FGeometry const& myGeometry, float deltaTime
 void UCSIndicatorWidget::NativeDestruct()
 {
 	if (uWidgetData)
-		oCSS->UnregisterIndicator(iSoundID, GetOwningLocalPlayer(), this);
+		uCSS->UnregisterIndicator(iSoundID, GetOwningLocalPlayer(), this);
+	else
+		uCSS->SoundTrackNotify.RemoveAll(this);
 
 	Super::NativeDestruct();
 }
@@ -45,7 +47,7 @@ void UCSIndicatorWidget::UpdateCenterPosition(FGeometry const& myGeometry)//TODO
 		return;
 
 	iCenterPos = newCenterPos;
-	Image->SetDesiredSizeOverride(oCSS->GetCurrentSettings()->GetLayout().IndicatorSize);//Our change in position could be due to a resized widow.
+	Image->SetDesiredSizeOverride(uCSS->GetCurrentSettings()->GetLayout().IndicatorSize);//Our change in position could be due to a resized widow.
 	iUpdateOffset();
 }
 
@@ -61,18 +63,31 @@ void UCSIndicatorWidget::Register_Implementation(FCSSoundID const& id)
 {
 	iSoundID = id;
 
-	if (!oCSS)
+	if (!uCSS)
 		return;
 
-	CSIndicatorDelegates* delegates = oCSS->rRegisterIndicator(FCSRegisterArgs(iSoundID, uWidgetData), GetOwningLocalPlayer());
+	CSIndicatorDelegates* uDelegates = uCSS->rRegisterIndicator(FCSRegisterArgs(iSoundID, uWidgetData), GetOwningLocalPlayer());
+
+	if (uDelegates)
+		uDelegates->Add(this, &UCSIndicatorWidget::OnUpdateIndicators, &UCSIndicatorWidget::iUpdateDataPtr);
+	else
+		uCSS->SoundTrackNotify.AddDynamic(this, &UCSIndicatorWidget::uRegister);
+
+	Image->SetDesiredSizeOverride(uCSS->GetCurrentSettings()->GetLayout().IndicatorSize);//TODO: move?
+}
+
+void UCSIndicatorWidget::uRegister(FCSSoundID const& soundID)
+{
+	if (soundID != iSoundID)
+		return;
+
+	CSIndicatorDelegates* uDelegates = uCSS->rRegisterIndicator(FCSRegisterArgs(iSoundID, uWidgetData), GetOwningLocalPlayer());
+
+	if (!uDelegates)
+		return;
 	
-	if (!delegates)
-		return;
-
-	delegates->UpdateIDataEvent.AddUObject(this, &UCSIndicatorWidget::OnUpdateIndicators);
-	delegates->SwapIDataEvent.AddUObject(this, &UCSIndicatorWidget::iUpdateDataPtr);
-
-	Image->SetDesiredSizeOverride(oCSS->GetCurrentSettings()->GetLayout().IndicatorSize);//TODO: move?
+	uDelegates->Add(this, &UCSIndicatorWidget::OnUpdateIndicators, &UCSIndicatorWidget::iUpdateDataPtr);
+	uCSS->SoundTrackNotify.RemoveAll(this);
 }
 
 void UCSIndicatorWidget::iUpdateOffset() const

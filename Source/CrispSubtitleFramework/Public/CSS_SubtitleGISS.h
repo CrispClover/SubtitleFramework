@@ -58,16 +58,16 @@ template<typename DataElement>
 struct TCSTimedData
 {
 	inline TArray<DataElement> const& Get() const
-	{ return iDataElements; };
+		{ return iDataElements; };
 
 	inline TArray<FTimerHandle> const& Handles() const
-	{ return iTimerHandles; };
+		{ return iTimerHandles; };
 
 	inline TArray<int32> const& IDs() const
-	{ return iIDs; };
+		{ return iIDs; };
 
 	inline int32 Num() const
-	{ return iDataElements.Num(); };
+		{ return iDataElements.Num(); };
 
 	//Stores an Element alongside its ID; Creates and returns a new TimerHandle (by ref).
 	inline FTimerHandle& Add(const DataElement data, const int32 id)
@@ -158,7 +158,7 @@ public:
 	struct Iterator
 	{
 		Iterator(TCSTimedData& timedData, const int32 startIndex = 0)
-			: iData(timedData)
+			: iData3D(timedData)
 			, iIndex(startIndex)
 		{};
 		
@@ -175,33 +175,33 @@ public:
 		}
 		
 		FORCEINLINE explicit operator bool() const
-		{ return iData.iDataElements.IsValidIndex(iIndex); };
+			{ return iData3D.iDataElements.IsValidIndex(iIndex); };
 		
 		inline void Reset()
-		{ iIndex = 0; };
+			{ iIndex = 0; };
 
 		FORCEINLINE DataElement& Data() const
-		{ return iData.iDataElements[iIndex]; };
+			{ return iData3D.iDataElements[iIndex]; };
 
 		FORCEINLINE FTimerHandle& Handle() const
-		{ return iData.iTimerHandles[iIndex]; };
+			{ return iData3D.iTimerHandles[iIndex]; };
 
 		FORCEINLINE int32 ID() const
-		{ return iData.iIDs[iIndex]; };
+			{ return iData3D.iIDs[iIndex]; };
 		
 		void RemoveCurrent()
 		{
-			iData.uRemoveAt(iIndex);
+			iData3D.uRemoveAt(iIndex);
 			iIndex--;
 		};
 
 	private:
-		TCSTimedData& iData;
+		TCSTimedData& iData3D;
 		int32 iIndex = 0;
 	};
 
 	inline Iterator GetIterator()
-	{ return Iterator(*this); };
+		{ return Iterator(*this); };
 };
 
 //Bundles the data of subtitles/captions, and their timer handles.
@@ -209,13 +209,13 @@ template<typename DataElement>
 struct TCSCurrentData
 {
 	inline TArray<DataElement> const& Get() const
-	{ return iTimedData.Get(); };
+		{ return iTimedData.Get(); };
 
 	inline TArray<FTimerHandle> const& Handles() const
-	{ return iTimedData.Handles(); };
+		{ return iTimedData.Handles(); };
 
 	inline int32 Num() const
-	{ return iTimedData.Num(); };
+		{ return iTimedData.Num(); };
 
 	//Stores an Element alongside its ID, Creates and returns a new TimerHandle (by ref).
 	inline FTimerHandle& Add(const DataElement data, const int32 id, const bool isPermanent)
@@ -286,7 +286,7 @@ public:
 	struct VolatileIterator
 	{
 		VolatileIterator(TCSCurrentData<DataElement>& timedData, const int32 startIndex = 0)
-			: iData(timedData)
+			: iData3D(timedData)
 			, iIndex(startIndex)
 		{};
 		
@@ -303,35 +303,41 @@ public:
 		}
 		
 		FORCEINLINE explicit operator bool() const
-		{ return iData.iTimedData.iDataElements.IsValidIndex(iIndex); };
+			{ return iData3D.iTimedData.iDataElements.IsValidIndex(iIndex); };
 		
 		inline void Reset()
-		{ iIndex = 0; };
+			{ iIndex = 0; };
 
 		FORCEINLINE DataElement& Data() const
-		{ return iData.iTimedData.iDataElements[iIndex]; };
+			{ return iData3D.iTimedData.iDataElements[iIndex]; };
 
 		FORCEINLINE FTimerHandle& Handle() const
-		{ return iData.iTimedData.iTimerHandles[iIndex]; };
+			{ return iData3D.iTimedData.iTimerHandles[iIndex]; };
 
 		FORCEINLINE int32 ID() const
-		{ return iData.iTimedData.iIDs[iIndex]; };
+			{ return iData3D.iTimedData.iIDs[iIndex]; };
 
 		FORCEINLINE int32 IsPermanent() const
-		{ return iData.iArePermanent[iIndex]; };
+			{ return iData3D.iArePermanent[iIndex]; };
 
-		FORCEINLINE int32 xCurrent() const
-		{ return iIndex; };
+		/*FORCEINLINE int32 xCurrent() const
+			{ return iIndex; };*/
+		
+		void RemoveCurrent()
+		{
+			iData3D.uRemoveAt(iIndex);
+			iIndex--;
+		};
 
 	private:
-		TCSCurrentData<DataElement>& iData;
+		TCSCurrentData<DataElement>& iData3D;
 		int32 iIndex = 0;
 	};
 
 	struct Iterator
 	{
 		Iterator(TCSCurrentData<DataElement> const& timedData, const int32 startIndex = 0)
-			: iData(timedData)
+			: iData3D(timedData)
 			, iIndex(startIndex)
 		{};
 		
@@ -348,55 +354,55 @@ public:
 		}
 		
 		FORCEINLINE explicit operator bool() const
-		{ return iData.iTimedData.iDataElements.IsValidIndex(iIndex); };
+			{ return iData3D.iTimedData.iDataElements.IsValidIndex(iIndex); };
 		
 		inline void Reset()
-		{ iIndex = 0; };
+			{ iIndex = 0; };
 
 		FORCEINLINE DataElement const& Data() const
-		{ return iData.iTimedData.iDataElements[iIndex]; };
+			{ return iData3D.iTimedData.iDataElements[iIndex]; };
 
 		FORCEINLINE FTimerHandle const& Handle() const
-		{ return iData.iTimedData.iTimerHandles[iIndex]; };
+			{ return iData3D.iTimedData.iTimerHandles[iIndex]; };
 
 		FORCEINLINE int32 ID() const
-		{ return iData.iTimedData.iIDs[iIndex]; };
+			{ return iData3D.iTimedData.iIDs[iIndex]; };
 
 		FORCEINLINE int32 IsPermanent() const
-		{ return iData.iArePermanent[iIndex]; };
+			{ return iData3D.iArePermanent[iIndex]; };
 
 		FORCEINLINE int32 xCurrent() const
-		{ return iIndex; };
+			{ return iIndex; };
 
 	private:
-		TCSCurrentData<DataElement> const& iData;
+		TCSCurrentData<DataElement> const& iData3D;
 		int32 iIndex = 0;
 	};
 
 	inline Iterator GetIterator() const
-	{ return Iterator(*this); };
+		{ return Iterator(*this); };
 
 	inline Iterator GetReverseIterator() const
-	{ return Iterator(*this, Num() - 1); };
+		{ return Iterator(*this, Num() - 1); };
 
 	inline VolatileIterator GetVolatileIterator()
-	{ return VolatileIterator(*this); };
+		{ return VolatileIterator(*this); };
 };
 
 //Bundles the data of subtitles and their number of lines. Ensures maximum number of subtitles and lines are not exceeded.
 struct FCSCurrentSubtitleData
 {
 	FCSCurrentSubtitleData()
-	{ iCurrentData.Reserve(UCSProjectSettingFunctions::GetMaxSubtitles()); };
+		{ iCurrentData.Reserve(UCSProjectSettingFunctions::GetMaxSubtitles()); };
 
 	inline TArray<FFullSubtitle> const& Get() const
-	{ return iCurrentData.Get(); };
+		{ return iCurrentData.Get(); };
 
 	inline TArray<FTimerHandle> const& Handles() const
-	{ return iCurrentData.Handles(); };
+		{ return iCurrentData.Handles(); };
 
 	inline int32 Num() const
-	{ return iCurrentData.Num(); };
+		{ return iCurrentData.Num(); };
 
 	FTimerHandle& Add(FFullSubtitle const& subtitle, const int32 id, const bool isPermanent, TArray<FTimerHandle>& removedHandles, TArray<int32>& removedIDs)
 	{
@@ -477,7 +483,7 @@ struct FCSCurrentSubtitleData
 	};
 
 	inline TCSCurrentData<FFullSubtitle>::Iterator GetIterator() const
-	{ return iCurrentData.GetIterator(); };
+		{ return iCurrentData.GetIterator(); };
 
 private:
 	TCSCurrentData<FFullSubtitle> iCurrentData = TCSCurrentData<FFullSubtitle>();
@@ -488,7 +494,7 @@ private:
 struct FCSFlickerProtectionData
 {
 	inline float tLastSet() const
-	{ return itLastChanged; };
+		{ return itLastChanged; };
 
 	inline float dtMissing(float tNow, float dtGap) const
 	{
@@ -520,36 +526,36 @@ struct FCSBroadcastingData
 	{};
 
 	inline void LogConstruction(const float tNow)
-	{ iProtectDestruct.Set(tNow); };
+		{ iProtectDestruct.Set(tNow); };
 
 	inline void LogDestruction(const float tNow)
-	{ iProtectConstruct.Set(tNow); };
+		{ iProtectConstruct.Set(tNow); };
 
 	inline void LogPaused()
-	{ iIsPaused = true; };
+		{ iIsPaused = true; };
 
 	inline void LogUnpaused()
-	{ iIsPaused = false; };
+		{ iIsPaused = false; };
 
 	inline bool LogDelay(const bool isDelaying)
-	{ return iIsDelayingDestruction = isDelaying; };
+		{ return iIsDelayingDestruction = isDelaying; };
 
 	inline bool IsDelayingDestruction() const
-	{ return iIsDelayingDestruction; };
+		{ return iIsDelayingDestruction; };
 
 	inline bool IsPaused() const
-	{ return iIsPaused; };
+		{ return iIsPaused; };
 
 	inline float tLastConstruction() const
-	{ return iProtectDestruct.tLastSet(); };
+		{ return iProtectDestruct.tLastSet(); };
 
 	//Returns the time to wait before we're allowed to add an element.
 	inline float dtFlickerProtectConstruct(const float tNow, const float dtGap) const
-	{ return iProtectConstruct.dtMissing(tNow, dtGap); };
+		{ return iProtectConstruct.dtMissing(tNow, dtGap); };
 
 	//Returns the time to wait before we're allowed to remove an element.
 	inline float dtFlickerProtectDestruct(const float tNow, const float dtGap) const
-	{ return iProtectDestruct.dtMissing(tNow, dtGap); };
+		{ return iProtectDestruct.dtMissing(tNow, dtGap); };
 
 private:
 	FCSFlickerProtectionData iProtectConstruct;
@@ -567,7 +573,7 @@ struct FCSSubtitleBroadcastingData : FCSBroadcastingData
 	{};
 
 	inline float dtBusy(const float tNow) const
-	{ return FMath::Max(0.f, idtBusy + tLastConstruction() - tNow); };
+		{ return FMath::Max(0.f, idtBusy + tLastConstruction() - tNow); };
 
 	inline void LogBroadcast(const float tNow, const float dtBusy)
 	{
@@ -601,6 +607,9 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FDestructTrigger, const int32, Index
 //Delegate to notify about permanent subtitle changes.
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FPermanentSubtitleNotify);
 
+//Delegate for triggering destruction.
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FSoundTrackNotify, FCSSoundID const&, SoundID);
+
 #pragma endregion
 
 /**
@@ -621,6 +630,14 @@ private:
 
 	inline void iPlayerRemoved(ULocalPlayer* player)
 		{ iSourcesManager.RemovePlayer(player); };
+
+	inline void iManageRemoval(const int32 id)
+	{
+		iIDManager.Delete(id);
+
+		if (CustomData)
+			CustomData->RemoveData(id);
+	}
 
 	inline void iManageRemoval(FTimerHandle& handle, const int32 id)
 	{
@@ -1038,10 +1055,12 @@ public:
 	/**
 	 * Unregisters a source from this subsystem.
 	 * @param SourceName The name used for identification.
-	 * @return true if any sources have been removed.
+	 * @param RemoveCurrentSubtitles Whether to remove current subtitles from the UI.
+	 * @param RemoveCurrentCaptions Whether to remove current captions from the UI.
+	 * @return true if the source has been removed.
 	 */
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Sources")
-		bool UnregisterSource(const FName SourceName);
+		bool UnregisterSource(const FName SourceName, const bool RemoveCurrentSubtitles = false, const bool RemoveCurrentCaptions = false);
 	
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Sources")
 		void EmptySources();
@@ -1080,12 +1099,18 @@ public:
 		void ClearSourcesOverride();
 
 private:
+	void iRemoveCurrentSubtitlesBySource(const FName source);
+	void iRemoveCurrentCaptionsBySource(const FName source);
+
 	FCSSourcesManager iSourcesManager = FCSSourcesManager();
 
 #pragma endregion
 
 #pragma region INDICATORS
 public:
+	//Called when a sound starts being tracked. Indicators subscribe to this if their initial registration failed.
+	UPROPERTY(BlueprintAssignable, Category = "CrispSubtitles|Events")
+		FSoundTrackNotify SoundTrackNotify;
 
 	/**
 	 * Forces recalculation of the indicator data. Doesn't need to be called by default.

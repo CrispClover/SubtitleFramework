@@ -15,7 +15,7 @@ void FCSSourcesManager::CallCalculate(ULocalPlayer const* player)
 		for (CSTrackingManager* manager : iSplitscreenTrackingManagers)
 			manager->Calculate();
 	else
-		if (CSTrackingManager* manager = iAccessManager(player))
+		if (CSTrackingManager* manager = rAccessManager(player))
 			manager->Calculate();
 }
 
@@ -97,7 +97,7 @@ bool FCSSourcesManager::RemoveSource(FName name)
 		for (CSTrackingManager* manager : iSplitscreenTrackingManagers)
 			manager->RemoveSource(name);
 	else
-		if (CSTrackingManager* manager = iAccessManager())
+		if (CSTrackingManager* manager = rAccessManager())
 			manager->RemoveSource(name);
 
 	return true;
@@ -112,8 +112,23 @@ bool FCSSourcesManager::TrackSound(FCSSoundID const& soundID, FVector const& loc
 		for (CSTrackingManager* manager : iSplitscreenTrackingManagers)
 			manager->TrackSound(soundID, location);
 	else
-		if (CSTrackingManager* manager = iAccessManager(player))
+		if (CSTrackingManager* manager = rAccessManager(player))
 			manager->TrackSound(soundID, location);
+
+	return true;
+}
+
+bool FCSSourcesManager::TrackSound(FCSSoundID const& soundID, FVector2D const& position, ULocalPlayer const* player)
+{
+	if (!IsRegistered(soundID.Source))
+		return false;
+
+	if (UCSProjectSettingFunctions::SupportSplitscreen() && !player)
+		for (CSTrackingManager* manager : iSplitscreenTrackingManagers)
+			manager->TrackSound(soundID, position);
+	else
+		if (CSTrackingManager* manager = rAccessManager(player))
+			manager->TrackSound(soundID, position);
 
 	return true;
 }
@@ -124,7 +139,7 @@ void FCSSourcesManager::StopTrackingSound(FCSSoundID const& soundID, ULocalPlaye
 		for (CSTrackingManager* manager : iSplitscreenTrackingManagers)
 			manager->RemoveSound(soundID);
 	else
-		if (CSTrackingManager* manager = iAccessManager(player))
+		if (CSTrackingManager* manager = rAccessManager(player))
 			manager->RemoveSound(soundID);
 }
 
@@ -134,7 +149,7 @@ void FCSSourcesManager::StopTrackingSource(const FName name, ULocalPlayer const*
 		for (CSTrackingManager* manager : iSplitscreenTrackingManagers)
 			manager->RemoveSource(name);
 	else
-		if (CSTrackingManager* manager = iAccessManager(player))
+		if (CSTrackingManager* manager = rAccessManager(player))
 			manager->RemoveSource(name);
 }
 
@@ -150,7 +165,7 @@ bool FCSSourcesManager::IsSoundTracked(FCSSoundID const& soundID, ULocalPlayer c
 	}
 	else
 	{
-		if (CSTrackingManager const* manager = iGetManager(player))
+		if (CSTrackingManager const* manager = rGetManager(player))
 			return manager->Contains(soundID);
 		else
 			return false;
@@ -159,7 +174,7 @@ bool FCSSourcesManager::IsSoundTracked(FCSSoundID const& soundID, ULocalPlayer c
 
 bool FCSSourcesManager::GetSoundData(FCSSoundID const& soundID, FVector& location, ULocalPlayer const* player) const
 {
-	if (CSTrackingManager const* manager = iGetManager(player))
+	if (CSTrackingManager const* manager = rGetManager(player))
 		return manager->GetSoundData(soundID, location);
 	else
 		return false;
@@ -167,7 +182,7 @@ bool FCSSourcesManager::GetSoundData(FCSSoundID const& soundID, FVector& locatio
 
 CSIndicatorDelegates* FCSSourcesManager::rRegisterIndicator(FCSRegisterArgs args, ULocalPlayer const* player)
 {
-	if (CSTrackingManager* manager = iAccessManager(player))
+	if (CSTrackingManager* manager = rAccessManager(player))
 		return manager->rRegisterIndicator(args);
 	else
 		return nullptr;
@@ -175,7 +190,7 @@ CSIndicatorDelegates* FCSSourcesManager::rRegisterIndicator(FCSRegisterArgs args
 
 void FCSSourcesManager::UnregisterIndicator(FCSSoundID const& soundID, ULocalPlayer const* player, UObject* widget)
 {
-	if (CSTrackingManager* manager = iAccessManager(player))
+	if (CSTrackingManager* manager = rAccessManager(player))
 		manager->UnregisterIndicator(soundID, widget);
 }
 
@@ -226,14 +241,14 @@ void FCSSourcesManager::UnionisePlayerSources(ULocalPlayer const* receivingPlaye
 	if (!UCSProjectSettingFunctions::SupportSplitscreen() || iSplitscreenTrackingManagers.Num() < 2 || !receivingPlayer || !copiedPlayer)
 		return;
 
-	CSTrackingManager const* copying = iGetManager(copiedPlayer);
-	CSTrackingManager* receiving = iAccessManager(receivingPlayer);
+	CSTrackingManager const* copying = rGetManager(copiedPlayer);
+	CSTrackingManager* receiving = rAccessManager(receivingPlayer);
 
 	if (copying && receiving)
 		receiving->Copy(copying);
 }
 
-CSTrackingManager const* FCSSourcesManager::iGetManager(ULocalPlayer const* player) const
+CSTrackingManager const* FCSSourcesManager::rGetManager(ULocalPlayer const* player) const
 {
 	if (UCSProjectSettingFunctions::SupportSplitscreen() && player)
 		for (CSTrackingManager const* manager : iSplitscreenTrackingManagers)
@@ -243,7 +258,7 @@ CSTrackingManager const* FCSSourcesManager::iGetManager(ULocalPlayer const* play
 	return uTrackingManager;
 }
 
-CSTrackingManager* FCSSourcesManager::iAccessManager(ULocalPlayer const* player)
+CSTrackingManager* FCSSourcesManager::rAccessManager(ULocalPlayer const* player)
 {
 	if (UCSProjectSettingFunctions::SupportSplitscreen() && player)
 		for (CSTrackingManager* manager : iSplitscreenTrackingManagers)

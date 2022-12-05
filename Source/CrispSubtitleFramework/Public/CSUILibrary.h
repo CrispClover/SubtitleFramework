@@ -49,10 +49,11 @@ public:
 
 	FCSLetterboxStyle
 	(
-		  TSubclassOf<UCSLineWidget> lineClass, FCSLineStyle lineStyle, FLinearColor const& boxColour
-		, FMargin const& boxPadding, FMargin const& linePadding, const bool showIndicator
+		  TSubclassOf<UCSLineWidget> lineClass, FCSLineStyle const& lineStyle, FCSLineStyle const& labelStyle
+		, FLinearColor const& boxColour, FMargin const& boxPadding, FMargin const& linePadding, const bool showIndicator
 	)
 		: LineClass(lineClass)
+		, LabelStyle(labelStyle)
 		, LineStyle(lineStyle)
 		, LetterboxColour(boxColour)
 		, BoxPadding(boxPadding)
@@ -62,6 +63,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "CrispSubtitles")
 		TSubclassOf<UCSLineWidget> LineClass;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "CrispSubtitles")
+		FCSLineStyle LabelStyle;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "CrispSubtitles")
 		FCSLineStyle LineStyle;
@@ -123,16 +127,22 @@ class CRISPSUBTITLEFRAMEWORK_API UCSUILibrary : public UBlueprintFunctionLibrary
 
 public:
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|UI")
-		static FCSLetterboxStyle GetLetterboxStyle(UCSUserSettings* UserSettings, const FName Speaker);
+		static FCSLetterboxStyle GetLetterboxStyle(UCSUserSettings* UserSettings, const FName Speaker, const bool bIsIndirectSpeech);
 	
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|UI")
-		static FCSLineStyle GetLineStyle(UCSUserSettings* UserSettings, const FName Speaker);
+		static FCSLineStyle GetLabelStyle(UCSUserSettings* UserSettings, const FName Speaker);
+	
+	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|UI")
+		static FCSLineStyle GetLineStyle(UCSUserSettings* UserSettings, const FName Speaker, const bool bIsIndirectSpeech);
 
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|UI")
 		static FCSCaptionStyle GetCaptionStyle(UCSUserSettings* UserSettings, const FName Source);
 
 	UFUNCTION(BlueprintPure, meta = (DisplayName = "DesignLetterboxStyle", CompactNodeTitle = "->", BlueprintAutocast), Category = "CrispSubtitles|UI")
 		static FCSLetterboxStyle GetDesignLetterboxStyle(const FName Speaker);
+
+	UFUNCTION(BlueprintPure, meta = (DisplayName = "DesignLineStyle", CompactNodeTitle = "->", BlueprintAutocast), Category = "CrispSubtitles|UI")
+		static FCSLineStyle GetDesignLabelStyle(const FName Speaker);
 
 	UFUNCTION(BlueprintPure, meta = (DisplayName = "DesignLineStyle", CompactNodeTitle = "->", BlueprintAutocast), Category = "CrispSubtitles|UI")
 		static FCSLineStyle GetDesignLineStyle(const FName Speaker);

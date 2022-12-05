@@ -737,8 +737,7 @@ bool UCSS_SubtitleGISS::RegisterAndTrackSound3D(FCSSoundID const& soundID, FVect
 	if (!RegisterSource(soundID.Source))
 		return false;
 
-	iSourcesManager.TrackSound(soundID, location, player);
-	return true;
+	return iSourcesManager.TrackSound(soundID, location, player);
 }
 
 bool UCSS_SubtitleGISS::RegisterAndTrackSound2D(FCSSoundID const& soundID, FVector2D const& position, ULocalPlayer const* player)
@@ -746,18 +745,33 @@ bool UCSS_SubtitleGISS::RegisterAndTrackSound2D(FCSSoundID const& soundID, FVect
 	if (!RegisterSource(soundID.Source))
 		return false;
 
-	//return sourcesManager.StartTrackingSource(name, position, player);//TODO
-	return true;
+	return iSourcesManager.TrackSound(soundID, position, player);
 }
 
 bool UCSS_SubtitleGISS::TrackSound3D(FCSSoundID const& soundID, FVector const& location, ULocalPlayer const* player)
 {
-	return iSourcesManager.TrackSound(soundID, location, player);
+	if (iSourcesManager.TrackSound(soundID, location, player))
+	{
+		SoundTrackNotify.Broadcast(soundID);
+		return true;
+	}
+	else
+	{
+		return false;
+	}
 }
 
 bool UCSS_SubtitleGISS::TrackSound2D(FCSSoundID const& soundID, FVector2D const& position, ULocalPlayer const* player)
 {
-	return false;// sourcesManager.TrackSound(name, position, player);//TODO
+	if (iSourcesManager.TrackSound(soundID, position, player))
+	{
+		SoundTrackNotify.Broadcast(soundID);
+		return true;
+	}
+	else
+	{
+		return false;
+	}
 }
 
 bool UCSS_SubtitleGISS::GetSoundLocation(FCSSoundID const& soundID,  FVector& location, ULocalPlayer const* player) const
@@ -770,35 +784,37 @@ void UCSS_SubtitleGISS::StopTrackingSound(FCSSoundID const& soundID, ULocalPlaye
 	iSourcesManager.StopTrackingSound(soundID, player);
 }
 
-bool UCSS_SubtitleGISS::UnregisterSource(const FName source)
+bool UCSS_SubtitleGISS::UnregisterSource(const FName source, const bool removeSubtitles, const bool removeCaptions)
 {
 	if (!iSourcesManager.RemoveSource(source))
 		return false;
-
-	const bool hadPermanent = HasPermanentSubtitle();
 
 	RemoveQueuedSubtitlesBySource(source);
 	RemoveQueuedCaptionsBySource(source);
 
 	for (auto it = iDelayedSubtitles.CreateIterator(); it; ++it)
+	{
 		if (it.Value().Source == source)
+		{
+			iManageRemoval(it.Key());
 			it.RemoveCurrent();
+		}
+	}
 
-	TArray<FTimerHandle> removedHandles = TArray<FTimerHandle>();
-	TArray<int32> removedIDs = TArray<int32>();
+	for (auto it = iDelayedCaptions.CreateIterator(); it; ++it)
+	{
+		if (it.Value().SoundID.Source == source)
+		{
+			iManageRemoval(it.Key());
+			it.RemoveCurrent();
+		}
+	}
 
-	iCurrentSubtitles.RemoveBySource(source, removedHandles, removedIDs);
+	if (removeSubtitles)
+		iRemoveCurrentSubtitlesBySource(source);
 
-	if (removedHandles.IsEmpty())
-		return true;
-
-	iManageRemoval(removedHandles, removedIDs);
-
-	if (hadPermanent && !HasPermanentSubtitle())
-		PermanentSubtitlesRemoved.Broadcast();
-
-	iSubtitleBroadcastData.LogDestruction(itNow());
-	uReconstructSubtitles();
+	if (removeCaptions)
+		iRemoveCurrentCaptionsBySource(source);
 
 	return true;
 }
@@ -832,6 +848,52 @@ void UCSS_SubtitleGISS::ClearSourcesOverride()
 {
 	iSourcesManager.ClearSourcesOverride();
 }
+
+void UCSS_SubtitleGISS::iRemoveCurrentSubtitlesBySource(const FName source)
+{
+	TArray<FTimerHandle> removedHandles = TArray<FTimerHandle>();
+	TArray<int32> removedIDs = TArray<int32>();
+
+	const bool hadPermanent = HasPermanentSubtitle();
+
+	iCurrentSubtitles.RemoveBySource(source, removedHandles, removedIDs);
+
+	if (removedHandles.IsEmpty())
+		return;
+
+	iManageRemoval(removedHandles, removedIDs);
+
+	iSubtitleBroadcastData.LogDestruction(itNow());
+	uReconstructSubtitles();
+
+	if (hadPermanent && !HasPermanentSubtitle())
+		PermanentSubtitlesRemoved.Broadcast();
+}
+
+void UCSS_SubtitleGISS::iRemoveCurrentCaptionsBySource(const FName source)
+{
+	TArray<FTimerHandle> removedHandles = TArray<FTimerHandle>();
+	TArray<int32> removedIDs = TArray<int32>();
+
+	for (auto it = iCurrentCaptions.GetVolatileIterator(); it; ++it)
+	{
+		if (it.Data().SoundID.Source == source)
+		{
+			removedHandles.Add(it.Handle());
+			removedIDs.Add(it.ID());
+			it.RemoveCurrent();
+		}
+	}
+
+	if (removedHandles.IsEmpty())
+		return;
+
+	iManageRemoval(removedHandles, removedIDs);
+
+	iCaptionBroadcastData.LogDestruction(itNow());
+	uReconstructCaptions();
+}
+
 #pragma endregion
 
 #pragma region INDICATORS

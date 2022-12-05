@@ -3,7 +3,7 @@
 #include "CSCoreLibrary.h"
 #include "CSUserSettings.h"
 #include "Engine/UserInterfaceSettings.h"
-#include <CSProjectSettingFunctions.h>
+#include "CSProjectSettingFunctions.h"
 
 double UCSCoreLibrary::AngleConversion(const double angle, const int32 segments, const EAngleUnit unit)
 {
@@ -52,7 +52,7 @@ FCrispSubtitle UCSCoreLibrary::FrySubtitle(FFullSubtitle const& sub, const int32
 		return FCrispSubtitle(label, sub.Source, id);
 	}
 
-	const bool excludeSpeaker = settings->GetShowSpeaker(sub.Speaker) || sub.SpeakerText.IsEmpty();
+	const bool excludeSpeaker = !settings->GetShowSpeaker(sub.Speaker) || sub.SpeakerText.IsEmpty();
 	const bool excludeDescription = !settings->bShowSubtitleDescriptions || sub.Description.IsEmpty();
 
 	if (!excludeSpeaker)

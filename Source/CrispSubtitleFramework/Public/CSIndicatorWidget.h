@@ -36,7 +36,7 @@ public:
 	//If the object is behind the camera, this value will be negative. Magnitude is the screen-distance between widget and object.
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Data")
 		FORCEINLINE float GetOpacityDriver() const
-	{ return uWidgetData ? uWidgetData->OpacityDriver : 0; };
+			{ return uWidgetData ? uWidgetData->OpacityDriver : 0; };
 	
 	//Gets the ID for the sound this indicator points toward. ID is set using "Register".
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Data")
@@ -58,9 +58,10 @@ public:
 protected:
 	virtual void OnUpdateIndicators_Implementation();
 	void Register_Implementation(FCSSoundID const& id);
-	UCSS_SubtitleGISS* oCSS = nullptr;
 
 private:
+	UCSS_SubtitleGISS* uCSS = nullptr;
+	void uRegister(FCSSoundID const& SoundID);
 	void iUpdateOffset() const;
 	void iUpdateDataPtr(FCSSwapArgs const& a);
 	

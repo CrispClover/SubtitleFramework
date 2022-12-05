@@ -22,9 +22,9 @@ void UCSUserSettingsWidget::SynchronizeProperties()
 
 void UCSUserSettingsWidget::NativeConstruct()
 {
-	oCSS = UGameplayStatics::GetGameInstance(GetWorld())->GetSubsystem<UCSS_SubtitleGISS>();
+	uCSS = UGameplayStatics::GetGameInstance(GetWorld())->GetSubsystem<UCSS_SubtitleGISS>();
 
-	CurrentSettings = oCSS->GetCurrentSettings();
+	CurrentSettings = uCSS->GetCurrentSettings();
 
 	if (SettingsSelector)
 		SettingsSelector->SelectionChangedEvent.AddDynamic(this, &UCSUserSettingsWidget::OnSettingsSelected);
@@ -56,10 +56,10 @@ void UCSUserSettingsWidget::OnSettingsSelected_Implementation(UCSUserSettings* s
 void UCSUserSettingsWidget::ReconstructExample_Implementation()
 {
 	const FCrispSubtitle sub = UCSProjectSettingFunctions::GetExampleSubtitle(CurrentSettings);
-	SubtitlePreview->ConstructFromSubtitle(sub, UCSUILibrary::GetLetterboxStyle(CurrentSettings, sub.Speaker));
+	SubtitlePreview->ConstructFromSubtitle(sub, UCSUILibrary::GetLetterboxStyle(CurrentSettings, sub.Speaker, sub.IsIndirectSpeech()));
 }
 
 void UCSUserSettingsWidget::Save_Implementation()
 {
-	oCSS->SetSettings(CurrentSettings);
+	uCSS->SetSettings(CurrentSettings);
 }

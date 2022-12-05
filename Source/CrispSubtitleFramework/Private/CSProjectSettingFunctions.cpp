@@ -1,5 +1,6 @@
 // Copyright Crisp Clover.
 
+#include "CSProjectSettingFunctions.h"
 #include "CSUserSettings.h"
 #include "Engine/UserInterfaceSettings.h"
 

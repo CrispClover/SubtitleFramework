@@ -14,28 +14,24 @@ UCSUserSettings::UCSUserSettings()
 	, bShowSubtitleIndicators(false)
 	, bShowCaptions(false)
 	, bShowCaptionIndicators(true)
+	, ColourProfile(nullptr)
 	//Label:
 	, FullLabelFormat(FText::FromString("{speaker}: [{description}]"))
 	, SpeakerOnlyLabelFormat(FText::FromString("{speaker}:"))
 	, DescriptionOnlyLabelFormat(FText::FromString("[{description}]"))
-	, ShowSpeaker(EShowSpeakerType::Always)
+	, ShowSpeaker(EShowSpeaker::Never)
 	, bSpeakersAreUpperCase(true)
 	, bShowSubtitleDescriptions(false)
 	//Font:
 	, Font(nullptr)
 	, RegularTypeface(FName("Regular"))
-	, ItalicTypeface(FName("Italic"))
+	, SourceMismatchTypeface(FName("Italic"))
 	, CaptionTypeface(FName("Regular"))
 	, Outline(FFontOutlineSettings())
 	, LetterSpacing(0)
 	, FontMaterial(nullptr)
 	, SubtitleTextSize(.04f)
 	, CaptionTextSize(.04f)
-	//Colours:
-	, ColourProfile()
-	, LetterboxColour(FLinearColor::FLinearColor(0, 0, 0, .5f))
-	, LineBackColour(FLinearColor::Transparent)
-	, CaptionBackColour(FLinearColor::FLinearColor(0, 0, 0, .5f))
 	//Layout:
 	, SubtitlePadding(.015f)
 	, LinePadding(0.f)
@@ -99,10 +95,19 @@ bool UCSUserSettings::GetShowSpeaker(const FName speaker) const
 {
 	switch (ShowSpeaker)
 	{
-	case EShowSpeakerType::ColourCoded:
-		return ColourProfile.LoadSynchronous()->ColourWasMatched(speaker);
+	case EShowSpeaker::ColourCodedShowOnce:
+		if (UCSCPMatched* cp = Cast<UCSCPMatched>(ColourProfile.Get()))
+			return !cp->ColourWasMatched(speaker);
+		else
+			return true;
 
-	case EShowSpeakerType::Never:
+	case EShowSpeaker::ColourCodedShowNever:
+		if (UCSCPMatched* cp = Cast<UCSCPMatched>(ColourProfile.Get()))
+			return !cp->HasColour(speaker);
+		else
+			return true;
+
+	case EShowSpeaker::Never:
 		return false;
 
 	default:
@@ -112,20 +117,27 @@ bool UCSUserSettings::GetShowSpeaker(const FName speaker) const
 
 void UCSUserSettings::LogSpeakerShown(const FName speaker) const
 {
-	if (ColourProfile.IsNull())
-		return;
-	else
-		ColourProfile.LoadSynchronous()->LogMatch(speaker);
+	if (UCSCPMatched* cp = Cast<UCSCPMatched>(ColourProfile.LoadSynchronous()))
+		cp->LogMatch(speaker);
 }
 
-FLinearColor const& UCSUserSettings::GetTextColour(FName speaker) const
+FLinearColor const& UCSUserSettings::GetSubtitleTextColour(const FName speaker) const
 {
 	if (ColourProfile.IsNull())
 		return FLinearColor::White;
 	else
-		return ColourProfile.LoadSynchronous()->GetColour(speaker);
+		return ColourProfile.LoadSynchronous()->GetSubtitleColour(speaker);
 }
 
+FLinearColor const& UCSUserSettings::GetCaptionTextColour(const FName speaker) const
+{
+	if (ColourProfile.IsNull())
+		return FLinearColor::White;
+	else
+		return ColourProfile.LoadSynchronous()->GetCaptionColour(speaker);
+}
+
+#if WITH_EDITOR
 TArray<FName> UCSUserSettings::GetTypefaceOptions() const
 {
 	TArray<FName> options = TArray<FName>();
@@ -136,3 +148,4 @@ TArray<FName> UCSUserSettings::GetTypefaceOptions() const
 
 	return options;
 }
+#endif

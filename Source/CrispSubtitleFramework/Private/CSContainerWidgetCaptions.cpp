@@ -12,17 +12,17 @@ void UCSContainerWidgetCaptions::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	oCSS->ConstructCaptionEvent.AddDynamic(this, &UCSContainerWidgetCaptions::OnCaptionReceived);
-	oCSS->DestructCaptionEvent.AddDynamic(this, &UCSContainerWidgetCaptions::OnDestroy);
-	oCSS->ReconstructCaptionsEvent.AddDynamic(this, &UCSContainerWidgetCaptions::OnReconstruct);
-	oCSS->RecalculateLayout();
+	uCSS->ConstructCaptionEvent.AddDynamic(this, &UCSContainerWidgetCaptions::OnCaptionReceived);
+	uCSS->DestructCaptionEvent.AddDynamic(this, &UCSContainerWidgetCaptions::OnDestroy);
+	uCSS->ReconstructCaptionsEvent.AddDynamic(this, &UCSContainerWidgetCaptions::OnReconstruct);
+	uCSS->RecalculateLayout();
 }
 
 void UCSContainerWidgetCaptions::NativeDestruct()
 {
-	oCSS->ConstructCaptionEvent.RemoveAll(this);
-	oCSS->DestructCaptionEvent.RemoveAll(this);
-	oCSS->ReconstructCaptionsEvent.RemoveAll(this);
+	uCSS->ConstructCaptionEvent.RemoveAll(this);
+	uCSS->DestructCaptionEvent.RemoveAll(this);
+	uCSS->ReconstructCaptionsEvent.RemoveAll(this);
 
 	Super::NativeDestruct();
 }
@@ -49,7 +49,7 @@ UCSCaptionWidget* UCSContainerWidgetCaptions::GetCaptionWidget(const int32 id)
 
 void UCSContainerWidgetCaptions::OnCaptionReceived_Implementation(FCrispCaption const& caption)
 {
-	UCSUserSettings* settings = oCSS->GetCurrentSettings();
+	UCSUserSettings* settings = uCSS->GetCurrentSettings();
 
 	const FCSCaptionStyle style = UCSUILibrary::GetCaptionStyle(settings, caption.SoundID.Source);
 
@@ -69,7 +69,7 @@ void UCSContainerWidgetCaptions::OnDestroy_Implementation(const int32 id)
 
 void UCSContainerWidgetCaptions::OnReconstruct_Implementation(TArray<FCrispCaption> const& captions)
 {
-	UCSUserSettings* settings = oCSS->GetCurrentSettings();
+	UCSUserSettings* settings = uCSS->GetCurrentSettings();
 
 	const int32 cCaptions = captions.Num();
 	const int32 cWidgets = iChildrenData.Num();

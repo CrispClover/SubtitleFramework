@@ -34,7 +34,7 @@ struct FCSSwapArgs
 	{};
 };
 
-//The 2D data required to calculate and display a direction indicator correctly.
+//The UI data required to calculate and display a direction indicator correctly.
 USTRUCT(BlueprintType)
 struct FCSIndicatorWidgetData
 {
@@ -58,17 +58,17 @@ public:
 	{};
 };
 
-//The 3D data required to calculate a direction indicator correctly.
-struct FCSSoundIndicatorData : public FCSIndicatorWidgetData
+//All data required to calculate a 3D direction indicator correctly.
+struct FCSTrackedSoundData : public FCSIndicatorWidgetData
 {
 	FVector SoundData;
 
-	FCSSoundIndicatorData()
+	FCSTrackedSoundData()
 		: FCSIndicatorWidgetData()
 		, SoundData()
 	{};
 
-	FCSSoundIndicatorData(FVector data)
+	FCSTrackedSoundData(FVector data)
 		: FCSIndicatorWidgetData()
 		, SoundData(data)
 	{};
@@ -104,16 +104,16 @@ struct FCSTrackingData
 	inline int32 Num() const
 		{ return iSoundIDs.Num(); }
 
-	inline FCSSoundIndicatorData& AccessItem(const int32 index)
+	inline FCSTrackedSoundData& AccessItem(const int32 index)
 		{ return iSoundData[index]; }
 
-	inline FCSSoundIndicatorData const& GetItem(const int32 index) const
+	inline FCSTrackedSoundData const& GetItem(const int32 index) const
 		{ return iSoundData[index]; }
 
 	inline FCSSoundID const& GetID(const int32 index) const
 		{ return iSoundIDs[index]; }
 
-	inline FCSSoundIndicatorData const* rFind(FCSSoundID const& id) const
+	inline FCSTrackedSoundData const* rFind(FCSSoundID const& id) const
 	{
 		const int32 i = iSoundIDs.Find(id);
 		if (i > 0)
@@ -129,7 +129,7 @@ struct FCSTrackingData
 		if (index < iSoundData.Num())
 			iSoundData[index].SoundData = data;
 		else
-			iSoundData.Add(FCSSoundIndicatorData(data));
+			iSoundData.Add(FCSTrackedSoundData(data));
 	};
 
 	inline void RemoveSound(FCSSoundID const& id)
@@ -236,7 +236,7 @@ private:
 	TArray<FCSSoundID> iSoundIDs = TArray<FCSSoundID>();
 	TArray<FCSSoundID> iDeletionScheduledIDs = TArray<FCSSoundID>();
 
-	TArray<FCSSoundIndicatorData> iSoundData = TArray<FCSSoundIndicatorData>();
+	TArray<FCSTrackedSoundData> iSoundData = TArray<FCSTrackedSoundData>();
 	int32 icActiveSounds = 0;
 };
 
@@ -256,6 +256,16 @@ struct CSIndicatorDelegates
 		SwapIDataEvent.Clear();
 		UpdateIDataEvent.Clear();
 	};
+	
+	template<typename UserClass> using TUpdateMethodPtr = typename TMemFunPtrType<false, UserClass, void()>::Type;
+	template<typename UserClass> using TSwapMethodPtr = typename TMemFunPtrType<false, UserClass, void(FCSSwapArgs const&)>::Type;
+
+	template<typename UserClass>
+	inline void Add(UserClass* user, TUpdateMethodPtr<UserClass> updateFunction, TSwapMethodPtr<UserClass> swapFunction)
+	{
+		UpdateIDataEvent.AddUObject(user, updateFunction);
+		SwapIDataEvent.AddUObject(user, swapFunction);
+	}
 
 	inline void Remove(UObject* widget)
 	{
@@ -281,7 +291,7 @@ public:
 	void Calculate();
 
 	inline bool Contains(FCSSoundID const& soundID) const
-		{ return nullptr != iData.rFind(soundID); };
+		{ return nullptr != iData3D.rFind(soundID); };
 	
 	CSTrackingManager() = delete;
 
@@ -294,27 +304,29 @@ public:
 	
 	inline void Clear()
 	{
-		iDelegates.Clear();
-		iData.Clear();
+		iDelegates3D.Clear();
+		iData3D.Clear();
 	};
 
 	inline void Empty()
-		{ iData.Empty(); };
+		{ iData3D.Empty(); };
 
 	//We can expect memory usage to plateau, so we only shrink upon request.
 	inline void Shrink()
-		{ iData.Shrink(); };
+		{ iData3D.Shrink(); };
 
 	inline void TrackSound(FCSSoundID const& id, FVector const& data)
-		{ iData.TrackSound(id, data); };
+		{ iData3D.TrackSound(id, data); };
+
+	void TrackSound(FCSSoundID const& id, FVector2D const& data);
 
 	bool GetSoundData(FCSSoundID const& id, FVector& data) const;
 
 	inline void RemoveSound(FCSSoundID const& id)
-		{ return iData.RemoveSound(id); };
+		{ return iData3D.RemoveSound(id); };
 
 	inline void RemoveSource(FName const& source)
-		{ return iData.RemoveSource(source); };
+		{ return iData3D.RemoveSource(source); };
 
 	CSIndicatorDelegates* rRegisterIndicator(FCSRegisterArgs args);
 	void UnregisterIndicator(FCSSoundID const& id, UObject* widget);
@@ -322,6 +334,15 @@ public:
 	void Copy(CSTrackingManager const* manager);
 
 private:
-	CSIndicatorDelegates iDelegates;
-	FCSTrackingData iData;
+	bool iRegister2D(FCSSoundID id, FCSIndicatorWidgetData*& dataPtr);
+	void uCalculateData2D(FCSIndicatorWidgetData* indicatorData, FVector2D const& position);
+
+	FCSTrackingData iData3D = FCSTrackingData();
+	CSIndicatorDelegates iDelegates3D = CSIndicatorDelegates();
+
+	TMap<FCSSoundID, FCSIndicatorWidgetData> iData2D = TMap<FCSSoundID, FCSIndicatorWidgetData>();
+	CSIndicatorDelegates iDelegates2D = CSIndicatorDelegates();
+	
+	//Stores 2D location data lacking existing indicators.
+	TMap<FCSSoundID, FVector2D> iLocations2D = TMap<FCSSoundID, FVector2D>();
 };

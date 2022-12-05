@@ -12,10 +12,11 @@ class UCSCaptionWidget;
 class UCSColourProfile;
 
 UENUM(BlueprintType)
-enum class EShowSpeakerType : uint8
+enum class EShowSpeaker : uint8
 {
 	Always,
-	ColourCoded,
+	ColourCodedShowOnce,
+	ColourCodedShowNever,
 	Never
 };
 
@@ -99,6 +100,10 @@ public:
 	//Whether to show direction indicators on captions.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bShowCaptions", EditConditionHides), Category = "Captions")
 		bool bShowCaptionIndicators;
+
+	//Determines how colours are applied to the UI.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bShowSubtitles||bShowCaptions", EditConditionHides), Category = "Colours")
+		TSoftObjectPtr<UCSColourProfile> ColourProfile;
 	
 #pragma endregion
 
@@ -118,7 +123,7 @@ public:
 
 	//Whether to show the speaker's name.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bShowSubtitles", EditConditionHides), Category = "SubtitleLabel")
-		EShowSpeakerType ShowSpeaker;
+		EShowSpeaker ShowSpeaker;
 
 	//Whether to convert the speaker's name to uppercase letters.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bShowSubtitles", EditConditionHides), Category = "SubtitleLabel")
@@ -133,16 +138,16 @@ public:
 #pragma region FONT
 public:
 	//The font to use.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bShowSubtitles||bShowCaptions", EditConditionHides, GetOptions = "GetTypefaceOptions"), Category = "Font")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bShowSubtitles||bShowCaptions", EditConditionHides, AllowedClasses = "Font"), Category = "Font")
 		TSoftObjectPtr<const UObject> Font;
 	
 	//The typeface to use for subtitles.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bShowCaptions", EditConditionHides, GetOptions = "GetTypefaceOptions"), Category = "Font")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bShowSubtitles", EditConditionHides, GetOptions = "GetTypefaceOptions"), Category = "Font")
 		FName RegularTypeface;
 	
 	//The typeface to use when a subtitle's source and speaker mismatch.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bShowCaptions", EditConditionHides, GetOptions = "GetTypefaceOptions"), Category = "Font")
-		FName ItalicTypeface;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bShowSubtitles", EditConditionHides, GetOptions = "GetTypefaceOptions"), Category = "Font")
+		FName SourceMismatchTypeface;
 
 	//The typeface to use for captions.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bShowCaptions", EditConditionHides, GetOptions = "GetTypefaceOptions"), Category = "Font")
@@ -153,7 +158,7 @@ public:
 		FFontOutlineSettings Outline;
 
 	//The uniform spacing (or tracking) between all characters in the text.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, AdvancedDisplay, meta = (ClampMin = -1000, ClampMax = 10000), Category = "Font")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, AdvancedDisplay, meta = (UIMin = -1000, UIMax = 10000), Category = "Font")
 		int32 LetterSpacing;
 
 	//The material to use when rendering this font, can be left blank.
@@ -172,28 +177,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bShowCaptions", EditConditionHides), Category = "Font")
 		float CaptionTextSize;
 
-	UFUNCTION()
-		TArray<FName> GetTypefaceOptions() const;
-
-#pragma endregion
-		
-#pragma region COLOURS
-public:
-	//Determines how colours are applied to the subtitles.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (ShowOnlyInnerProperties, EditCondition = "bShowSubtitles||bShowCaptions", EditConditionHides), Category = "Colours")
-		TSoftObjectPtr<UCSColourProfile> ColourProfile;
-
-	//The colour of the letterbox, should have a high contrast compared to the text colours.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bShowSubtitles", EditConditionHides), Category = "Colours")
-		FLinearColor LetterboxColour;
-
-	//The colour of the background behind the individual lines, should have a high contrast compared to the text colours.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bShowSubtitles", EditConditionHides), Category = "Colours")
-		FLinearColor LineBackColour;
-
-	//The colour of the background behind the captions, should have a high contrast compared to the text colours.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bShowCaptions", EditConditionHides), Category = "Colours")
-		FLinearColor CaptionBackColour;
 #pragma endregion
 
 #pragma region LAYOUT
@@ -261,9 +244,13 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Label")
 		void LogSpeakerShown(const FName Speaker) const;
 	
-	//Returns the text colour for subtitles defined by ColourProfile.
+	//Returns the text colour for subtitles as defined by ColourProfile.
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Style")
-		FLinearColor const& GetTextColour(FName Speaker) const;
+		FLinearColor const& GetSubtitleTextColour(const FName Speaker) const;
+	
+	//Returns the text colour for captions as defined by ColourProfile.
+	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Style")
+		FLinearColor const& GetCaptionTextColour(const FName Speaker) const;
 	
 private:
 	void iRecalculateLayout();
@@ -271,4 +258,10 @@ private:
 	FLayoutCacheData iCachedLayout = FLayoutCacheData();
 
 #pragma endregion
+
+#if WITH_EDITOR
+private:
+	UFUNCTION()
+		TArray<FName> GetTypefaceOptions() const;
+#endif
 };

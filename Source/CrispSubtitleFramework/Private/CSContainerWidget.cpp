@@ -6,7 +6,7 @@
 
 void UCSContainerWidget::NativeConstruct()
 {
-	oCSS = UGameplayStatics::GetGameInstance(GetWorld())->GetSubsystem<UCSS_SubtitleGISS>();
+	uCSS = UGameplayStatics::GetGameInstance(GetWorld())->GetSubsystem<UCSS_SubtitleGISS>();
 
 	Super::NativeConstruct();
 }

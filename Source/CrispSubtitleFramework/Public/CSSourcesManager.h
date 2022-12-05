@@ -56,6 +56,7 @@ public:
 	bool RemoveSource(const FName name);
 
 	bool TrackSound(FCSSoundID const& soundID, FVector const& location, ULocalPlayer const* player);
+	bool TrackSound(FCSSoundID const& soundID, FVector2D const& position, ULocalPlayer const* player);
 
 	void StopTrackingSound(FCSSoundID const& soundID, ULocalPlayer const* player);
 
@@ -77,8 +78,8 @@ public:
 	void UnionisePlayerSources(ULocalPlayer const* receivingPlayer, ULocalPlayer const* copiedPlayer);
 
 private:
-	CSTrackingManager const* iGetManager(ULocalPlayer const* player = nullptr) const;
-	CSTrackingManager* iAccessManager(ULocalPlayer const* player = nullptr);
+	CSTrackingManager const* rGetManager(ULocalPlayer const* player = nullptr) const;
+	CSTrackingManager* rAccessManager(ULocalPlayer const* player = nullptr);
 
 	CSTrackingManager* uTrackingManager = nullptr;
 	TArray<CSTrackingManager*> iSplitscreenTrackingManagers = TArray<CSTrackingManager*>();

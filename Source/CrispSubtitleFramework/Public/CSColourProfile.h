@@ -1,4 +1,4 @@
-// Copyright Crisp Clover. Feel free to copy.
+// Copyright Crisp Clover.
 
 #pragma once
 
@@ -15,10 +15,76 @@ class CRISPSUBTITLEFRAMEWORK_API UCSColourProfile : public UPrimaryDataAsset
 	GENERATED_BODY()
 	
 public:
+	UCSColourProfile()
+		: LetterboxColour(FLinearColor::FLinearColor(0, 0, 0, .5f))
+		, LineBackColour(FLinearColor::Transparent)
+		, CaptionBackColour(FLinearColor::FLinearColor(0, 0, 0, .5f))
+	{};
+
+	//The colour of the letterbox, should have a high contrast compared to the text colours.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Colours")
+		FLinearColor LetterboxColour;
+
+	//The colour of the background behind the individual lines, should have a high contrast compared to the text colours.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Colours")
+		FLinearColor LineBackColour;
+
+	//The colour of the background behind the captions, should have a high contrast compared to the text colours.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Colours")
+		FLinearColor CaptionBackColour;
+
 	//Returns the subtitle text colour for the given speaker.
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|ColourProfile")
-		FORCEINLINE FLinearColor const& GetColour(FName Speaker) const
-			{ return oGetColour(Speaker); };
+		FORCEINLINE FLinearColor const& GetSubtitleColour(FName Speaker) const
+			{ return oSubtitleGetColour(Speaker); };
+
+	//Returns the subtitle text colour for the given speaker.
+	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|ColourProfile")
+		FORCEINLINE FLinearColor const& GetCaptionColour(FName Source) const
+			{ return oCaptionGetColour(Source); };
+
+protected:
+	inline virtual FLinearColor const& oSubtitleGetColour(FName speaker) const
+		{ return FLinearColor::White; };
+
+	inline virtual FLinearColor const& oCaptionGetColour(FName source) const
+		{ return FLinearColor::White; };
+};
+
+/**
+ * 
+ */
+UCLASS()
+class CRISPSUBTITLEFRAMEWORK_API UCSCPSimple : public UCSColourProfile
+{
+	GENERATED_BODY()
+
+public:
+	//The default text colour.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Colours")
+		FLinearColor DefaultSubtitleTextColour = FLinearColor::White;
+
+	//The default text colour.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Colours")
+		FLinearColor DefaultCaptionTextColour = FLinearColor::White;
+
+protected:
+	virtual FLinearColor const& oSubtitleGetColour(FName speaker) const override;
+	virtual FLinearColor const& oCaptionGetColour(FName source) const override;
+};
+
+/**
+ * 
+ */
+UCLASS(Abstract)
+class CRISPSUBTITLEFRAMEWORK_API UCSCPMatched : public UCSCPSimple
+{
+	GENERATED_BODY()
+	
+public:
+	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|ColourProfile")
+		FORCEINLINE bool HasColour(FName Speaker) const
+			{ return oHasColour(Speaker); };
 
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|ColourProfile")
 		FORCEINLINE bool ColourWasMatched(FName Speaker) const
@@ -33,41 +99,21 @@ public:
 			{ oForgetMatch(Speaker); };
 
 protected:
-	virtual FLinearColor const& oGetColour(FName speaker) const
-		{ return FLinearColor::White; };
-
-	inline virtual bool oColourWasMatched(FName speaker) const
+	inline virtual bool oHasColour(FName speaker) const
 		{ return false; };
-	
-	inline virtual void oLogMatch(FName speaker)
-		{ return; };
 
-	inline virtual void oForgetMatch(FName speaker)
-		{ return; };
+	virtual bool oColourWasMatched(FName speaker) const;
+	virtual void oLogMatch(FName speaker);
+	virtual void oForgetMatch(FName speaker);
+
+	TSet<FName> oMatchedSpeakers = TSet<FName>();
 };
 
 /**
  * 
  */
 UCLASS()
-class CRISPSUBTITLEFRAMEWORK_API UCSCPSimple : public UCSColourProfile
-{
-	GENERATED_BODY()
-
-public:
-	//The default text colour.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Colours")
-		FLinearColor DefaultColour = FLinearColor::White;
-
-protected:
-	virtual FLinearColor const& oGetColour(FName speaker) const override;
-};
-
-/**
- * 
- */
-UCLASS()
-class CRISPSUBTITLEFRAMEWORK_API UCSCPAssigned : public UCSCPSimple
+class CRISPSUBTITLEFRAMEWORK_API UCSCPAssigned : public UCSCPMatched
 {
 	GENERATED_BODY()
 		
@@ -82,12 +128,9 @@ public:
 		};
 
 protected:
-	virtual FLinearColor const& oGetColour(FName speaker) const override;
-	virtual bool oColourWasMatched(FName speaker) const override;
+	virtual bool oHasColour(FName speaker) const override;
+	virtual FLinearColor const& oSubtitleGetColour(FName speaker) const override;
 	virtual void oLogMatch(FName speaker) override;
-	virtual void oForgetMatch(FName speaker) override;
-
-	TSet<FName> oMatchedSpeakers = TSet<FName>();
 };
 
 /**

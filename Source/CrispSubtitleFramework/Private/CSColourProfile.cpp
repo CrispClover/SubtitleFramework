@@ -1,34 +1,49 @@
-// Copyright Crisp Clover. Feel free to copy.
+// Copyright Crisp Clover.
 
 #include "CSColourProfile.h"
 
-FLinearColor const& UCSCPSimple::oGetColour(FName speaker) const
+FLinearColor const& UCSCPSimple::oSubtitleGetColour(FName speaker) const
 {
-	return DefaultColour;
+	return DefaultSubtitleTextColour;
 }
 
-FLinearColor const& UCSCPAssigned::oGetColour(FName speaker) const
+FLinearColor const& UCSCPSimple::oCaptionGetColour(FName source) const
+{
+	return DefaultCaptionTextColour;
+}
+
+bool UCSCPMatched::oColourWasMatched(FName speaker) const
+{
+	return oMatchedSpeakers.Contains(speaker);
+}
+
+void UCSCPMatched::oLogMatch(FName speaker)
+{
+	oMatchedSpeakers.Add(speaker);
+}
+
+void UCSCPMatched::oForgetMatch(FName speaker)
+{
+	oMatchedSpeakers.Remove(speaker);
+}
+
+bool UCSCPAssigned::oHasColour(FName speaker) const
+{
+	return AssignedColours.Contains(speaker);
+}
+
+FLinearColor const& UCSCPAssigned::oSubtitleGetColour(FName speaker) const
 {
 	if (FLinearColor const* colour = AssignedColours.Find(speaker))
 		return *colour;
 	else
-		return DefaultColour;
+		return DefaultSubtitleTextColour;
 }
 
-bool UCSCPAssigned::oColourWasMatched(FName speaker) const
-{
-	return oMatchedSpeakers.Contains(speaker);
-}
-	
 void UCSCPAssigned::oLogMatch(FName speaker)
 {
 	if (AssignedColours.Contains(speaker))
-		oMatchedSpeakers.Add(speaker);
-}
-
-void UCSCPAssigned::oForgetMatch(FName speaker)
-{
-	oMatchedSpeakers.Remove(speaker);
+		UCSCPMatched::oLogMatch(speaker);
 }
 
 void UCSCPCustom::Empty()

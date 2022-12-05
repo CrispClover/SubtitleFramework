@@ -321,6 +321,9 @@ public:
 		, Source(source)
 		, ID(id)
 	{};
+
+	inline bool IsIndirectSpeech() const
+		{ return Source != Speaker; };
 };
 
 #pragma endregion

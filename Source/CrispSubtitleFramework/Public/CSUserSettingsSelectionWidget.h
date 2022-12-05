@@ -97,7 +97,7 @@ public:
 	TSharedRef<SWidget> GenerateOptionWidget(UCSUserSettings* option);
 
 protected:
-	UCSS_SubtitleGISS* oCSS = nullptr;
+	UCSS_SubtitleGISS* uCSS = nullptr;
 	UCSUserSettings* oSelectedSettings;
 
 	virtual void oOnSettingsLoaded();

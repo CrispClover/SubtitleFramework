@@ -27,7 +27,12 @@ struct FCSChildWidgetData
 	};
 
 	inline void Remove(const int32 id)
-		{ iRemoveAt(rxFind(id));	};
+	{
+		const int32 ux = rxFind(id);
+
+		if (ux != INDEX_NONE)
+			uRemoveAt(ux);
+	};
 
 	inline ChildType* rConsume(const int32 id)
 	{
@@ -37,7 +42,7 @@ struct FCSChildWidgetData
 			return nullptr;
 		
 		ChildType* ptrCopy = Children[rx];
-		iRemoveAt(rx);
+		uRemoveAt(rx);
 		return ptrCopy;
 	};
 
@@ -46,7 +51,7 @@ struct FCSChildWidgetData
 	TArray<int32> IDs = TArray<int32>();
 
 private:
-	inline void iRemoveAt(const int32 index)
+	inline void uRemoveAt(const int32 index)
 	{
 		IDs.RemoveAt(index);
 		Slots.RemoveAt(index);
@@ -70,5 +75,5 @@ public:
 		UVerticalBox* Container = nullptr;
 
 protected:
-	UCSS_SubtitleGISS* oCSS = nullptr;
+	UCSS_SubtitleGISS* uCSS = nullptr;
 };

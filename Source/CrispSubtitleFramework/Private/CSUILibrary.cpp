@@ -2,6 +2,7 @@
 
 #include "CSUILibrary.h"
 #include "CSUserSettings.h"
+#include "CSColourProfile.h"
 #include "CSProjectSettingFunctions.h"
 
 FCSLineStyle::FCSLineStyle()
@@ -17,6 +18,7 @@ FCSLineStyle::FCSLineStyle()
 
 FCSLetterboxStyle::FCSLetterboxStyle()
     : LineClass(UCSProjectSettingFunctions::GetDefaultSettings()->LineClass.LoadSynchronous())
+    , LabelStyle()
     , LineStyle()
     , LetterboxColour(FLinearColor::Black)
     , BoxPadding()
@@ -32,7 +34,7 @@ FCSCaptionStyle::FCSCaptionStyle()
     , bShowIndicator(true)
 {};
 
-FCSLetterboxStyle UCSUILibrary::GetLetterboxStyle(UCSUserSettings* settings, const FName speaker)
+FCSLetterboxStyle UCSUILibrary::GetLetterboxStyle(UCSUserSettings* settings, const FName speaker, const bool indirectSpeech)
 {
     if (!settings)
         return FCSLetterboxStyle();
@@ -41,9 +43,10 @@ FCSLetterboxStyle UCSUILibrary::GetLetterboxStyle(UCSUserSettings* settings, con
 
     FCSLetterboxStyle style = FCSLetterboxStyle();
 
-    style.LetterboxColour = settings->LetterboxColour;
+    style.LetterboxColour = settings->ColourProfile.LoadSynchronous()->LetterboxColour;
     style.LineClass = settings->LineClass.LoadSynchronous();
-    style.LineStyle = GetLineStyle(settings, speaker);
+    style.LineStyle = GetLabelStyle(settings, speaker);
+    style.LineStyle = GetLineStyle(settings, speaker, indirectSpeech);
     style.BoxPadding = layout.BoxPadding;
     style.LinePadding = layout.LinePadding;
     style.bShowIndicator = settings->bShowSubtitleIndicators;
@@ -51,7 +54,7 @@ FCSLetterboxStyle UCSUILibrary::GetLetterboxStyle(UCSUserSettings* settings, con
     return style;
 }
 
-FCSLineStyle UCSUILibrary::GetLineStyle(UCSUserSettings* settings, const FName speaker)
+FCSLineStyle UCSUILibrary::GetLabelStyle(UCSUserSettings* settings, const FName speaker)
 {
     if (!settings)
         return FCSLineStyle();
@@ -60,8 +63,28 @@ FCSLineStyle UCSUILibrary::GetLineStyle(UCSUserSettings* settings, const FName s
 
     FCSLineStyle style = FCSLineStyle();
     style.FontInfo = layout.FontInfo;
-    style.BackColour = settings->LineBackColour;
-    style.TextColour = settings->GetTextColour(speaker);
+    style.BackColour = settings->ColourProfile.LoadSynchronous()->LineBackColour;
+    style.TextColour = settings->GetSubtitleTextColour(speaker);
+    style.TextPadding = layout.TextPadding;
+
+    return style;
+}
+
+FCSLineStyle UCSUILibrary::GetLineStyle(UCSUserSettings* settings, const FName speaker, const bool indirectSpeech)
+{
+    if (!settings)
+        return FCSLineStyle();
+
+    FLayoutCacheData const& layout = settings->GetLayout();
+
+    FCSLineStyle style = FCSLineStyle();
+    style.FontInfo = layout.FontInfo;
+
+    if (indirectSpeech)
+        style.FontInfo.TypefaceFontName = settings->SourceMismatchTypeface;
+
+    style.BackColour = settings->ColourProfile.LoadSynchronous()->LineBackColour;
+    style.TextColour = settings->GetSubtitleTextColour(speaker);
     style.TextPadding = layout.TextPadding;
 
     return style;
@@ -78,8 +101,8 @@ FCSCaptionStyle UCSUILibrary::GetCaptionStyle(UCSUserSettings* settings, const F
     style.FontInfo = layout.FontInfo;
     style.FontInfo.Size = layout.CaptionTextSize;
     style.FontInfo.TypefaceFontName = settings->CaptionTypeface;
-    style.BackColour = settings->CaptionBackColour;
-    style.TextColour = settings->GetTextColour(source);//TODO: caption colouring
+    style.BackColour = settings->ColourProfile.LoadSynchronous()->CaptionBackColour;
+    style.TextColour = settings->GetCaptionTextColour(source);
     style.TextPadding = layout.TextPadding;
 
     return style;
@@ -95,12 +118,30 @@ FCSLetterboxStyle UCSUILibrary::GetDesignLetterboxStyle(const FName speaker)
     FLayoutCacheData const& layout = settings->GetLayout();
 
     FCSLetterboxStyle style = FCSLetterboxStyle();
-    style.LetterboxColour = settings->LetterboxColour;
+    style.LetterboxColour = settings->ColourProfile.LoadSynchronous()->LetterboxColour;
     style.LineClass = settings->LineClass.LoadSynchronous();
     style.BoxPadding = layout.BoxPadding;
     style.LinePadding = layout.LinePadding;
     style.LineStyle = GetDesignLineStyle(speaker);
     style.bShowIndicator = settings->bShowSubtitleIndicators;
+
+    return style;
+}
+
+FCSLineStyle UCSUILibrary::GetDesignLabelStyle(const FName speaker)
+{
+    UCSUserSettings* settings = UCSProjectSettingFunctions::GetDesignSettings();
+
+    if (!settings)
+        return FCSLineStyle();
+    
+    FLayoutCacheData const& layout = settings->GetLayout();
+
+    FCSLineStyle style = FCSLineStyle();
+    style.FontInfo = layout.FontInfo;
+    style.BackColour = settings->ColourProfile.LoadSynchronous()->LineBackColour;
+    style.TextColour = settings->GetSubtitleTextColour(speaker);
+    style.TextPadding = layout.TextPadding;
 
     return style;
 }
@@ -116,8 +157,8 @@ FCSLineStyle UCSUILibrary::GetDesignLineStyle(const FName speaker)
 
     FCSLineStyle style = FCSLineStyle();
     style.FontInfo = layout.FontInfo;
-    style.BackColour = settings->LineBackColour;
-    style.TextColour = settings->GetTextColour(speaker);
+    style.BackColour = settings->ColourProfile.LoadSynchronous()->LineBackColour;
+    style.TextColour = settings->GetSubtitleTextColour(speaker);
     style.TextPadding = layout.TextPadding;
 
     return style;
@@ -135,8 +176,8 @@ FCSCaptionStyle UCSUILibrary::GetDesignCaptionStyle(const FName source)
     FCSCaptionStyle style = FCSCaptionStyle();
     style.FontInfo = layout.FontInfo;
     style.FontInfo.TypefaceFontName = settings->CaptionTypeface;
-    style.BackColour = settings->CaptionBackColour;
-    style.TextColour = settings->GetTextColour(source);//TODO: caption colouring
+    style.BackColour = settings->ColourProfile.LoadSynchronous()->CaptionBackColour;
+    style.TextColour = settings->GetCaptionTextColour(source);
     style.TextPadding = layout.TextPadding;
 
     return style;
