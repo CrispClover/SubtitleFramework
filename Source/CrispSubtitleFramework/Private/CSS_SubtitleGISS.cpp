@@ -126,6 +126,9 @@ void UCSS_SubtitleGISS::ClearSubtitles()
 
 void UCSS_SubtitleGISS::PauseSubtitles()
 {
+	if (!uTimerManager)
+		return;
+
 	iSubtitleBroadcastData.LogPaused();
 
 	for (FTimerHandle const& handle : iCurrentSubtitles.Handles())
@@ -144,17 +147,11 @@ void UCSS_SubtitleGISS::PauseQueuedSubtitles()
 		uTimerManager->PauseTimer(handle);
 }
 
-void UCSS_SubtitleGISS::UnpauseQueuedSubtitles()
+void UCSS_SubtitleGISS::UnpauseSubtitles()
 {
 	if (!uTimerManager)
 		return;
 
-	for (FTimerHandle const& handle : iQueuedSubtitles.Handles())
-		uTimerManager->UnPauseTimer(handle);
-}
-
-void UCSS_SubtitleGISS::UnpauseSubtitles()
-{
 	iSubtitleBroadcastData.LogUnpaused();
 
 	for (FTimerHandle const& handle : iCurrentSubtitles.Handles())
@@ -164,6 +161,15 @@ void UCSS_SubtitleGISS::UnpauseSubtitles()
 		uTimerManager->UnPauseTimer(handle);
 
 	iDelayedBroadcastSubtitles();
+}
+
+void UCSS_SubtitleGISS::UnpauseQueuedSubtitles()
+{
+	if (!uTimerManager)
+		return;
+
+	for (FTimerHandle const& handle : iQueuedSubtitles.Handles())
+		uTimerManager->UnPauseTimer(handle);
 }
 
 int32 UCSS_SubtitleGISS::QueueSubtitle(FFullSubtitle const& subtitle)
@@ -191,20 +197,21 @@ TArray<int32> UCSS_SubtitleGISS::QueueRawSubtitles(TArray<FRawSubtitle> const& s
 	TArray<int32> newIDs;
 	newIDs.Reserve(subtitles.Num());
 
-	for (const FRawSubtitle subtitle : subtitles)
+	for (FRawSubtitle const& subtitle : subtitles)
 	{
 		const FFullSubtitle fullSub = FFullSubtitle(subtitle, speakerText, speaker, source);
-		newIDs.Add(iIDManager.New());
+		const int32 id = iIDManager.New();
+		newIDs.Add(id);
 
 		if (subtitle.StartDelay == 0)
 		{
 			//ensure broadcast, even with start time of zero
-			iBroadcastSubtitle(fullSub, itNow(), newIDs.Last());
+			iBroadcastSubtitle(fullSub, itNow(), id);
 		}
 		else
 		{
-			FTimerHandle& handle = iQueuedSubtitles.Add(fullSub, newIDs.Last());
-			iSetTimer(&UCSS_SubtitleGISS::iOnSubtitleTriggered, handle, newIDs.Last(), subtitle.StartDelay);
+			FTimerHandle& handle = iQueuedSubtitles.Add(fullSub, id);
+			iSetTimer(&UCSS_SubtitleGISS::iOnSubtitleTriggered, handle, id, subtitle.StartDelay);
 		}
 	}
 
@@ -218,20 +225,21 @@ TArray<int32> UCSS_SubtitleGISS::QueueGroupSubtitles(TArray<FGroupSubtitle> cons
 	TArray<int32> newIDs;
 	newIDs.Reserve(subtitles.Num());
 
-	for (const FGroupSubtitle subtitle : subtitles)
+	for (FGroupSubtitle const& subtitle : subtitles)
 	{
 		const FFullSubtitle fullSub = FFullSubtitle(subtitle, source);
-		newIDs.Add(iIDManager.New());
+		const int32 id = iIDManager.New();
+		newIDs.Add(id);
 
 		if (subtitle.StartDelay == 0)
 		{
 			//ensure broadcast, even with start time of zero
-			iBroadcastSubtitle(fullSub, itNow(), newIDs.Last());
+			iBroadcastSubtitle(fullSub, itNow(), id);
 		}
 		else
 		{
-			FTimerHandle& handle = iQueuedSubtitles.Add(fullSub, newIDs.Last());
-			iSetTimer(&UCSS_SubtitleGISS::iOnSubtitleTriggered, handle, newIDs.Last(), subtitle.StartDelay);
+			FTimerHandle& handle = iQueuedSubtitles.Add(fullSub, id);
+			iSetTimer(&UCSS_SubtitleGISS::iOnSubtitleTriggered, handle, id, subtitle.StartDelay);
 		}
 	}
 
@@ -245,19 +253,20 @@ TArray<int32> UCSS_SubtitleGISS::QueueFullSubtitles(TArray<FFullSubtitle> const&
 	TArray<int32> newIDs;
 	newIDs.Reserve(subtitles.Num());
 
-	for (const FFullSubtitle subtitle : subtitles)
+	for (FFullSubtitle const& subtitle : subtitles)
 	{
-		newIDs.Add(iIDManager.New());
+		const int32 id = iIDManager.New();
+		newIDs.Add(id);
 
 		if (subtitle.StartDelay == 0)
 		{
 			//ensure broadcast, even with start time of zero
-			iBroadcastSubtitle(subtitle, itNow(), newIDs.Last());
+			iBroadcastSubtitle(subtitle, itNow(), id);
 		}
 		else
 		{
-			FTimerHandle& handle = iQueuedSubtitles.Add(subtitle, newIDs.Last());
-			iSetTimer(&UCSS_SubtitleGISS::iOnSubtitleTriggered, handle, newIDs.Last(), subtitle.StartDelay);
+			FTimerHandle& handle = iQueuedSubtitles.Add(subtitle, id);
+			iSetTimer(&UCSS_SubtitleGISS::iOnSubtitleTriggered, handle, id, subtitle.StartDelay);
 		}
 	}
 
@@ -272,7 +281,7 @@ void UCSS_SubtitleGISS::RemoveQueuedSubtitle(const int32 id)
 
 void UCSS_SubtitleGISS::RemoveQueuedSubtitles(TArray<int32> const& ids)
 {
-	for (int32 id : ids)
+	for (const int32 id : ids)
 	{
 		FTimerHandle handle = iQueuedSubtitles.Remove(id);
 		iManageRemoval(handle, id);
@@ -371,11 +380,7 @@ void UCSS_SubtitleGISS::iDestroySubtitle(const int32 id)
 	const float dtMissing = iSubtitleBroadcastData.dtFlickerProtectDestruct(tNow, iCurrentSettings->TimeGap);
 
 	iCurrentSubtitles.Remove(id);
-
-	if (CustomData)
-		CustomData->RemoveData(id);
-
-	iIDManager.Delete(id);
+	iManageRemoval(id);
 
 	if (dtMissing > 0 && !iSubtitleBroadcastData.IsDelayingDestruction())
 	{
@@ -431,6 +436,32 @@ bool UCSS_SubtitleGISS::HasPermanentCaption()
 	return false;
 }
 
+void UCSS_SubtitleGISS::ClearCaptions()
+{
+	TArray<FTimerHandle> flushedHandles;
+	TArray<int32> flushedIDs;
+	iCurrentCaptions.Flush(flushedHandles, flushedIDs);
+
+	if (flushedIDs.IsEmpty())
+		return;
+
+	iManageRemoval(flushedHandles, flushedIDs);
+
+	const float tNow = itNow();
+	const float dtMissing = iCaptionBroadcastData.dtFlickerProtectDestruct(tNow, iCurrentSettings->TimeGap);
+
+	if (dtMissing > 0 && !iCaptionBroadcastData.IsDelayingDestruction())
+	{
+		iCaptionBroadcastData.LogDelay(true);
+		iSetTimer(&UCSS_SubtitleGISS::iDelayedDestroyCaptions, dtMissing);
+	}
+	else
+	{
+		iCaptionBroadcastData.LogDestruction(tNow);
+		uReconstructCaptions();
+	}
+}
+
 void UCSS_SubtitleGISS::PauseCaptions()
 {
 	if (!uTimerManager)
@@ -438,7 +469,7 @@ void UCSS_SubtitleGISS::PauseCaptions()
 
 	iCaptionBroadcastData.LogPaused();
 
-	for (FTimerHandle handle : iCurrentCaptions.Handles())
+	for (FTimerHandle const& handle : iCurrentCaptions.Handles())
 		uTimerManager->PauseTimer(handle);
 
 	for (FTimerHandle const& handle : iQueuedCaptions.Handles())
@@ -461,7 +492,7 @@ void UCSS_SubtitleGISS::UnpauseCaptions()
 
 	iCaptionBroadcastData.LogUnpaused();
 
-	for (FTimerHandle handle : iCurrentCaptions.Handles())
+	for (FTimerHandle const& handle : iCurrentCaptions.Handles())
 		uTimerManager->UnPauseTimer(handle);
 
 	for (FTimerHandle const& handle : iQueuedCaptions.Handles())
@@ -506,9 +537,10 @@ TArray<int32> UCSS_SubtitleGISS::QueueCaptions(TArray<FSoundCaption> const& capt
 
 	for (FSoundCaption const& caption : captions)
 	{
+		const FFullCaption fullCap = FFullCaption(caption, source, sound, dtDisplay);
 		const int32 id = iIDManager.New();
+		newIDs.Add(id);
 
-		FFullCaption fullCap = FFullCaption(caption, source, sound, dtDisplay);
 		if (fullCap.StartDelay == 0)
 		{
 			//ensure broadcast, even with start time of zero
@@ -518,7 +550,6 @@ TArray<int32> UCSS_SubtitleGISS::QueueCaptions(TArray<FSoundCaption> const& capt
 		{
 			FTimerHandle& handle = iQueuedCaptions.Add(fullCap, id);
 			iSetTimer(&UCSS_SubtitleGISS::iOnCaptionTriggered, handle, id, caption.StartDelay);
-			newIDs.Add(id);
 		}
 	}
 
@@ -535,6 +566,7 @@ TArray<int32> UCSS_SubtitleGISS::QueueFullCaptions(TArray<FFullCaption> const& c
 	for (FFullCaption const& caption : captions)
 	{
 		const int32 id = iIDManager.New();
+		newIDs.Add(id);
 
 		if (caption.StartDelay == 0)
 		{
@@ -545,7 +577,6 @@ TArray<int32> UCSS_SubtitleGISS::QueueFullCaptions(TArray<FFullCaption> const& c
 		{
 			FTimerHandle& handle = iQueuedCaptions.Add(caption, id);
 			iSetTimer(&UCSS_SubtitleGISS::iOnCaptionTriggered, handle, id, caption.StartDelay);
-			newIDs.Add(id);
 		}
 	}
 	
@@ -560,7 +591,7 @@ void UCSS_SubtitleGISS::RemoveQueuedCaption(int32 id)
 
 void UCSS_SubtitleGISS::RemoveQueuedCaptions(TArray<int32> const& ids)
 {
-	for (int32 id : ids)
+	for (const int32 id : ids)
 	{
 		FTimerHandle handle = iQueuedCaptions.Remove(id);
 		iManageRemoval(handle, id);
@@ -657,8 +688,22 @@ void UCSS_SubtitleGISS::iDelayedBroadcastCaptions()
 
 void UCSS_SubtitleGISS::iDestroyCaption(const int32 id)
 {
+	const float tNow = itNow();
+	const float dtMissing = iCaptionBroadcastData.dtFlickerProtectDestruct(tNow, iCurrentSettings->TimeGap);
+	
 	iCurrentCaptions.Remove(id);
-	DestructCaptionEvent.Broadcast(id);
+	iManageRemoval(id);
+
+	if (dtMissing > 0 && !iCaptionBroadcastData.IsDelayingDestruction())
+	{
+		iCaptionBroadcastData.LogDelay(true);
+		iSetTimer(&UCSS_SubtitleGISS::iDelayedDestroyCaptions, dtMissing);
+	}
+	else
+	{
+		iCaptionBroadcastData.LogDestruction(tNow);
+		DestructCaptionEvent.Broadcast(id);
+	}
 }
 
 void UCSS_SubtitleGISS::iDelayedDestroyCaptions()
@@ -891,7 +936,6 @@ void UCSS_SubtitleGISS::RecalculateLayout()//TODO
 	if (UGameViewportClient* viewportClient = GetGameInstance()->GetGameViewportClient())
 		iCurrentSettings->RecalculateLayout(viewportClient);
 }
-
 
 void UCSS_SubtitleGISS::SetSettings(UCSUserSettings* settings)
 {

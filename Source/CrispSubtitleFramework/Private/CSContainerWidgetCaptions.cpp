@@ -99,13 +99,21 @@ void UCSContainerWidgetCaptions::OnReconstruct_Implementation(TArray<FCrispCapti
 	const int32 dcCaptions = cWidgets - cCaptions;
 
 	for (int32 i = 1; i <= dcCaptions; i++)//Remove excess
-		iChildrenData.Children[cWidgets - i]->RemoveFromParent();
+	{
+		const int32 ni = cWidgets - i;
+		iChildrenData.Children[ni]->RemoveFromParent();
+		iChildrenData.uRemoveAt(ni);
+	}
 
 	for (int32 i = 0; i < cCaptions; i++)//Reconstruct existing
+	{
 		iChildrenData.Children[i]->ConstructFromCaption(captions[i], UCSUILibrary::GetCaptionStyle(settings, captions[i].SoundID.Source));
+		iChildrenData.IDs[i] = captions[i].ID;
+		iChildrenData.Slots[i]->SetPadding(settings->CaptionPadding);
+	}
 
-	for (UVerticalBoxSlot* slot : iChildrenData.Slots)//Apply padding to existing
-		slot->SetPadding(settings->CaptionPadding);
+	/*for (UVerticalBoxSlot* slot : iChildrenData.Slots)//Apply padding to existing
+		slot->SetPadding(settings->CaptionPadding);*/
 
 	for (int32 ni = dcCaptions; ni < 0; ni++)//Add missing
 		OnCaptionReceived(captions[cCaptions + ni]);

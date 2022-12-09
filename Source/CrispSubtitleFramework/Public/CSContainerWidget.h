@@ -46,17 +46,16 @@ struct FCSChildWidgetData
 		return ptrCopy;
 	};
 
-	TArray<ChildType*> Children = TArray<ChildType*>();
-	TArray<UVerticalBoxSlot*> Slots = TArray<UVerticalBoxSlot*>();
-	TArray<int32> IDs = TArray<int32>();
-
-private:
 	inline void uRemoveAt(const int32 index)
 	{
 		IDs.RemoveAt(index);
 		Slots.RemoveAt(index);
 		Children.RemoveAt(index);
 	};
+
+	TArray<ChildType*> Children = TArray<ChildType*>();
+	TArray<UVerticalBoxSlot*> Slots = TArray<UVerticalBoxSlot*>();
+	TArray<int32> IDs = TArray<int32>();
 };
 
 /**

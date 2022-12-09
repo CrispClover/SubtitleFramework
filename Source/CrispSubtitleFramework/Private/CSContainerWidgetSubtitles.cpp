@@ -99,13 +99,21 @@ void UCSContainerWidgetSubtitles::OnReconstruct_Implementation(TArray<FCrispSubt
 	const int32 dc = cWidgets - cSubtitles;
 
 	for (int32 i = 1; i <= dc; i++)//Remove excess
-		iChildrenData.Children[cWidgets - i]->RemoveFromParent();
+	{
+		const int32 ni = cWidgets - i;
+		iChildrenData.Children[ni]->RemoveFromParent();
+		iChildrenData.uRemoveAt(ni);
+	}
 
 	for (int32 i = 0; i < cSubtitles; i++)//Reconstruct existing
+	{
 		iChildrenData.Children[i]->ConstructFromSubtitle(subtitles[i], UCSUILibrary::GetLetterboxStyle(settings, subtitles[i].Speaker, subtitles[i].IsIndirectSpeech()));
+		iChildrenData.IDs[i] = subtitles[i].ID;
+		iChildrenData.Slots[i]->SetPadding(settings->SubtitlePadding);
+	}
 
-	for (UVerticalBoxSlot* slot : iChildrenData.Slots)
-		slot->SetPadding(settings->SubtitlePadding);
+	/*for (UVerticalBoxSlot* slot : iChildrenData.Slots)//Apply padding to existing
+		slot->SetPadding(settings->SubtitlePadding);*/
 
 	for (int32 ni = dc; ni < 0; ni++)//Add missing
 		OnSubtitleReceived(subtitles[cSubtitles + ni]);

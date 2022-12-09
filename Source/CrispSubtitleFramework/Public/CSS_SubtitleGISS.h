@@ -501,7 +501,7 @@ struct FCSFlickerProtectionData
 		if (inFrame == GFrameNumber)
 			return 0.f;
 		else
-			return FMath::Min(0, dtGap - (tNow - itLastChanged));
+			return FMath::Max(0, dtGap - (tNow - itLastChanged));
 	};
 
 	inline void Set(float tNow)
@@ -877,12 +877,16 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Captions")
 		bool HasPermanentCaption();
 
+	//Removes all current subtitles from the UI.
+	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Captions")
+		void ClearCaptions();
+
 	//Pauses all timers for all captions controlled by the subsystem.
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Captions")
 		void PauseCaptions();
 	
 	//Pauses all timers for all queued captions.
-	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Subtitles")
+	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Captions")
 		void PauseQueuedCaptions();
 	
 	//Resumes all timers for all captions controlled by the subsystem.
@@ -890,7 +894,7 @@ public:
 		void UnpauseCaptions();
 	
 	//Resumes all timers for all queued captions.
-	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Subtitles")
+	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Captions")
 		void UnpauseQueuedCaptions();
 	
 	/**
