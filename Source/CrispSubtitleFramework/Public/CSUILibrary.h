@@ -137,16 +137,18 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|UI")
 		static FCSCaptionStyle GetCaptionStyle(UCSUserSettings* UserSettings, const FName Source);
-
-	UFUNCTION(BlueprintPure, meta = (DisplayName = "DesignLetterboxStyle", CompactNodeTitle = "->", BlueprintAutocast), Category = "CrispSubtitles|UI")
-		static FCSLetterboxStyle GetDesignLetterboxStyle(const FName Speaker);
-
-	UFUNCTION(BlueprintPure, meta = (DisplayName = "DesignLineStyle", CompactNodeTitle = "->", BlueprintAutocast), Category = "CrispSubtitles|UI")
-		static FCSLineStyle GetDesignLabelStyle(const FName Speaker);
-
-	UFUNCTION(BlueprintPure, meta = (DisplayName = "DesignLineStyle", CompactNodeTitle = "->", BlueprintAutocast), Category = "CrispSubtitles|UI")
-		static FCSLineStyle GetDesignLineStyle(const FName Speaker);
 	
-	UFUNCTION(BlueprintPure, meta = (DisplayName = "DesignCaptionStyle", CompactNodeTitle = "->", BlueprintAutocast), Category = "CrispSubtitles|UI")
-		static FCSCaptionStyle GetDesignCaptionStyle(const FName Source);
+#if WITH_EDITOR
+	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|UI")
+		static FCSLetterboxStyle GetDesignLetterboxStyle(const FName Speaker, FVector2D ScreenSize);
+
+	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|UI")
+		static FCSLineStyle GetDesignLabelStyle(const FName Speaker, FVector2D ScreenSize);
+
+	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|UI")
+		static FCSLineStyle GetDesignLineStyle(const FName Speaker, FVector2D ScreenSize);
+	
+	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|UI")
+		static FCSCaptionStyle GetDesignCaptionStyle(const FName Source, FVector2D ScreenSize);
+#endif
 };

@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "CSBaseWidget.h"
 #include "CSS_SubtitleGISS.h"
 #include "Components/Border.h"
 #include "Components/Image.h"
@@ -12,13 +13,18 @@
  * 
  */
 UCLASS(Abstract)
-class CRISPSUBTITLEFRAMEWORK_API UCSIndicatorWidget : public UUserWidget
+class CRISPSUBTITLEFRAMEWORK_API UCSIndicatorWidget : public UCSBaseWidget
 {
 	GENERATED_BODY()
 
+#if WITH_EDITOR
+protected:
+	virtual void eConstructExample(FVector2D const& size) override;
+#endif
+
 protected:
 	virtual void NativeConstruct() override;
-	virtual void NativeTick(FGeometry const& MyGeometry, float InDeltaTime) override;
+	virtual void NativeTick(FGeometry const& myGeometry, float dt) override;
 	virtual void NativeDestruct() override;
 
 public:
@@ -61,9 +67,9 @@ protected:
 
 private:
 	UCSS_SubtitleGISS* uCSS = nullptr;
-	void uRegister(FCSSoundID const& SoundID);
+	void uRegister(FCSSoundID const& soundID);
 	void iUpdateOffset() const;
-	void iUpdateDataPtr(FCSSwapArgs const& a);
+	void iUpdateDataPtr(CSSwapArgs const& a);
 	
 	FCSSoundID iSoundID;
 	FVector2D iCenterPos;

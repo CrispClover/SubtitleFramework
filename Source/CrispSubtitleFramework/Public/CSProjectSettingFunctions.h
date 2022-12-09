@@ -18,6 +18,13 @@ class CRISPSUBTITLEFRAMEWORK_API UCSProjectSettingFunctions : public UBlueprintF
 {
 	GENERATED_BODY()
 
+#if WITH_EDITOR
+public:
+	//Returns the default settings for design-time. Defined in the plugin's project settings.
+	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|ProjectSettings")
+		static UCSUserSettings* GetDesignSettings(FVector2D const& ScreenSize);
+#endif
+
 public:
 	//Returns the maximum subtitles per container. Defined in the plugin's project settings.
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|ProjectSettings")
@@ -36,18 +43,13 @@ public:
 
 	//Returns the settings path. Defined in the plugin's project settings.
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|ProjectSettings")
-		static FORCEINLINE FString const& GetSettingsPath()
-			{ return GetDefault<UCSProjectSettings>()->SettingsPath.Path; };
+		static TArray<FString> GetSettingsDirectories();
 
 	//Returns the default settings. Defined in the plugin's project settings.
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|ProjectSettings")
 		static FORCEINLINE UCSUserSettings* GetDefaultSettings()
 			{ return GetDefault<UCSProjectSettings>()->DefaultSettings.LoadSynchronous(); };
 
-	//Returns the default settings for design-time. Defined in the plugin's project settings.
-	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|ProjectSettings")
-		static UCSUserSettings* GetDesignSettings();
-	
 	//Returns whether the project should support splitscreen direction indicators. Defined in the plugin's project settings.
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|ProjectSettings")
 		static FORCEINLINE bool SupportSplitscreen()

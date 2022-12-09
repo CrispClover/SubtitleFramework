@@ -2,14 +2,32 @@
 
 #include "CSProjectSettingFunctions.h"
 #include "CSUserSettings.h"
+
+#if WITH_EDITOR
 #include "Engine/UserInterfaceSettings.h"
 
-UCSUserSettings* UCSProjectSettingFunctions::GetDesignSettings()//TODO: move to editor tools once they exist.
+UCSUserSettings* UCSProjectSettingFunctions::GetDesignSettings(FVector2D const& screenSize)//TODO: move to editor tools once they exist.
 {
 	UCSUserSettings* settings = GetDefaultSettings();
-	settings->RecalculateDesignLayout(GetDefault<UUserInterfaceSettings>()->DesignScreenSize);
+	
+	if (screenSize == FVector2D())
+		settings->RecalculateDesignLayout(GetDefault<UUserInterfaceSettings>()->DesignScreenSize);
+	else
+		settings->RecalculateDesignLayout(screenSize);
+
 	return settings;
 };
+#endif
+
+TArray<FString> UCSProjectSettingFunctions::GetSettingsDirectories()
+{
+	TArray<FString> paths;
+
+	for (FDirectoryPath const& path : GetDefault<UCSProjectSettings>()->SettingsDirectories)
+		paths.Add(path.Path);
+
+	return paths;
+}
 
 FCrispSubtitle UCSProjectSettingFunctions::GetExampleSubtitle(UCSUserSettings const* settings)
 {

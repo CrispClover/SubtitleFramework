@@ -118,21 +118,6 @@ bool FCSSourcesManager::TrackSound(FCSSoundID const& soundID, FVector const& loc
 	return true;
 }
 
-bool FCSSourcesManager::TrackSound(FCSSoundID const& soundID, FVector2D const& position, ULocalPlayer const* player)
-{
-	if (!IsRegistered(soundID.Source))
-		return false;
-
-	if (UCSProjectSettingFunctions::SupportSplitscreen() && !player)
-		for (CSTrackingManager* manager : iSplitscreenTrackingManagers)
-			manager->TrackSound(soundID, position);
-	else
-		if (CSTrackingManager* manager = rAccessManager(player))
-			manager->TrackSound(soundID, position);
-
-	return true;
-}
-
 void FCSSourcesManager::StopTrackingSound(FCSSoundID const& soundID, ULocalPlayer const* player)
 {
 	if (UCSProjectSettingFunctions::SupportSplitscreen() && !player)
@@ -178,14 +163,6 @@ bool FCSSourcesManager::GetSoundData(FCSSoundID const& soundID, FVector& locatio
 		return manager->GetSoundData(soundID, location);
 	else
 		return false;
-}
-
-CSIndicatorDelegates* FCSSourcesManager::rRegisterIndicator(FCSRegisterArgs args, ULocalPlayer const* player)
-{
-	if (CSTrackingManager* manager = rAccessManager(player))
-		return manager->rRegisterIndicator(args);
-	else
-		return nullptr;
 }
 
 void FCSSourcesManager::UnregisterIndicator(FCSSoundID const& soundID, ULocalPlayer const* player, UObject* widget)

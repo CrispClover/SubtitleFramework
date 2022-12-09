@@ -53,18 +53,18 @@ void UCSUserSettings::RecalculateLayout(UGameViewportClient const* viewportClien
 	viewportClient->GetViewportSize(viewportSize);
 	const int32 size = FMath::Min(viewportSize.X, viewportSize.Y);
 
-	if (iCachedLayout.BaseSize == size)
+	if (iCachedLayout.BaseSize == size || size <= 0)
 		return;
 
 	iCachedLayout.BaseSize = size;
 	iRecalculateLayout();
 }
 
-void UCSUserSettings::RecalculateDesignLayout(const FIntPoint screenSize)
+void UCSUserSettings::RecalculateDesignLayout(FVector2D const& screenSize)
 {
-	const int32 size = FMath::Min(screenSize.X, screenSize.Y);
-
-	if (iCachedLayout.BaseSize == size)
+	const float size = FMath::Min(screenSize.X, screenSize.Y);
+	
+	if (iCachedLayout.BaseSize == size || size <= 0)
 		return;
 
 	iCachedLayout.BaseSize = size;

@@ -50,7 +50,7 @@ public:
 		{ return Source == other.Source && Sound == other.Sound; }
 };
 
-FORCEINLINE uint32 GetTypeHash(FCSSoundID const& id)//TODO
+FORCEINLINE uint32 GetTypeHash(FCSSoundID const& id)
 {
 	uint32 srcHash = GetTypeHash(id.Source);//R
 	uint32 sndHash = GetTypeHash(id.Sound);//N
@@ -340,7 +340,7 @@ public:
 	/**
 	 * Converts an angle for usage on indicators.
 	 * @param Angle The angle to convert (in radians).
-	 * @param Segments Divides the full circle rotations into steps of "360/Segments" degrees. (Only for numbers above 0.)
+	 * @param Segments Divides the full circle rotations into steps of "360/Segments" degrees. (Only for Segments > 0)
 	 * @param Unit The angle unit you want returned.
 	 */
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Data")

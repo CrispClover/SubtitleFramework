@@ -10,19 +10,19 @@
 #include "Components/VerticalBoxSlot.h"
 #include "Components/InvalidationBox.h"
 
-void UCSLetterboxWidget::SynchronizeProperties()
-{
-	Super::SynchronizeProperties();
-
 #if WITH_EDITOR
-	if (!IsDesignTime() || !Background || !LineContainer)
+void UCSLetterboxWidget::eConstructExample(FVector2D const& size)
+{
+	Super::eConstructExample(size);
+
+	if (!Background || !LineContainer)
 		return;
-	
+
 	FCrispSubtitle const& subtitle = UCSProjectSettingFunctions::GetDefaultExampleSubtitle();
-	FCSLetterboxStyle const& style = UCSUILibrary::GetDesignLetterboxStyle(subtitle.Speaker);
+	FCSLetterboxStyle const& style = UCSUILibrary::GetDesignLetterboxStyle(subtitle.Speaker, size);
 	ConstructFromSubtitle(subtitle, style);
-#endif
 }
+#endif
 
 void UCSLetterboxWidget::ConstructFromSubtitle_Implementation(FCrispSubtitle const& subtitle, FCSLetterboxStyle const& style)
 {

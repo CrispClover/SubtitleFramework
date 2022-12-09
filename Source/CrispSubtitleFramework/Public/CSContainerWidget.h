@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Blueprint/UserWidget.h"
+#include "CSBaseWidget.h"
 #include "CSContainerWidget.generated.h"
 
 class UVerticalBox;
@@ -63,7 +63,7 @@ private:
  * 
  */
 UCLASS(Abstract)
-class CRISPSUBTITLEFRAMEWORK_API UCSContainerWidget : public UUserWidget
+class CRISPSUBTITLEFRAMEWORK_API UCSContainerWidget : public UCSBaseWidget
 {
 	GENERATED_BODY()
 

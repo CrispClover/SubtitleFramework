@@ -16,6 +16,12 @@ class CRISPSUBTITLEFRAMEWORK_API UCSContainerWidgetSubtitles : public UCSContain
 {
 	GENERATED_BODY()
 
+#if WITH_EDITOR
+protected:
+	UCSLetterboxWidget* euExample = nullptr;
+	virtual void eConstructExample(FVector2D const& size) override;
+#endif
+
 protected:
 	virtual void NativeConstruct() override;
 	virtual void NativeDestruct() override;

@@ -8,6 +8,29 @@
 #include "Components/VerticalBox.h"
 #include "Components/VerticalBoxSlot.h"
 
+#if WITH_EDITOR
+void UCSContainerWidgetCaptions::eConstructExample(FVector2D const& size)
+{
+	Super::eConstructExample(size);
+
+	if (!Container)
+		return;
+
+	UCSUserSettings* settings = UCSProjectSettingFunctions::GetDesignSettings(FVector2D());
+	FCrispCaption const& caption = UCSProjectSettingFunctions::GetExampleCaption();
+	FCSCaptionStyle const& style = UCSUILibrary::GetDesignCaptionStyle(caption.SoundID.Source, size);
+
+	if (!euExample)
+		euExample = CreateWidget<UCSCaptionWidget>(this, settings->CaptionClass.LoadSynchronous());
+	
+	Container->RemoveChild(euExample);
+	UVerticalBoxSlot* slot = Container->AddChildToVerticalBox(euExample);
+
+	slot->SetPadding(settings->GetLayout().CaptionPadding);
+	euExample->ConstructFromCaption(caption, style);
+}
+#endif
+
 void UCSContainerWidgetCaptions::NativeConstruct()
 {
 	Super::NativeConstruct();

@@ -8,6 +8,27 @@
 #include "Components/VerticalBox.h"
 #include "Components/VerticalBoxSlot.h"
 
+void UCSContainerWidgetSubtitles::eConstructExample(FVector2D const& size)
+{
+	Super::eConstructExample(size);
+
+	if (!Container)
+		return;
+
+	UCSUserSettings* settings = UCSProjectSettingFunctions::GetDesignSettings(FVector2D());
+	FCrispSubtitle const& subtitle = UCSProjectSettingFunctions::GetExampleSubtitle(settings);
+	FCSLetterboxStyle const& style = UCSUILibrary::GetDesignLetterboxStyle(subtitle.Speaker, size);//TODO: mismatches
+
+	if (!euExample)
+		euExample = CreateWidget<UCSLetterboxWidget>(this, settings->LetterboxClass.LoadSynchronous());
+	
+	Container->RemoveChild(euExample);
+	UVerticalBoxSlot* slot = Container->AddChildToVerticalBox(euExample);
+
+	slot->SetPadding(settings->GetLayout().SubtitlePadding);
+	euExample->ConstructFromSubtitle(subtitle, style);
+}
+
 void UCSContainerWidgetSubtitles::NativeConstruct()
 {
 	Super::NativeConstruct();

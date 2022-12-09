@@ -5,6 +5,8 @@
 
 UCSProjectSettings::UCSProjectSettings(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
+	, DefaultSettings(FSoftObjectPath("/CrispSubtitleFramework/Settings/DefaultSettings.DefaultSettings"))
+	, SettingsDirectories()
 	, bDisplayCaptionsAsSubtitles(false)
 	, MaximumSubtitles(3)
 	, MaximumSubtitleLines(5)
@@ -31,4 +33,16 @@ UCSProjectSettings::UCSProjectSettings(const FObjectInitializer& ObjectInitializ
 		, FName("cursor")
 		, FName("click")
 	)
-{}
+{
+#if WITH_EDITOR
+	if (SettingsDirectories.Num())
+		return;
+
+	FDirectoryPath testing;
+	testing.Path = "/CrispSubtitleFramework/Testing";
+	FDirectoryPath settings;
+	settings.Path = "/CrispSubtitleFramework/Settings";
+	SettingsDirectories.Add(testing);
+	SettingsDirectories.Add(settings);
+#endif
+}

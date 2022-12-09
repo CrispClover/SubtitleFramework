@@ -56,7 +56,6 @@ public:
 	bool RemoveSource(const FName name);
 
 	bool TrackSound(FCSSoundID const& soundID, FVector const& location, ULocalPlayer const* player);
-	bool TrackSound(FCSSoundID const& soundID, FVector2D const& position, ULocalPlayer const* player);
 
 	void StopTrackingSound(FCSSoundID const& soundID, ULocalPlayer const* player);
 
@@ -66,8 +65,12 @@ public:
 
 	bool GetSoundData(FCSSoundID const& soundID, FVector& location, ULocalPlayer const* player) const;
 
-	//Returns a pointer to the data for the indicator. Will be null if the source isn't tracked.
-	CSIndicatorDelegates* rRegisterIndicator(FCSRegisterArgs args, ULocalPlayer const* player);
+	template<typename UserClass>
+	void RegisterIndicator(CSIndicatorRegistrationData<UserClass> args, ULocalPlayer const* player)
+	{
+		if (CSTrackingManager* manager = rAccessManager(player))
+			manager->RegisterIndicator(args);
+	}
 
 	void UnregisterIndicator(FCSSoundID const& soundID, ULocalPlayer const* player, UObject* widget);
 

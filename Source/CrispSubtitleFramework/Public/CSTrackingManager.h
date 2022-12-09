@@ -8,29 +8,65 @@
 
 struct FCSSoundID;
 
-struct FCSRegisterArgs
+struct CSSwapArgs
+{
+	FCSSoundID ID;
+	FCSIndicatorWidgetData* WidgetDataPtr;
+
+	CSSwapArgs() = delete;
+
+	CSSwapArgs(FCSSoundID const& id, FCSIndicatorWidgetData* dataPtr)
+		: ID(id)
+		, WidgetDataPtr(dataPtr)
+	{};
+};
+
+struct CSRegisterArgs
 {
 	FCSSoundID const& ID;
 	FCSIndicatorWidgetData*& WidgetDataPtrRef;
 
-	FCSRegisterArgs() = delete;
+	CSRegisterArgs() = delete;
 
-	FCSRegisterArgs(FCSSoundID const& id, FCSIndicatorWidgetData*& dataPtrRef)
+	CSRegisterArgs(FCSSoundID const& id, FCSIndicatorWidgetData*& dataPtrRef)
 		: ID(id)
 		, WidgetDataPtrRef(dataPtrRef)
 	{};
 };
 
-struct FCSSwapArgs
+template<typename UserClass>
+struct CSIndicatorFunctions
 {
-	FCSSoundID ID;
-	FCSIndicatorWidgetData* WidgetDataPtr;
+	typedef typename TMemFunPtrType<false, UserClass, void()>::Type UpdateFunc;
+	typedef typename TMemFunPtrType<false, UserClass, void(CSSwapArgs const&)>::Type SwapFunc;
+	typedef typename TMemFunPtrType<false, UserClass, void(FCSSoundID const&)>::Type TrackFunc;
 
-	FCSSwapArgs() = delete;
+	UpdateFunc UpdateFunction;
+	SwapFunc SwapFunction;
+	TrackFunc TrackFunction;
 
-	FCSSwapArgs(FCSSoundID const& id, FCSIndicatorWidgetData* dataPtr)
-		: ID(id)
-		, WidgetDataPtr(dataPtr)
+	CSIndicatorFunctions() = delete;
+
+	CSIndicatorFunctions(UpdateFunc updateFunction, SwapFunc swapFunction, TrackFunc trackFunction)
+		: UpdateFunction(updateFunction)
+		, SwapFunction(swapFunction)
+		, TrackFunction(trackFunction)
+	{};
+};
+
+template<typename UserClass>
+struct CSIndicatorRegistrationData
+{
+	UserClass* User;
+	CSRegisterArgs RegisterArgs;
+	CSIndicatorFunctions<UserClass> Functions;
+
+	CSIndicatorRegistrationData() = delete;
+
+	CSIndicatorRegistrationData(UserClass* user, CSRegisterArgs const& registerArgs, CSIndicatorFunctions<UserClass> const& functions)
+		: User(user)
+		, RegisterArgs(registerArgs)
+		, Functions(functions)
 	{};
 };
 
@@ -59,22 +95,22 @@ public:
 };
 
 //All data required to calculate a 3D direction indicator correctly.
-struct FCSTrackedSoundData : public FCSIndicatorWidgetData
+struct CSTrackedSoundData : public FCSIndicatorWidgetData
 {
 	FVector SoundData;
 
-	FCSTrackedSoundData()
+	CSTrackedSoundData()
 		: FCSIndicatorWidgetData()
 		, SoundData()
 	{};
 
-	FCSTrackedSoundData(FVector data)
+	CSTrackedSoundData(FVector data)
 		: FCSIndicatorWidgetData()
 		, SoundData(data)
 	{};
 };
 
-struct FCSTrackingData
+struct CSTrackingData
 {
 	inline void Clear()
 	{
@@ -104,16 +140,19 @@ struct FCSTrackingData
 	inline int32 Num() const
 		{ return iSoundIDs.Num(); }
 
-	inline FCSTrackedSoundData& AccessItem(const int32 index)
+	inline bool Contains(FCSSoundID const& id) const
+		{ return iSoundIDs.Contains(id); }
+
+	inline CSTrackedSoundData& AccessItem(const int32 index)
 		{ return iSoundData[index]; }
 
-	inline FCSTrackedSoundData const& GetItem(const int32 index) const
+	inline CSTrackedSoundData const& GetItem(const int32 index) const
 		{ return iSoundData[index]; }
 
 	inline FCSSoundID const& GetID(const int32 index) const
 		{ return iSoundIDs[index]; }
 
-	inline FCSTrackedSoundData const* rFind(FCSSoundID const& id) const
+	inline CSTrackedSoundData const* rFind(FCSSoundID const& id) const
 	{
 		const int32 i = iSoundIDs.Find(id);
 		if (i > 0)
@@ -122,14 +161,18 @@ struct FCSTrackingData
 			return nullptr;
 	}
 
-	inline void TrackSound(FCSSoundID const& id, FVector const& data)
+	//Returns true when the sound is newly tracked.
+	inline bool TrackSound(FCSSoundID const& id, FVector const& data)
 	{
 		const int32 index = iSoundIDs.AddUnique(id);
+		const bool isOld = index < iSoundData.Num();
 
-		if (index < iSoundData.Num())
+		if (isOld)
 			iSoundData[index].SoundData = data;
 		else
-			iSoundData.Add(FCSTrackedSoundData(data));
+			iSoundData.Add(CSTrackedSoundData(data));
+
+		return !isOld;
 	};
 
 	inline void RemoveSound(FCSSoundID const& id)
@@ -176,9 +219,9 @@ struct FCSTrackingData
 		}
 	};
 
-	inline bool Register(FCSSoundID const& id, FCSIndicatorWidgetData*& dataPtr)
+	inline bool Register(CSRegisterArgs const& args)
 	{
-		const int32 uxToSwap = iSoundIDs.Find(id);
+		const int32 uxToSwap = iSoundIDs.Find(args.ID);
 
 		if (uxToSwap < icActiveSounds)
 			return false;//catches INDEX_NONE and registering multiple indicators with the same sound ID 
@@ -189,14 +232,14 @@ struct FCSTrackingData
 			iSoundData.SwapMemory(uxToSwap, icActiveSounds);
 		}
 
-		dataPtr = &iSoundData[icActiveSounds];
+		args.WidgetDataPtrRef = &iSoundData[icActiveSounds];
 
 		icActiveSounds++;
 
 		return true;
 	};
 
-	inline void Unregister(FCSSoundID const& id, FCSSwapArgs& args)
+	inline void Unregister(FCSSoundID const& id, CSSwapArgs& args)
 	{
 		bool wasSwapped = false;
 
@@ -227,58 +270,27 @@ private:
 		iSoundData.SwapMemory(index, icActiveSounds);
 	}
 
-	inline FCSSwapArgs uSwapNotify(const int32 index)
+	inline CSSwapArgs uSwapNotify(const int32 index)
 	{
 		uSwap(index);
-		return FCSSwapArgs(iSoundIDs[index], &iSoundData[index]);
+		return CSSwapArgs(iSoundIDs[index], &iSoundData[index]);
 	}
 
 	TArray<FCSSoundID> iSoundIDs = TArray<FCSSoundID>();
 	TArray<FCSSoundID> iDeletionScheduledIDs = TArray<FCSSoundID>();
 
-	TArray<FCSTrackedSoundData> iSoundData = TArray<FCSTrackedSoundData>();
+	TArray<CSTrackedSoundData> iSoundData = TArray<CSTrackedSoundData>();
 	int32 icActiveSounds = 0;
 };
 
 //Delegate to update direction indicators after their data has been calculated.
-DECLARE_MULTICAST_DELEGATE(FCSUpdateIData);
+DECLARE_MULTICAST_DELEGATE(CSUpdateIData);
 
-/**
- * Delegate to notify indicators of index changes.
- * Params: FName sourceName, int32 oldIndex, int32 newIndex, FIndicatorWidgetData* newWidgetDataPointer
- */
-DECLARE_MULTICAST_DELEGATE_OneParam(FCSSwapIData, FCSSwapArgs const&);
+//Delegate to notify indicators of pointer changes.
+DECLARE_MULTICAST_DELEGATE_OneParam(CSSwapIData, CSSwapArgs const&);
 
-struct CSIndicatorDelegates
-{
-	inline void Clear()
-	{
-		SwapIDataEvent.Clear();
-		UpdateIDataEvent.Clear();
-	};
-	
-	template<typename UserClass> using TUpdateMethodPtr = typename TMemFunPtrType<false, UserClass, void()>::Type;
-	template<typename UserClass> using TSwapMethodPtr = typename TMemFunPtrType<false, UserClass, void(FCSSwapArgs const&)>::Type;
-
-	template<typename UserClass>
-	inline void Add(UserClass* user, TUpdateMethodPtr<UserClass> updateFunction, TSwapMethodPtr<UserClass> swapFunction)
-	{
-		UpdateIDataEvent.AddUObject(user, updateFunction);
-		SwapIDataEvent.AddUObject(user, swapFunction);
-	}
-
-	inline void Remove(UObject* widget)
-	{
-		SwapIDataEvent.RemoveAll(widget);
-		UpdateIDataEvent.RemoveAll(widget);
-	};
-
-	//Used to update the indicator UIs, usually called on tick or on a timer.
-	FCSUpdateIData UpdateIDataEvent;
-
-	//Used to update the swapped indicator data pointer after removing one of the indicators.
-	FCSSwapIData SwapIDataEvent;
-};
+//Delegate to notify indicators when a new sound is being tracked.
+DECLARE_MULTICAST_DELEGATE_OneParam(CSNewSoundTracked, FCSSoundID const&);
 
 /**
  * 
@@ -291,7 +303,7 @@ public:
 	void Calculate();
 
 	inline bool Contains(FCSSoundID const& soundID) const
-		{ return nullptr != iData3D.rFind(soundID); };
+		{ return nullptr != iData.rFind(soundID); };
 	
 	CSTrackingManager() = delete;
 
@@ -300,49 +312,60 @@ public:
 	{};
 
 	virtual ~CSTrackingManager()
-	{ Clear(); };
+		{ Clear(); };
 	
 	inline void Clear()
 	{
-		iDelegates3D.Clear();
-		iData3D.Clear();
+		UpdateIDataEvent.Clear();
+		iSwapDataEvent.Clear();
+		iData.Clear();
+		iPendingIndicatorDelegates.Empty();
+		iNewSoundTrackedEvent.Clear();
 	};
 
 	inline void Empty()
-		{ iData3D.Empty(); };
+		{ iData.Empty(); };
 
 	//We can expect memory usage to plateau, so we only shrink upon request.
 	inline void Shrink()
-		{ iData3D.Shrink(); };
+		{ iData.Shrink(); };
 
-	inline void TrackSound(FCSSoundID const& id, FVector const& data)
-		{ iData3D.TrackSound(id, data); };
-
-	void TrackSound(FCSSoundID const& id, FVector2D const& data);
+	void TrackSound(FCSSoundID const& id, FVector const& data);
 
 	bool GetSoundData(FCSSoundID const& id, FVector& data) const;
 
 	inline void RemoveSound(FCSSoundID const& id)
-		{ return iData3D.RemoveSound(id); };
+		{ return iData.RemoveSound(id); };
 
 	inline void RemoveSource(FName const& source)
-		{ return iData3D.RemoveSource(source); };
+		{ return iData.RemoveSource(source); };
+	
+	template<typename UserClass>
+	void RegisterIndicator(CSIndicatorRegistrationData<UserClass> args)
+	{
+		if (iData.Register(args.RegisterArgs))
+		{
+			UpdateIDataEvent.AddUObject(args.User, args.Functions.UpdateFunction);
+			iSwapDataEvent.AddUObject(args.User, args.Functions.SwapFunction);
+		}
+		else
+		{
+			FDelegateHandle handle = iNewSoundTrackedEvent.AddUObject(args.User, args.Functions.TrackFunction);
+			iPendingIndicatorDelegates.Add(args.RegisterArgs.ID, handle);
+		}
+	}
 
-	CSIndicatorDelegates* rRegisterIndicator(FCSRegisterArgs args);
 	void UnregisterIndicator(FCSSoundID const& id, UObject* widget);
 	
 	void Copy(CSTrackingManager const* manager);
 
 private:
-	bool iRegister2D(FCSSoundID id, FCSIndicatorWidgetData*& dataPtr);
-	void uCalculateData2D(FCSIndicatorWidgetData* indicatorData, FVector2D const& position);
+	CSUpdateIData UpdateIDataEvent;
+	CSSwapIData iSwapDataEvent;
 
-	FCSTrackingData iData3D = FCSTrackingData();
-	CSIndicatorDelegates iDelegates3D = CSIndicatorDelegates();
+	CSNewSoundTracked iNewSoundTrackedEvent;
+	void iNotifyOfNewTrackedSound(FCSSoundID const& id);
 
-	TMap<FCSSoundID, FCSIndicatorWidgetData> iData2D = TMap<FCSSoundID, FCSIndicatorWidgetData>();
-	CSIndicatorDelegates iDelegates2D = CSIndicatorDelegates();
-	
-	//Stores 2D location data lacking existing indicators.
-	TMap<FCSSoundID, FVector2D> iLocations2D = TMap<FCSSoundID, FVector2D>();
+	CSTrackingData iData = CSTrackingData();
+	TMap<FCSSoundID, FDelegateHandle> iPendingIndicatorDelegates;
 };

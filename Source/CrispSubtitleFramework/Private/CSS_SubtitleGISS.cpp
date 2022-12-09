@@ -740,38 +740,9 @@ bool UCSS_SubtitleGISS::RegisterAndTrackSound3D(FCSSoundID const& soundID, FVect
 	return iSourcesManager.TrackSound(soundID, location, player);
 }
 
-bool UCSS_SubtitleGISS::RegisterAndTrackSound2D(FCSSoundID const& soundID, FVector2D const& position, ULocalPlayer const* player)
-{
-	if (!RegisterSource(soundID.Source))
-		return false;
-
-	return iSourcesManager.TrackSound(soundID, position, player);
-}
-
 bool UCSS_SubtitleGISS::TrackSound3D(FCSSoundID const& soundID, FVector const& location, ULocalPlayer const* player)
 {
-	if (iSourcesManager.TrackSound(soundID, location, player))
-	{
-		SoundTrackNotify.Broadcast(soundID);
-		return true;
-	}
-	else
-	{
-		return false;
-	}
-}
-
-bool UCSS_SubtitleGISS::TrackSound2D(FCSSoundID const& soundID, FVector2D const& position, ULocalPlayer const* player)
-{
-	if (iSourcesManager.TrackSound(soundID, position, player))
-	{
-		SoundTrackNotify.Broadcast(soundID);
-		return true;
-	}
-	else
-	{
-		return false;
-	}
+	return iSourcesManager.TrackSound(soundID, location, player);
 }
 
 bool UCSS_SubtitleGISS::GetSoundLocation(FCSSoundID const& soundID,  FVector& location, ULocalPlayer const* player) const
@@ -900,11 +871,6 @@ void UCSS_SubtitleGISS::iRemoveCurrentCaptionsBySource(const FName source)
 void UCSS_SubtitleGISS::UpdateIndicatorData(ULocalPlayer const* player)
 {
 	iSourcesManager.CallCalculate(player);
-}
-
-CSIndicatorDelegates* UCSS_SubtitleGISS::rRegisterIndicator(FCSRegisterArgs args, ULocalPlayer const* player)
-{
-	return iSourcesManager.rRegisterIndicator(args, player);
 }
 
 void UCSS_SubtitleGISS::UnregisterIndicator(FCSSoundID const& soundID, ULocalPlayer const* player, UObject* widget)

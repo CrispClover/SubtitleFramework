@@ -16,6 +16,12 @@ class CRISPSUBTITLEFRAMEWORK_API UCSContainerWidgetCaptions : public UCSContaine
 {
 	GENERATED_BODY()
 
+#if WITH_EDITOR
+protected:
+	UCSCaptionWidget* euExample = nullptr;
+	virtual void eConstructExample(FVector2D const& size) override;
+#endif
+
 protected:
 	virtual void NativeConstruct() override;
 	virtual void NativeDestruct() override;

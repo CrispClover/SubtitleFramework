@@ -4,21 +4,21 @@
 #include "CSS_SubtitleGISS.h"
 #include "CSUserSettingsSelectionWidget.h"
 #include "CSLetterboxWidget.h"
+#include "CSCaptionWidget.h"
 #include "Kismet/GameplayStatics.h"
 
-void UCSUserSettingsWidget::SynchronizeProperties()
-{
-	Super::SynchronizeProperties();
-
 #if WITH_EDITOR
-	if (!IsDesignTime() || !SubtitlePreview)
+void UCSUserSettingsWidget::eConstructExample(FVector2D const& size)
+{
+	Super::eConstructExample(size);
+
+	if (!SubtitlePreview)
 		return;
 
-	CurrentSettings = UCSProjectSettingFunctions::GetDefaultSettings();
-
+	CurrentSettings = UCSProjectSettingFunctions::GetDesignSettings(size);
 	ReconstructExample();
-#endif
 }
+#endif
 
 void UCSUserSettingsWidget::NativeConstruct()
 {
@@ -40,11 +40,18 @@ void UCSUserSettingsWidget::NativeConstruct()
 void UCSUserSettingsWidget::NativeDestruct()
 {
 	SubtitlePreview->RemoveFromParent();
+
+	if (CaptionPreview)
+		CaptionPreview->RemoveFromParent();
+
 	Super::NativeDestruct();
 }
 
 void UCSUserSettingsWidget::OnSettingsSelected_Implementation(UCSUserSettings* selectedSettings, ESelectInfo::Type selectionType)
 {
+	if (!selectedSettings)
+		return;
+
 	CurrentSettings = selectedSettings;
 
 	if (ULocalPlayer* player = GetOwningLocalPlayer())
@@ -57,6 +64,12 @@ void UCSUserSettingsWidget::ReconstructExample_Implementation()
 {
 	const FCrispSubtitle sub = UCSProjectSettingFunctions::GetExampleSubtitle(CurrentSettings);
 	SubtitlePreview->ConstructFromSubtitle(sub, UCSUILibrary::GetLetterboxStyle(CurrentSettings, sub.Speaker, sub.IsIndirectSpeech()));
+
+	if (!CaptionPreview)
+		return;
+
+	FCrispCaption const& cap = UCSProjectSettingFunctions::GetExampleCaption();
+	CaptionPreview->ConstructFromCaption(cap, UCSUILibrary::GetCaptionStyle(CurrentSettings, cap.SoundID.Source));
 }
 
 void UCSUserSettingsWidget::Save_Implementation()

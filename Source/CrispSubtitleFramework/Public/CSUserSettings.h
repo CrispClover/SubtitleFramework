@@ -52,7 +52,7 @@ public:
 		int32 CaptionTextSize;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "CrispSubtitles")
-		int32 BaseSize;
+		float BaseSize;
 };
 
 /**
@@ -234,7 +234,7 @@ public:
 	
 	//Recalculates the cached layout data if the smaller dimension has changed.
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Layout")
-		void RecalculateDesignLayout(const FIntPoint ScreenSize);
+		void RecalculateDesignLayout(FVector2D const& ScreenSize);
 
 	//Returns whether a subtitle should show the speaker's display-name.
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Label")

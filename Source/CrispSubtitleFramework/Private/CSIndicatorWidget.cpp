@@ -6,6 +6,19 @@
 #include "Kismet/GameplayStatics.h"
 #include "Slate/SGameLayerManager.h"
 
+#if WITH_EDITOR
+void UCSIndicatorWidget::eConstructExample(FVector2D const& size)
+{
+	Super::eConstructExample(size);
+	
+	if (!Image)
+		return;
+
+	UCSUserSettings* settings = UCSProjectSettingFunctions::GetDesignSettings(size);
+	Image->SetDesiredSizeOverride(settings->GetLayout().IndicatorSize);
+}
+#endif
+
 void UCSIndicatorWidget::NativeConstruct()
 {
 	uCSS = UGameplayStatics::GetGameInstance(GetWorld())->GetSubsystem<UCSS_SubtitleGISS>();
@@ -24,8 +37,6 @@ void UCSIndicatorWidget::NativeDestruct()
 {
 	if (uWidgetData)
 		uCSS->UnregisterIndicator(iSoundID, GetOwningLocalPlayer(), this);
-	else
-		uCSS->SoundTrackNotify.RemoveAll(this);
 
 	Super::NativeDestruct();
 }
@@ -66,28 +77,37 @@ void UCSIndicatorWidget::Register_Implementation(FCSSoundID const& id)
 	if (!uCSS)
 		return;
 
-	CSIndicatorDelegates* uDelegates = uCSS->rRegisterIndicator(FCSRegisterArgs(iSoundID, uWidgetData), GetOwningLocalPlayer());
+	CSIndicatorFunctions<UCSIndicatorWidget> funcs
+		= CSIndicatorFunctions<UCSIndicatorWidget>
+		(
+			  &UCSIndicatorWidget::OnUpdateIndicators
+			, &UCSIndicatorWidget::iUpdateDataPtr
+			, &UCSIndicatorWidget::uRegister
+		);
 
-	if (uDelegates)
-		uDelegates->Add(this, &UCSIndicatorWidget::OnUpdateIndicators, &UCSIndicatorWidget::iUpdateDataPtr);
-	else
-		uCSS->SoundTrackNotify.AddDynamic(this, &UCSIndicatorWidget::uRegister);
+	CSIndicatorRegistrationData<UCSIndicatorWidget> args = CSIndicatorRegistrationData<UCSIndicatorWidget>(this, CSRegisterArgs(id, uWidgetData), funcs);
+
+	uCSS->RegisterIndicator(args, GetOwningLocalPlayer());
 
 	Image->SetDesiredSizeOverride(uCSS->GetCurrentSettings()->GetLayout().IndicatorSize);//TODO: move?
 }
 
-void UCSIndicatorWidget::uRegister(FCSSoundID const& soundID)
+void UCSIndicatorWidget::uRegister(FCSSoundID const& id)
 {
-	if (soundID != iSoundID)
+	if (id != iSoundID)
 		return;
 
-	CSIndicatorDelegates* uDelegates = uCSS->rRegisterIndicator(FCSRegisterArgs(iSoundID, uWidgetData), GetOwningLocalPlayer());
+	CSIndicatorFunctions<UCSIndicatorWidget> funcs
+		= CSIndicatorFunctions<UCSIndicatorWidget>
+		(
+			  &UCSIndicatorWidget::OnUpdateIndicators
+			, &UCSIndicatorWidget::iUpdateDataPtr
+			, &UCSIndicatorWidget::uRegister
+		);
 
-	if (!uDelegates)
-		return;
-	
-	uDelegates->Add(this, &UCSIndicatorWidget::OnUpdateIndicators, &UCSIndicatorWidget::iUpdateDataPtr);
-	uCSS->SoundTrackNotify.RemoveAll(this);
+	CSIndicatorRegistrationData<UCSIndicatorWidget> args = CSIndicatorRegistrationData<UCSIndicatorWidget>(this, CSRegisterArgs(id, uWidgetData), funcs);
+
+	uCSS->RegisterIndicator(args, GetOwningLocalPlayer());
 }
 
 void UCSIndicatorWidget::iUpdateOffset() const
@@ -112,7 +132,7 @@ void UCSIndicatorWidget::iUpdateOffset() const
 	uWidgetData->Offset = UCSCoreLibrary::LocalPositionToNDC(layerGeo.AbsoluteToLocal(iCenterPos), viewportSize.IntPoint(), layerSize);
 }
 
-void UCSIndicatorWidget::iUpdateDataPtr(FCSSwapArgs const& swapArgs)
+void UCSIndicatorWidget::iUpdateDataPtr(CSSwapArgs const& swapArgs)
 {
 	if (swapArgs.ID != iSoundID)
 		return;

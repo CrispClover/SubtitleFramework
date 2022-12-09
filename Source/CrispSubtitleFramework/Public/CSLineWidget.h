@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Blueprint/UserWidget.h"
+#include "CSBaseWidget.h"
 #include "CSUILibrary.h"
 #include "CSLineWidget.generated.h"
 
@@ -14,7 +14,7 @@ class UBorder;
  * 
  */
 UCLASS(Blueprintable, Abstract)
-class CRISPSUBTITLEFRAMEWORK_API UCSLineWidget : public UUserWidget
+class CRISPSUBTITLEFRAMEWORK_API UCSLineWidget : public UCSBaseWidget
 {
 	GENERATED_BODY()
 

@@ -607,9 +607,6 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FDestructTrigger, const int32, Index
 //Delegate to notify about permanent subtitle changes.
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FPermanentSubtitleNotify);
 
-//Delegate for triggering destruction.
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FSoundTrackNotify, FCSSoundID const&, SoundID);
-
 #pragma endregion
 
 /**
@@ -1006,16 +1003,6 @@ public:
 		bool RegisterAndTrackSound3D(FCSSoundID const& SoundID, FVector const& SourceLocation, ULocalPlayer const* Player = nullptr);
 
 	/**
-	 * Registers a 2D sound source with this subsystem.
-	 * @param SoundID The ID of the sound.
-	 * @param SourcePosition The screen space position to use as the source's location.
-	 * @param Player The player to register the sound source with. If left blank, the source will register with all players.
-	 * @return false if SourceName is already registered.
-	 */
-	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Sources")
-		bool RegisterAndTrackSound2D(FCSSoundID const& SoundID, FVector2D const& SourcePosition, ULocalPlayer const* Player = nullptr);
-
-	/**
 	 * Starts tracking a registered sound source for direction indicators.
 	 * @param SoundID The ID used at registration.
 	 * @param SourceLocation The world position to use as the source's location.
@@ -1024,16 +1011,6 @@ public:
 	 */
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Sources")
 		bool TrackSound3D(FCSSoundID const& SoundID, FVector const& SourceLocation, ULocalPlayer const* Player = nullptr);
-
-	/**
-	 * Starts tracking a registered sound source for direction indicators.
-	 * @param SoundID The ID used at registration.
-	 * @param SourcePosition The screen position to use.
-	 * @param Player The player to change the sound position for. If left blank, the position will update for all players.
-	 * @return false if source hasn't been registered yet.
-	 */
-	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Sources")
-		bool TrackSound2D(FCSSoundID const& SoundID, FVector2D const& SourcePosition, ULocalPlayer const* Player = nullptr);
 
 	/**
 	 * @param SoundID The ID used at registration.
@@ -1108,10 +1085,6 @@ private:
 
 #pragma region INDICATORS
 public:
-	//Called when a sound starts being tracked. Indicators subscribe to this if their initial registration failed.
-	UPROPERTY(BlueprintAssignable, Category = "CrispSubtitles|Events")
-		FSoundTrackNotify SoundTrackNotify;
-
 	/**
 	 * Forces recalculation of the indicator data. Doesn't need to be called by default.
 	 * If you want to run calculations on a timer, use this and disable bCalculateIndicatorsOnTick in the project settings.
@@ -1119,13 +1092,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Tick")
 		void UpdateIndicatorData(ULocalPlayer const* Player);
 
-	/**
-	 * Registers an indicator widget with this subsystem.
-	 * @param Args The ID of the sound and a reference to the widget data pointer.
-	 * @param Player The player the indicator widget belongs to.
-	 * @return The delegates to subscribe to for updates, can be null.
-	 */
-	CSIndicatorDelegates* rRegisterIndicator(FCSRegisterArgs Args, ULocalPlayer const* Player = nullptr);
+	template<typename UserClass>
+	void RegisterIndicator(CSIndicatorRegistrationData<UserClass> args, ULocalPlayer const* player = nullptr)
+		{ iSourcesManager.RegisterIndicator(args, player); }
 	
 	/**
 	 * Removes an indicator from the list of registered indicators.

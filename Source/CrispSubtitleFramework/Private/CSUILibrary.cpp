@@ -6,7 +6,7 @@
 #include "CSProjectSettingFunctions.h"
 
 FCSLineStyle::FCSLineStyle()
-    : FontInfo()//TODO: fallback needed?
+    : FontInfo()
     , TextColour(FLinearColor::White)
     , BackColour(FLinearColor::Black)
     , TextPadding()
@@ -27,7 +27,7 @@ FCSLetterboxStyle::FCSLetterboxStyle()
 {};
 
 FCSCaptionStyle::FCSCaptionStyle()
-    : FontInfo()//TODO: fallback needed?
+    : FontInfo()
     , TextColour(FLinearColor::White)
     , BackColour(FLinearColor::Black)
     , TextPadding()
@@ -108,9 +108,10 @@ FCSCaptionStyle UCSUILibrary::GetCaptionStyle(UCSUserSettings* settings, const F
     return style;
 }
 
-FCSLetterboxStyle UCSUILibrary::GetDesignLetterboxStyle(const FName speaker)
+#if WITH_EDITOR
+FCSLetterboxStyle UCSUILibrary::GetDesignLetterboxStyle(const FName speaker, FVector2D screenSize)
 {
-    UCSUserSettings* settings = UCSProjectSettingFunctions::GetDesignSettings();
+    UCSUserSettings* settings = UCSProjectSettingFunctions::GetDesignSettings(screenSize);
 
     if (!settings)
         return FCSLetterboxStyle();
@@ -122,15 +123,15 @@ FCSLetterboxStyle UCSUILibrary::GetDesignLetterboxStyle(const FName speaker)
     style.LineClass = settings->LineClass.LoadSynchronous();
     style.BoxPadding = layout.BoxPadding;
     style.LinePadding = layout.LinePadding;
-    style.LineStyle = GetDesignLineStyle(speaker);
+    style.LineStyle = GetDesignLineStyle(speaker, screenSize);
     style.bShowIndicator = settings->bShowSubtitleIndicators;
 
     return style;
 }
 
-FCSLineStyle UCSUILibrary::GetDesignLabelStyle(const FName speaker)
+FCSLineStyle UCSUILibrary::GetDesignLabelStyle(const FName speaker, FVector2D screenSize)
 {
-    UCSUserSettings* settings = UCSProjectSettingFunctions::GetDesignSettings();
+    UCSUserSettings* settings = UCSProjectSettingFunctions::GetDesignSettings(screenSize);
 
     if (!settings)
         return FCSLineStyle();
@@ -146,9 +147,9 @@ FCSLineStyle UCSUILibrary::GetDesignLabelStyle(const FName speaker)
     return style;
 }
 
-FCSLineStyle UCSUILibrary::GetDesignLineStyle(const FName speaker)
+FCSLineStyle UCSUILibrary::GetDesignLineStyle(const FName speaker, FVector2D screenSize)
 {
-    UCSUserSettings* settings = UCSProjectSettingFunctions::GetDesignSettings();
+    UCSUserSettings* settings = UCSProjectSettingFunctions::GetDesignSettings(screenSize);
 
     if (!settings)
         return FCSLineStyle();
@@ -164,9 +165,9 @@ FCSLineStyle UCSUILibrary::GetDesignLineStyle(const FName speaker)
     return style;
 }
 
-FCSCaptionStyle UCSUILibrary::GetDesignCaptionStyle(const FName source)
+FCSCaptionStyle UCSUILibrary::GetDesignCaptionStyle(const FName source, FVector2D screenSize)
 {
-    UCSUserSettings* settings = UCSProjectSettingFunctions::GetDesignSettings();
+    UCSUserSettings* settings = UCSProjectSettingFunctions::GetDesignSettings(screenSize);
 
     if (!settings)
         return FCSCaptionStyle();
@@ -182,3 +183,4 @@ FCSCaptionStyle UCSUILibrary::GetDesignCaptionStyle(const FName source)
 
     return style;
 }
+#endif //WITH_EDITOR

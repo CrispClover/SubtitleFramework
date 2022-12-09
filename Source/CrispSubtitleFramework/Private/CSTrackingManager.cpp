@@ -15,9 +15,9 @@ void CSTrackingManager::Calculate()
 	const FMatrix projectionMatrix = projectionData.ComputeViewProjectionMatrix();
 	FIntRect const& rectangle = projectionData.GetConstrainedViewRect();
 
-	for (int32 i = 0; iData3D.NeedsCalc(i); i++)
+	for (int32 i = 0; iData.NeedsCalc(i); i++)
 	{
-		FCSTrackedSoundData& sound3D = iData3D.AccessItem(i);
+		CSTrackedSoundData& sound3D = iData.AccessItem(i);
 
 		const FVector4 projection = projectionMatrix.TransformFVector4(FVector4(sound3D.SoundData, 1.f));
 		const float m = 1 - 2 * (int8)(projection.W < 0);//We want to mirror coordinates behind the player's view.
@@ -29,20 +29,18 @@ void CSTrackingManager::Calculate()
 		sound3D.OpacityDriver = m * adjustedNDC.Length();//Negative numbers were unused. "Packing" projection.W < 0.
 	}
 
-	iDelegates3D.UpdateIDataEvent.Broadcast();
+	UpdateIDataEvent.Broadcast();
 }
 
-void CSTrackingManager::TrackSound(FCSSoundID const& id, FVector2D const& positionNDC)
+void CSTrackingManager::TrackSound(FCSSoundID const& id, FVector const& data)
 {
-	if (FCSIndicatorWidgetData* uData = iData2D.Find(id))
-		uCalculateData2D(uData, positionNDC);
-	else
-		iLocations2D.FindOrAdd(FCSSoundID(id), positionNDC);
+	if (iData.TrackSound(id, data))
+		iNotifyOfNewTrackedSound(id);
 }
 
 bool CSTrackingManager::GetSoundData(FCSSoundID const& id, FVector& data) const
 {
-	FCSTrackedSoundData const* ptr = iData3D.rFind(id);
+	CSTrackedSoundData const* ptr = iData.rFind(id);
 
 	if (!ptr)
 		return false;
@@ -51,67 +49,39 @@ bool CSTrackingManager::GetSoundData(FCSSoundID const& id, FVector& data) const
 	return true;
 }
 
-CSIndicatorDelegates* CSTrackingManager::rRegisterIndicator(FCSRegisterArgs args)
-{
-	if (iData3D.Register(args.ID, args.WidgetDataPtrRef))
-		return &iDelegates3D;
-	else if (iRegister2D(args.ID, args.WidgetDataPtrRef))
-		return &iDelegates2D;
-	else
-		return nullptr;
-}
-
 void CSTrackingManager::UnregisterIndicator(FCSSoundID const& id, UObject* widget)
 {
-	if (iData2D.Remove(id))
+	FDelegateHandle handle;
+	if (iPendingIndicatorDelegates.RemoveAndCopyValue(id, handle))
 	{
-		iDelegates2D.Remove(widget);
+		iNewSoundTrackedEvent.Remove(handle);
 	}
 	else
 	{
-		iDelegates3D.Remove(widget);
+		UpdateIDataEvent.RemoveAll(widget);
+		iSwapDataEvent.RemoveAll(widget);
 
-		FCSSwapArgs args = FCSSwapArgs(id, nullptr);
+		CSSwapArgs args = CSSwapArgs(id, nullptr);
 
-		iData3D.Unregister(id, args);
+		iData.Unregister(id, args);
 
 		if (args.WidgetDataPtr)
-			iDelegates3D.SwapIDataEvent.Broadcast(args);
+			iSwapDataEvent.Broadcast(args);
 	}
 }
 
 void CSTrackingManager::Copy(CSTrackingManager const* manager)
 {
-	for (int32 i = 0; i < manager->iData3D.Num(); i++)
-		TrackSound(manager->iData3D.GetID(i), manager->iData3D.GetItem(i).SoundData);
+	for (int32 i = 0; i < manager->iData.Num(); i++)
+		TrackSound(manager->iData.GetID(i), manager->iData.GetItem(i).SoundData);
 }
 
-bool CSTrackingManager::iRegister2D(FCSSoundID id, FCSIndicatorWidgetData*& dataPtr)
+void CSTrackingManager::iNotifyOfNewTrackedSound(FCSSoundID const& id)
 {
-	FVector2D pos;
-	if (!iLocations2D.RemoveAndCopyValue(id, pos))
-		return false;
-
-	dataPtr = &iData2D.Add(id);
-	uCalculateData2D(dataPtr, pos);
-	return true;
-}
-
-void CSTrackingManager::uCalculateData2D(FCSIndicatorWidgetData* indicatorData, FVector2D const& positionNDC)
-{
-	if (!Player || !Player->ViewportClient)
-		return;
-
-	FSceneViewProjectionData projectionData;
-	if (!Player->GetProjectionData(Player->ViewportClient->Viewport, projectionData))
-		return;
-
-	FIntRect const& rectangle = projectionData.GetConstrainedViewRect();
-
-	const FVector2f offsetNDC = FVector2f(positionNDC.X - indicatorData->Offset.X, -positionNDC.Y - indicatorData->Offset.Y);
-
-	indicatorData->Angle = FMath::Atan2(offsetNDC.Y * rectangle.Height(), offsetNDC.X * rectangle.Width());
-	indicatorData->OpacityDriver = offsetNDC.Length();
-
-	iDelegates2D.UpdateIDataEvent.Broadcast();
+	FDelegateHandle handle;
+	if (iPendingIndicatorDelegates.RemoveAndCopyValue(id, handle))
+	{
+		iNewSoundTrackedEvent.Broadcast(id);
+		iNewSoundTrackedEvent.Remove(handle);
+	}
 }

@@ -7,19 +7,19 @@
 #include "Components/Border.h"
 #include "Components/TextBlock.h"
 
-void UCSCaptionWidget::SynchronizeProperties()
-{
-	Super::SynchronizeProperties();
-	
 #if WITH_EDITOR
-	if (!IsDesignTime() || !Background || !Text)
+void UCSCaptionWidget::eConstructExample(FVector2D const& size)
+{
+	Super::eConstructExample(size);
+
+	if (!Background || !Text)
 		return;
 	
 	FCrispCaption const& caption = UCSProjectSettingFunctions::GetExampleCaption();
-	FCSCaptionStyle const& style = UCSUILibrary::GetDesignCaptionStyle(caption.SoundID.Source);
+	FCSCaptionStyle const& style = UCSUILibrary::GetDesignCaptionStyle(caption.SoundID.Source, size);
 	ConstructFromCaption(caption, style);
-#endif
 }
+#endif
 
 void UCSCaptionWidget::ConstructFromCaption_Implementation(FCrispCaption const& caption, FCSCaptionStyle const& style)
 {

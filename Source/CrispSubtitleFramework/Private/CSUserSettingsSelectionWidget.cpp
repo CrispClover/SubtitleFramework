@@ -18,7 +18,7 @@ void UCSUserSettingsSelectionWidget::SynchronizeProperties()
 
 	uCSS = UGameplayStatics::GetGameInstance(GetWorld())->GetSubsystem<UCSS_SubtitleGISS>();
 
-	const bool settingsNeedLoading = iLoadSettingsAsync(DefaultLoadPath, &UCSUserSettingsSelectionWidget::oOnSettingsLoaded);
+	const bool settingsNeedLoading = iLoadSettingsAsync(&UCSUserSettingsSelectionWidget::oOnSettingsLoaded);
 
 	if (!settingsNeedLoading)
 		oOnSettingsLoaded();
@@ -45,19 +45,21 @@ UCSUserSettingsSelectionWidget::UCSUserSettingsSelectionWidget()
 #endif
 }
 
-void UCSUserSettingsSelectionWidget::LoadSettings(FString const& path)
+void UCSUserSettingsSelectionWidget::LoadSettings()
 {
 	if (!uSettingsLibrary)
-		uSettingsLibrary = UObjectLibrary::CreateLibrary(UCSUserSettings::StaticClass(), false, GIsEditor);
-
-	uSettingsLibrary->LoadAssetDataFromPath(path);
+		uSettingsLibrary = UObjectLibrary::CreateLibrary(UCSUserSettings::StaticClass(), true, GIsEditor);
+	
+	uSettingsLibrary->LoadAssetDataFromPaths(UCSProjectSettingFunctions::GetSettingsDirectories());
 	uSettingsLibrary->LoadAssetsFromAssetData();
+
+	oOnSettingsLoaded();
 }
 
 TArray<UCSUserSettings*> UCSUserSettingsSelectionWidget::GetSettingsList()
 {
 	if (!uSettingsLibrary)
-		LoadSettings(DefaultLoadPath);
+		LoadSettings();
 
 	TArray<FAssetData> aDataList;
 	uSettingsLibrary->GetAssetDataList(aDataList);
@@ -78,8 +80,8 @@ void UCSUserSettingsSelectionWidget::SetSelectedSettings(UCSUserSettings* option
 
 	if (iComboBox)
 		iComboBox->SetSelectedItem(option);
-	else
-		oSelectedSettings = option;
+	
+	oSelectedSettings = option;
 }
 
 UCSUserSettings* UCSUserSettingsSelectionWidget::GetSelectedSettings() const
@@ -109,12 +111,12 @@ void UCSUserSettingsSelectionWidget::oOnSettingsLoaded()
 	SetSelectedSettings(uCSS->GetCurrentSettings());
 }
 
-bool UCSUserSettingsSelectionWidget::iLoadSettingsAsync(FString const& path, SelectWidgetVFunction function)
+bool UCSUserSettingsSelectionWidget::iLoadSettingsAsync(SelectWidgetVFunction function)
 {
 	if (!uSettingsLibrary)
-		uSettingsLibrary = UObjectLibrary::CreateLibrary(UCSUserSettings::StaticClass(), false, GIsEditor);
+		uSettingsLibrary = UObjectLibrary::CreateLibrary(UCSUserSettings::StaticClass(), true, GIsEditor);
 
-	const int32 numSettings = uSettingsLibrary->LoadAssetDataFromPath(path);
+	const int32 numSettings = uSettingsLibrary->LoadAssetDataFromPaths(UCSProjectSettingFunctions::GetSettingsDirectories());
 
 	TArray<FSoftObjectPath> settingsPaths;
 	settingsPaths.Reserve(numSettings);
@@ -147,12 +149,15 @@ void UCSUserSettingsSelectionWidget::iOnSelectionChanged(UCSUserSettings* option
 
 	if (!IsDesignTime())
 		SelectionChangedEvent.Broadcast(option, selectionType);
-
+		
 	iGenerateContent();
 }
 
 void UCSUserSettingsSelectionWidget::iGenerateContent()
 {
+	if (!iContentBox || !oSelectedSettings)
+		return;
+
 	iContentBox->SetContent
 	(
 		SNew(STextBlock)

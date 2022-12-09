@@ -25,7 +25,7 @@ public:
 
 	//The paths to search for settings assets.
 	UPROPERTY(EditAnywhere, config, Category = "UserSettings", meta = (ContentDir))
-		FDirectoryPath SettingsPath;
+		TArray<FDirectoryPath> SettingsDirectories;
 
 	//Whether to display sound captions inside the subtitle container
 	UPROPERTY(EditAnywhere, config, Category = "UI")

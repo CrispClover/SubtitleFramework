@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Blueprint/UserWidget.h"
+#include "CSBaseWidget.h"
 #include "CSCoreLibrary.h"
 #include "CSUILibrary.h"
 #include "CSCaptionWidget.generated.h"
@@ -18,12 +18,14 @@ class UCSUserSettings;
  * 
  */
 UCLASS(Blueprintable, Abstract)
-class CRISPSUBTITLEFRAMEWORK_API UCSCaptionWidget : public UUserWidget
+class CRISPSUBTITLEFRAMEWORK_API UCSCaptionWidget : public UCSBaseWidget
 {
 	GENERATED_BODY()
 	
+#if WITH_EDITOR
 protected:
-	virtual void SynchronizeProperties() override;
+	virtual void eConstructExample(FVector2D const& size) override;
+#endif
 
 public:
 	UPROPERTY(BlueprintReadOnly, Category = "CrispSubtitles|UI", meta = (BindWidget))

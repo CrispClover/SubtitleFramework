@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Blueprint/UserWidget.h"
+#include "CSBaseWidget.h"
 #include "CSUserSettingsWidget.generated.h"
 
 class UCSUserSettingsSelectionWidget;
@@ -15,12 +15,16 @@ class UCSS_SubtitleGISS;
  * 
  */
 UCLASS(Blueprintable, Abstract)
-class CRISPSUBTITLEFRAMEWORK_API UCSUserSettingsWidget : public UUserWidget
+class CRISPSUBTITLEFRAMEWORK_API UCSUserSettingsWidget : public UCSBaseWidget
 {
 	GENERATED_BODY()
 
+#if WITH_EDITOR
 protected:
-	virtual void SynchronizeProperties() override;
+	virtual void eConstructExample(FVector2D const& size) override;
+#endif
+
+protected:
 	virtual void NativeConstruct() override;
 	virtual void NativeDestruct() override;
 

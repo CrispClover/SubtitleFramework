@@ -17,7 +17,7 @@ class UCSUserSettings;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FSelectionChanged, UCSUserSettings*, SelectedOption, ESelectInfo::Type, SelectionType);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOpening);
 
-/*
+/**
  * 
  */
 UCLASS()
@@ -38,9 +38,6 @@ public:
 	//Called when the selection widget is opening
 	UPROPERTY(BlueprintAssignable, Category = Events)
 		FOpening OpeningEvent;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Style", meta = (ContentDir))
-		FString DefaultLoadPath = UCSProjectSettingFunctions::GetSettingsPath();
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "CrispSubtitles")
 		TArray<UCSUserSettings*> SettingsOptions;
@@ -79,7 +76,7 @@ public:
 
 	//Synchronously loads user settings from the specified path.
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Settings")
-		void LoadSettings(FString const& Path);
+		void LoadSettings();//TODO: remove?
 
 	//Returns the list of loaded user settings. Loads the settings from DefaultLoadPath if no settings are currently loaded.
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles")
@@ -106,7 +103,7 @@ private:
 	typedef TMemFunPtrType<false, UCSUserSettingsSelectionWidget, void()>::Type SelectWidgetVFunction;
 
 	//Returns false if all settings assets are already loaded.
-	bool iLoadSettingsAsync(FString const& path, SelectWidgetVFunction function);
+	bool iLoadSettingsAsync(SelectWidgetVFunction function);
 	void iOnSelectionChanged(UCSUserSettings* item, ESelectInfo::Type selectionType);
 	void iGenerateContent();
 	void iOnOpening();
