@@ -20,6 +20,9 @@ public:
 	virtual void SetDesignerFlags(EWidgetDesignFlags newFlags) override;
 	virtual void OnDesignerChanged(const FDesignerChangedEventArgs& eventArgs) override;
 
+	virtual inline const FText GetPaletteCategory() override
+		{ return NSLOCTEXT("CrispSubtitles", "Subtitles", "Subtitles"); };
+
 protected:
 	virtual void eConstructExample(FVector2D const& size)
 	{};

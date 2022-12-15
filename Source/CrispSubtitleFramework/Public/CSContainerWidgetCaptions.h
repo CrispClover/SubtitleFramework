@@ -7,6 +7,7 @@
 #include "CSContainerWidgetCaptions.generated.h"
 
 class UCSCaptionWidget;
+class UCSVerticalBoxSlot;
 
 /**
  * 
@@ -18,7 +19,7 @@ class CRISPSUBTITLEFRAMEWORK_API UCSContainerWidgetCaptions : public UCSContaine
 
 #if WITH_EDITOR
 protected:
-	UCSCaptionWidget* euExample = nullptr;
+	TArray<UCSCaptionWidget*> eExamples = TArray<UCSCaptionWidget*>();
 	virtual void eConstructExample(FVector2D const& size) override;
 #endif
 
@@ -28,7 +29,7 @@ protected:
 
 public:
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Events")
-		UVerticalBoxSlot* GetSlot(const int32 ID);
+		UCSVerticalBoxSlot* GetSlot(const int32 ID);
 
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Events")
 		UCSCaptionWidget* GetCaptionWidget(const int32 ID);
@@ -40,8 +41,9 @@ public:
 		void OnDestroy(const int32 ID);
 
 	UFUNCTION(BlueprintNativeEvent, Category = "CrispSubtitles|Events")
-		void OnReconstruct(TArray<FCrispCaption> const& Captions);
+		void OnReconstruct(TArray<FCrispCaption> const& Captions, UCSUserSettings* Settings);
 
-private:
-	FCSChildWidgetData<UCSCaptionWidget> iChildrenData = FCSChildWidgetData<UCSCaptionWidget>();
+	void OnCaptionReceived_Implementation(FCrispCaption const& caption);
+	void OnDestroy_Implementation(const int32 id);
+	void OnReconstruct_Implementation(TArray<FCrispCaption> const& captions, UCSUserSettings* settings);
 };

@@ -6,18 +6,23 @@
 #include "CSIndicatorWidget.h"
 #include "Components/Border.h"
 #include "Components/TextBlock.h"
+#include "Components/InvalidationBox.h"
 
 #if WITH_EDITOR
 void UCSCaptionWidget::eConstructExample(FVector2D const& size)
 {
 	Super::eConstructExample(size);
 
-	if (!Background || !Text)
+	if (!Background || !Text || GetParent())
 		return;
-	
-	FCrispCaption const& caption = UCSProjectSettingFunctions::GetExampleCaption();
-	FCSCaptionStyle const& style = UCSUILibrary::GetDesignCaptionStyle(caption.SoundID.Source, size);
-	ConstructFromCaption(caption, style);
+		
+	TArray<FCrispCaption> const& captions = UCSProjectSettingFunctions::GetExampleCaptions();
+
+	if (captions.IsEmpty())
+		return;
+
+	FCSCaptionStyle const& style = UCSUILibrary::GetDesignCaptionStyle(captions[0].SoundID.Source, size);
+	ConstructFromCaption(captions[0], style);
 }
 #endif
 

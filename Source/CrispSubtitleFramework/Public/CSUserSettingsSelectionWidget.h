@@ -117,9 +117,10 @@ private:
 //Overrides
 public:
 	virtual void ReleaseSlateResources(bool releaseChildren) override;
-
+	
 #if WITH_EDITOR
-	virtual const FText GetPaletteCategory() override;
+	virtual inline const FText GetPaletteCategory() override
+		{ return NSLOCTEXT("CrispSubtitles", "Subtitles", "Subtitles"); };
 #endif
 
 private:

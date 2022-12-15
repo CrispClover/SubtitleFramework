@@ -37,8 +37,9 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = "CrispSubtitles|UI", meta = (BindWidgetOptional))
 		UCSIndicatorWidget* Indicator = nullptr;
 
-	UPROPERTY(BlueprintReadOnly, Category = "CrispSubtitles|UI", meta = (BindWidgetOptional))
-		UInvalidationBox* InvalidationBox = nullptr;
+	//BUG?: InvalidationBox' children appear disabled after adding subtitles to the container on the same canvas.
+	/*UPROPERTY(BlueprintReadOnly, Category = "CrispSubtitles|UI", meta = (BindWidgetOptional))
+		UInvalidationBox* InvalidationBox = nullptr;*/
 
 	UFUNCTION(BlueprintNativeEvent, Category = "CrispSubtitles|Broadcast")
 		void ConstructFromCaption(FCrispCaption const& Caption, FCSCaptionStyle const& Style);

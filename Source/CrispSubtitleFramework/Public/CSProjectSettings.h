@@ -62,8 +62,8 @@ public:
 		FName SoundNameForSpeech;
 
 	UPROPERTY(EditAnywhere, config, Category = "Examples")
-		FFullSubtitle ExampleSubtitle;
+		TArray<FFullSubtitle> ExampleSubtitles;
 
 	UPROPERTY(EditAnywhere, config, Category = "Examples")
-		FFullCaption ExampleCaption;
+		TArray<FFullCaption> ExampleCaptions;
 };

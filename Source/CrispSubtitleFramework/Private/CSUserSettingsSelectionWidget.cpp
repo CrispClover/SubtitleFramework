@@ -180,13 +180,6 @@ void UCSUserSettingsSelectionWidget::ReleaseSlateResources(bool releaseChildren)
 	iContentBox.Reset();
 }
 
-#if WITH_EDITOR
-const FText UCSUserSettingsSelectionWidget::GetPaletteCategory()
-{
-	return NSLOCTEXT("CrispSubtitles", "CSInput", "CSInput");
-}
-#endif
-
 TSharedRef<SWidget> UCSUserSettingsSelectionWidget::RebuildWidget()
 {
 	iComboBox =

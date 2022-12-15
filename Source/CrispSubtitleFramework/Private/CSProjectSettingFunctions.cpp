@@ -29,12 +29,24 @@ TArray<FString> UCSProjectSettingFunctions::GetSettingsDirectories()
 	return paths;
 }
 
-FCrispSubtitle UCSProjectSettingFunctions::GetExampleSubtitle(UCSUserSettings const* settings)
+TArray<FCrispSubtitle> UCSProjectSettingFunctions::GetExampleSubtitles(UCSUserSettings const* settings)
 {
-	return UCSCoreLibrary::FrySubtitle(GetDefault<UCSProjectSettings>()->ExampleSubtitle, INDEX_NONE, settings);
+	TArray<FCrispSubtitle> subtitles;
+
+	for (FFullSubtitle const& subtitle : GetDefault<UCSProjectSettings>()->ExampleSubtitles)
+	{
+		subtitles.Add(UCSCoreLibrary::FrySubtitle(subtitle, INDEX_NONE, settings));
+	}
+
+	return subtitles;
 }
 
-FCrispCaption UCSProjectSettingFunctions::GetExampleCaption()
+TArray<FCrispCaption> UCSProjectSettingFunctions::GetExampleCaptions()
 {
-	return FCrispCaption(GetDefault<UCSProjectSettings>()->ExampleCaption, INDEX_NONE);
+	TArray<FCrispCaption> captions;
+
+	for (FFullCaption const& caption : GetDefault<UCSProjectSettings>()->ExampleCaptions)
+		captions.Add(FCrispCaption(caption, INDEX_NONE));
+
+	return captions;
 }

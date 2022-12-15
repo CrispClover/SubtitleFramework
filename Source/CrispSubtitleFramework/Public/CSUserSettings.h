@@ -9,6 +9,8 @@
 class UCSLetterboxWidget;
 class UCSLineWidget;
 class UCSCaptionWidget;
+class UCSBaseSpacer;
+class UUserWidget;
 class UCSColourProfile;
 
 UENUM(BlueprintType)
@@ -55,6 +57,11 @@ public:
 		float BaseSize;
 };
 
+/** TODO?
+* meta=(DisplayAfter="abc")
+* meta=(DisplayPriority=123)
+*/
+
 /**
  * 
  */
@@ -65,11 +72,6 @@ class CRISPSUBTITLEFRAMEWORK_API UCSUserSettings : public UPrimaryDataAsset
 
 public:
 	UCSUserSettings();
-	/**
-	 * meta=(DisplayAfter="abc")
-	 * meta=(DisplayPriority=123)
-	 * meta=(NoResetToDefault)
-	 */
 #pragma region CORE
 public:
 	//The name to show to a user.
@@ -78,12 +80,18 @@ public:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bShowSubtitles", EditConditionHides, NoResetToDefault), Category = "Subtitles")
 		TSoftClassPtr<UCSLetterboxWidget> LetterboxClass;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bShowSubtitles", EditConditionHides, NoResetToDefault), Category = "Subtitles")
+		TSoftClassPtr<UCSBaseSpacer> SubtitleSpacer;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (EditCondition = "bShowSubtitles", EditConditionHides, NoResetToDefault), Category = "Subtitles")
 		TSoftClassPtr<UCSLineWidget> LineClass;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bShowCaptions", EditConditionHides, NoResetToDefault), Category = "Captions")
 		TSoftClassPtr<UCSCaptionWidget> CaptionClass;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bShowSubtitles", EditConditionHides, NoResetToDefault), Category = "Subtitles")
+		TSoftClassPtr<UCSBaseSpacer> CaptionSpacer;
 
 	//Whether to show subtitles.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Subtitles")
@@ -147,7 +155,7 @@ public:
 	
 	//The typeface to use when a subtitle's source and speaker mismatch.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bShowSubtitles", EditConditionHides, GetOptions = "GetTypefaceOptions"), Category = "Font")
-		FName SourceMismatchTypeface;
+		FName IndirectSpeechTypeface;
 
 	//The typeface to use for captions.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bShowCaptions", EditConditionHides, GetOptions = "GetTypefaceOptions"), Category = "Font")
@@ -192,6 +200,10 @@ public:
 	//The padding in between captions. (In screen %)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bShowCaptions", EditConditionHides), Category = "Layout")
 		float CaptionPadding;
+
+	//The horizontal alignment of each caption inside the container.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bShowCaptions", EditConditionHides), Category = "Layout")
+		TEnumAsByte<EHorizontalAlignment> CaptionAlignment;
 
 	//The size of indicators. (relative to the text size)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bShowSubtitleIndicators||bShowCaptionIndicators", EditConditionHides), Category = "Layout")

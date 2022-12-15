@@ -494,25 +494,25 @@ private:
 struct FCSFlickerProtectionData
 {
 	inline float tLastSet() const
-		{ return itLastChanged; };
+		{ return itChanged; };
 
-	inline float dtMissing(float tNow, float dtGap) const
+	inline float dtMissing(const float tNow, const float dtGap) const
 	{
-		if (inFrame == GFrameNumber)
+		if (ifChanged == GFrameNumber)
 			return 0.f;
 		else
-			return FMath::Max(0, dtGap - (tNow - itLastChanged));
+			return FMath::Max(0, dtGap - (tNow - itChanged));
 	};
 
-	inline void Set(float tNow)
+	inline void Set(const float tNow)
 	{
-		itLastChanged = tNow;
-		inFrame = GFrameNumber;
+		itChanged = tNow;
+		ifChanged = GFrameNumber;
 	};
 
 private:
-	float itLastChanged = 0;
-	uint32 inFrame = 0;
+	float itChanged = 0;
+	uint32 ifChanged = 0;
 };
 
 //Bundle to control broadcasts.
@@ -521,9 +521,16 @@ struct FCSBroadcastingData
 	FCSBroadcastingData()
 		: iProtectConstruct()
 		, iProtectDestruct()
+		, idtBusy(0)
 		, iIsDelayingDestruction(false)
 		, iIsPaused(false)
 	{};
+
+	inline void LogBroadcast(const float tNow, const float dtBusy)
+	{
+		LogConstruction(tNow);
+		idtBusy = dtBusy;
+	};
 
 	inline void LogConstruction(const float tNow)
 		{ iProtectDestruct.Set(tNow); };
@@ -549,6 +556,9 @@ struct FCSBroadcastingData
 	inline float tLastConstruction() const
 		{ return iProtectDestruct.tLastSet(); };
 
+	inline float dtBusy(const float tNow) const
+		{ return FMath::Max(0.f, idtBusy + tLastConstruction() - tNow); };
+
 	//Returns the time to wait before we're allowed to add an element.
 	inline float dtFlickerProtectConstruct(const float tNow, const float dtGap) const
 		{ return iProtectConstruct.dtMissing(tNow, dtGap); };
@@ -561,30 +571,11 @@ private:
 	FCSFlickerProtectionData iProtectConstruct;
 	FCSFlickerProtectionData iProtectDestruct;
 
+	float idtBusy;
+
 	bool iIsDelayingDestruction;
 	bool iIsPaused;
 };
-
-//Bundle to control subtitle broadcasts.
-struct FCSSubtitleBroadcastingData : FCSBroadcastingData
-{
-	FCSSubtitleBroadcastingData()
-		: idtBusy(0)
-	{};
-
-	inline float dtBusy(const float tNow) const
-		{ return FMath::Max(0.f, idtBusy + tLastConstruction() - tNow); };
-
-	inline void LogBroadcast(const float tNow, const float dtBusy)
-	{
-		LogConstruction(tNow);
-		idtBusy = dtBusy;
-	};
-
-private:
-	float idtBusy;
-};
-
 #pragma endregion
 
 #pragma region DELEGATES
@@ -593,13 +584,13 @@ private:
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FSubtitleTrigger, FCrispSubtitle const&, Subtitle);
 
 //Delegate for the subtitle reconstruct trigger.
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FReconstructSubtitlesTrigger, TArray<FCrispSubtitle> const&, Subtitles);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FReconstructSubtitlesTrigger, TArray<FCrispSubtitle> const&, Subtitles, UCSUserSettings*, Settings);
 
 //Delegate for the caption trigger.
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FCaptionTrigger, FCrispCaption const&, Caption);
 
 //Delegate for the caption reconstruct trigger.
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FReconstructCaptionsTrigger, TArray<FCrispCaption> const&, Captions);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FReconstructCaptionsTrigger, TArray<FCrispCaption> const&, Captions, UCSUserSettings*, Settings);
 
 //Delegate for triggering destruction.
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FDestructTrigger, const int32, Index);
@@ -830,7 +821,7 @@ private:
 	FCSCurrentSubtitleData iCurrentSubtitles = FCSCurrentSubtitleData();
 	TMap<int32, FFullSubtitle> iDelayedSubtitles = TMap<int32, FFullSubtitle>();
 	TCSTimedData<FFullSubtitle> iQueuedSubtitles = TCSTimedData<FFullSubtitle>();
-	FCSSubtitleBroadcastingData iSubtitleBroadcastData = FCSSubtitleBroadcastingData();
+	FCSBroadcastingData iSubtitleBroadcastData = FCSBroadcastingData();
 
 #pragma endregion
 
@@ -947,20 +938,19 @@ public:
 
 private:
 	void iOnCaptionTriggered(const int32 id);
-	void uBroadcastCaption(FFullCaption const& caption, const float tNow, const int32 id);
 	void iBroadcastCaption(FFullCaption const& caption, const float tNow, const int32 id);
 	void iDelayCaption(FFullCaption const& caption, const int32 id, const float dtMissing);
 	void iDelayedBroadcastCaptions();
 	void iDestroyCaption(const int32 id);
 	void iDelayedDestroyCaptions();
-	void uReconstructCaptions() const;
+	void iReconstructCaptions() const;
 
 	bool iTryUpdateCaptionDuration(FCSSoundID const& soundID, const float dtDisplay, const bool isPermanent);
 
 	TCSCurrentData<FFullCaption> iCurrentCaptions = TCSCurrentData<FFullCaption>();
 	TMap<int32, FFullCaption> iDelayedCaptions = TMap<int32, FFullCaption>();
 	TCSTimedData<FFullCaption> iQueuedCaptions = TCSTimedData<FFullCaption>();
-	FCSBroadcastingData iCaptionBroadcastData = FCSBroadcastingData();
+	bool iCaptionsArePaused = false;
 
 #pragma endregion
 
@@ -1118,9 +1108,6 @@ public:
 			{ return iCurrentSettings; };
 
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Settings")
-		void RecalculateDesignLayout(const FIntPoint ViewportSize);
-
-	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Settings")
 		void RecalculateLayout();
 
 	//Call after saving the user settings. Automatically called by UserSettingsWidget.
@@ -1128,8 +1115,6 @@ public:
 		void SetSettings(UCSUserSettings* Settings);
 
 private:
-	void iRecalculateLayout(UGameViewportClient const* viewportClient);
-
 	UPROPERTY()
 		UCSUserSettings* iCurrentSettings = UCSProjectSettingFunctions::GetDefaultSettings();
 	

@@ -5,6 +5,7 @@
 #include "CSColourProfile.h"
 #include "CSProjectSettingFunctions.h"
 
+#pragma region STRUCTS
 FCSLineStyle::FCSLineStyle()
     : FontInfo()
     , TextColour(FLinearColor::White)
@@ -33,8 +34,9 @@ FCSCaptionStyle::FCSCaptionStyle()
     , TextPadding()
     , bShowIndicator(true)
 {};
+#pragma endregion
 
-FCSLetterboxStyle UCSUILibrary::GetLetterboxStyle(UCSUserSettings* settings, const FName speaker, const bool indirectSpeech)
+FCSLetterboxStyle UCSUILibrary::GetLetterboxStyle(UCSUserSettings const* settings, const FName speaker, const bool indirectSpeech)
 {
     if (!settings)
         return FCSLetterboxStyle();
@@ -54,7 +56,7 @@ FCSLetterboxStyle UCSUILibrary::GetLetterboxStyle(UCSUserSettings* settings, con
     return style;
 }
 
-FCSLineStyle UCSUILibrary::GetLabelStyle(UCSUserSettings* settings, const FName speaker)
+FCSLineStyle UCSUILibrary::GetLabelStyle(UCSUserSettings const* settings, const FName speaker)
 {
     if (!settings)
         return FCSLineStyle();
@@ -70,7 +72,7 @@ FCSLineStyle UCSUILibrary::GetLabelStyle(UCSUserSettings* settings, const FName 
     return style;
 }
 
-FCSLineStyle UCSUILibrary::GetLineStyle(UCSUserSettings* settings, const FName speaker, const bool indirectSpeech)
+FCSLineStyle UCSUILibrary::GetLineStyle(UCSUserSettings const* settings, const FName speaker, const bool indirectSpeech)
 {
     if (!settings)
         return FCSLineStyle();
@@ -81,7 +83,7 @@ FCSLineStyle UCSUILibrary::GetLineStyle(UCSUserSettings* settings, const FName s
     style.FontInfo = layout.FontInfo;
 
     if (indirectSpeech)
-        style.FontInfo.TypefaceFontName = settings->SourceMismatchTypeface;
+        style.FontInfo.TypefaceFontName = settings->IndirectSpeechTypeface;
 
     style.BackColour = settings->ColourProfile.LoadSynchronous()->LineBackColour;
     style.TextColour = settings->GetSubtitleTextColour(speaker);
@@ -90,7 +92,7 @@ FCSLineStyle UCSUILibrary::GetLineStyle(UCSUserSettings* settings, const FName s
     return style;
 }
 
-FCSCaptionStyle UCSUILibrary::GetCaptionStyle(UCSUserSettings* settings, const FName source)
+FCSCaptionStyle UCSUILibrary::GetCaptionStyle(UCSUserSettings const* settings, const FName source)
 {
     if (!settings)
         return FCSCaptionStyle();
@@ -109,7 +111,7 @@ FCSCaptionStyle UCSUILibrary::GetCaptionStyle(UCSUserSettings* settings, const F
 }
 
 #if WITH_EDITOR
-FCSLetterboxStyle UCSUILibrary::GetDesignLetterboxStyle(const FName speaker, FVector2D screenSize)
+FCSLetterboxStyle UCSUILibrary::GetDesignLetterboxStyle(const FName speaker, const bool isIndirectSpeech, FVector2D const& screenSize)
 {
     UCSUserSettings* settings = UCSProjectSettingFunctions::GetDesignSettings(screenSize);
 
@@ -123,13 +125,14 @@ FCSLetterboxStyle UCSUILibrary::GetDesignLetterboxStyle(const FName speaker, FVe
     style.LineClass = settings->LineClass.LoadSynchronous();
     style.BoxPadding = layout.BoxPadding;
     style.LinePadding = layout.LinePadding;
-    style.LineStyle = GetDesignLineStyle(speaker, screenSize);
+    style.LabelStyle = GetDesignLabelStyle(speaker, screenSize);
+    style.LineStyle = GetDesignLineStyle(speaker, isIndirectSpeech, screenSize);
     style.bShowIndicator = settings->bShowSubtitleIndicators;
 
     return style;
 }
 
-FCSLineStyle UCSUILibrary::GetDesignLabelStyle(const FName speaker, FVector2D screenSize)
+FCSLineStyle UCSUILibrary::GetDesignLabelStyle(const FName speaker, FVector2D const& screenSize)
 {
     UCSUserSettings* settings = UCSProjectSettingFunctions::GetDesignSettings(screenSize);
 
@@ -147,7 +150,7 @@ FCSLineStyle UCSUILibrary::GetDesignLabelStyle(const FName speaker, FVector2D sc
     return style;
 }
 
-FCSLineStyle UCSUILibrary::GetDesignLineStyle(const FName speaker, FVector2D screenSize)
+FCSLineStyle UCSUILibrary::GetDesignLineStyle(const FName speaker, const bool isIndirectSpeech, FVector2D const& screenSize)
 {
     UCSUserSettings* settings = UCSProjectSettingFunctions::GetDesignSettings(screenSize);
 
@@ -158,6 +161,10 @@ FCSLineStyle UCSUILibrary::GetDesignLineStyle(const FName speaker, FVector2D scr
 
     FCSLineStyle style = FCSLineStyle();
     style.FontInfo = layout.FontInfo;
+
+    if (isIndirectSpeech)
+        style.FontInfo.TypefaceFontName = settings->IndirectSpeechTypeface;
+
     style.BackColour = settings->ColourProfile.LoadSynchronous()->LineBackColour;
     style.TextColour = settings->GetSubtitleTextColour(speaker);
     style.TextPadding = layout.TextPadding;
@@ -165,7 +172,7 @@ FCSLineStyle UCSUILibrary::GetDesignLineStyle(const FName speaker, FVector2D scr
     return style;
 }
 
-FCSCaptionStyle UCSUILibrary::GetDesignCaptionStyle(const FName source, FVector2D screenSize)
+FCSCaptionStyle UCSUILibrary::GetDesignCaptionStyle(const FName source, FVector2D const& screenSize)
 {
     UCSUserSettings* settings = UCSProjectSettingFunctions::GetDesignSettings(screenSize);
 

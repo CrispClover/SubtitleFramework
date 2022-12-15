@@ -77,14 +77,14 @@ public:
 
 	//Returns the example subtitle defined in the plugin's project settings.
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|ProjectSettings")
-		static FCrispSubtitle GetExampleSubtitle(UCSUserSettings const* Settings);
+		static TArray<FCrispSubtitle> GetExampleSubtitles(UCSUserSettings const* Settings);
 
 	//Returns the example subtitle with the default project settings applied, both defined in the plugin's project settings.
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|ProjectSettings")
-		static FORCEINLINE FCrispSubtitle GetDefaultExampleSubtitle()
-			{ return GetExampleSubtitle(GetDefaultSettings()); };
+		static FORCEINLINE TArray<FCrispSubtitle> GetDefaultExampleSubtitle()
+			{ return GetExampleSubtitles(GetDefaultSettings()); };
 
 	//Returns the example caption defined in the plugin's project settings.
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|ProjectSettings")
-		static FCrispCaption GetExampleCaption();
+		static TArray<FCrispCaption> GetExampleCaptions();
 };

@@ -2,11 +2,13 @@
 
 #include "CSContainerWidgetCaptions.h"
 #include "CSS_SubtitleGISS.h"
+#include "Kismet/GameplayStatics.h"
 #include "CSUserSettings.h"
 #include "CSCaptionWidget.h"
 #include "CSUILibrary.h"
-#include "Components/VerticalBox.h"
-#include "Components/VerticalBoxSlot.h"
+#include "CSVerticalBox.h"
+#include "CSVerticalBoxSlot.h"
+#include "CSBaseSpacer.h"
 
 #if WITH_EDITOR
 void UCSContainerWidgetCaptions::eConstructExample(FVector2D const& size)
@@ -15,30 +17,43 @@ void UCSContainerWidgetCaptions::eConstructExample(FVector2D const& size)
 
 	if (!Container)
 		return;
-
-	UCSUserSettings* settings = UCSProjectSettingFunctions::GetDesignSettings(FVector2D());
-	FCrispCaption const& caption = UCSProjectSettingFunctions::GetExampleCaption();
-	FCSCaptionStyle const& style = UCSUILibrary::GetDesignCaptionStyle(caption.SoundID.Source, size);
-
-	if (!euExample)
-		euExample = CreateWidget<UCSCaptionWidget>(this, settings->CaptionClass.LoadSynchronous());
 	
-	Container->RemoveChild(euExample);
-	UVerticalBoxSlot* slot = Container->AddChildToVerticalBox(euExample);
+	UCSUserSettings* settings = UCSProjectSettingFunctions::GetDesignSettings(FVector2D());
+	TSubclassOf<UCSCaptionWidget> captionClass = settings->CaptionClass.LoadSynchronous();
+	TArray<FCrispCaption> const& captions = UCSProjectSettingFunctions::GetExampleCaptions();
+		
+	for (UCSCaptionWidget* example : eExamples)
+		if (Container->HasChild(example))
+			example->RemoveFromParent();
 
-	slot->SetPadding(settings->GetLayout().CaptionPadding);
-	euExample->ConstructFromCaption(caption, style);
+	eExamples.Empty();
+
+	for (int32 x = 0; x < captions.Num(); x++)
+	{
+		UCSCaptionWidget* example = CreateWidget<UCSCaptionWidget>(this, captionClass);
+		eExamples.Add(example);
+
+		UCSVerticalBoxSlot* slot = Cast<UCSVerticalBoxSlot>(Container->AddChild(example));
+		slot->SetPadding(settings->GetLayout().CaptionPadding);
+		slot->SetHorizontalAlignment(settings->CaptionAlignment);
+
+		FCSCaptionStyle const& style = UCSUILibrary::GetDesignCaptionStyle(captions[x].SoundID.Source, size);
+		example->ConstructFromCaption(captions[x], UCSUILibrary::GetCaptionStyle(settings, captions[x].SoundID.Source));
+	}
 }
 #endif
 
 void UCSContainerWidgetCaptions::NativeConstruct()
 {
-	Super::NativeConstruct();
+	uCSS = UGameplayStatics::GetGameInstance(GetWorld())->GetSubsystem<UCSS_SubtitleGISS>();
 
 	uCSS->ConstructCaptionEvent.AddDynamic(this, &UCSContainerWidgetCaptions::OnCaptionReceived);
 	uCSS->DestructCaptionEvent.AddDynamic(this, &UCSContainerWidgetCaptions::OnDestroy);
 	uCSS->ReconstructCaptionsEvent.AddDynamic(this, &UCSContainerWidgetCaptions::OnReconstruct);
+
 	uCSS->RecalculateLayout();
+
+	Super::NativeConstruct();
 }
 
 void UCSContainerWidgetCaptions::NativeDestruct()
@@ -50,71 +65,81 @@ void UCSContainerWidgetCaptions::NativeDestruct()
 	Super::NativeDestruct();
 }
 
-UVerticalBoxSlot* UCSContainerWidgetCaptions::GetSlot(const int32 id)
+UCSVerticalBoxSlot* UCSContainerWidgetCaptions::GetSlot(const int32 id)
 {
-	const int32 ux = iChildrenData.rxFind(id);
-
-	if (ux == INDEX_NONE)
+	if (!Container)
 		return nullptr;
 	else
-		return iChildrenData.Slots[ux];
+		return Container->rFindSlot(id);
 }
 
 UCSCaptionWidget* UCSContainerWidgetCaptions::GetCaptionWidget(const int32 id)
 {
-	const int32 ux = iChildrenData.rxFind(id);
-
-	if (ux == INDEX_NONE)
+	if (!Container)
 		return nullptr;
 	else
-		return iChildrenData.Children[ux];
+		return Cast<UCSCaptionWidget>(Container->rFindChild(id));
 }
 
 void UCSContainerWidgetCaptions::OnCaptionReceived_Implementation(FCrispCaption const& caption)
 {
-	UCSUserSettings* settings = uCSS->GetCurrentSettings();
+	if (!Container || !uSettings && !uCSS)
+		return;
 
-	const FCSCaptionStyle style = UCSUILibrary::GetCaptionStyle(settings, caption.SoundID.Source);
+	if(!uSettings)
+		uSettings = uCSS->GetCurrentSettings();
 
-	UCSCaptionWidget* captionWidget = CreateWidget<UCSCaptionWidget>(this, settings->CaptionClass.LoadSynchronous());
-	UVerticalBoxSlot* slot = Container->AddChildToVerticalBox(captionWidget);
+	const FCSCaptionStyle style = UCSUILibrary::GetCaptionStyle(uSettings, caption.SoundID.Source);
 
-	slot->SetPadding(settings->GetLayout().CaptionPadding);
+	UCSCaptionWidget* captionWidget = CreateWidget<UCSCaptionWidget>(this, uSettings->CaptionClass.LoadSynchronous());
+
+	UCSVerticalBoxSlot* slot = Container->FindOrAddSlot(captionWidget, otNow(), uSettings->TimeGap, caption.ID);
+	slot->SetPadding(uSettings->GetLayout().CaptionPadding);
+	slot->SetHorizontalAlignment(uSettings->CaptionAlignment);
+
 	captionWidget->ConstructFromCaption(caption, style);
-	iChildrenData.Add(caption.ID, captionWidget, slot);
 }
 
 void UCSContainerWidgetCaptions::OnDestroy_Implementation(const int32 id)
 {
-	if (UCSCaptionWidget* captionWidget = iChildrenData.rConsume(id))
-		captionWidget->RemoveFromParent();
+	if (!Container || !uSettings && !uCSS)
+		return;
+
+	if (!uSettings)
+		uSettings = uCSS->GetCurrentSettings();
+
+	FCSSpacerInfo spacerInfo = FCSSpacerInfo();//TODO
+	spacerInfo.SpacerClass = uSettings->CaptionSpacer.LoadSynchronous();
+
+	const float dtMissing = Container->dtTryVacate(id, spacerInfo, otNow(), uSettings->TimeGap);
+
+	if (dtMissing > 0.f)
+	{
+		if (UWorld* world = GetWorld())
+		{
+			FTimerHandle dropped;
+			FTimerDelegate del = FTimerDelegate::CreateUObject(this, &UCSContainerWidgetCaptions::OnDestroy, id);
+			world->GetTimerManager().SetTimer(dropped, del, dtMissing, false);
+		}
+	}
 }
 
-void UCSContainerWidgetCaptions::OnReconstruct_Implementation(TArray<FCrispCaption> const& captions)
+void UCSContainerWidgetCaptions::OnReconstruct_Implementation(TArray<FCrispCaption> const& captions, UCSUserSettings* settings)
 {
-	UCSUserSettings* settings = uCSS->GetCurrentSettings();
+	if (!settings || !Container)
+		return;
 
-	const int32 cCaptions = captions.Num();
-	const int32 cWidgets = iChildrenData.Num();
-	const int32 dcCaptions = cWidgets - cCaptions;
+	uSettings = settings;
 
-	for (int32 i = 1; i <= dcCaptions; i++)//Remove excess
+	for (FCrispCaption const& caption : captions)
 	{
-		const int32 ni = cWidgets - i;
-		iChildrenData.Children[ni]->RemoveFromParent();
-		iChildrenData.uRemoveAt(ni);
+		if (UCSVerticalBoxSlot* slot = Container->rFindSlot(caption.ID))
+		{
+			slot->SetPadding(uSettings->GetLayout().CaptionPadding);
+			slot->SetHorizontalAlignment(uSettings->CaptionAlignment);
+
+			if (UCSCaptionWidget* widget = Cast<UCSCaptionWidget>(slot->Content))
+				widget->ConstructFromCaption(caption, UCSUILibrary::GetCaptionStyle(uSettings, caption.SoundID.Source));
+		}
 	}
-
-	for (int32 i = 0; i < cCaptions; i++)//Reconstruct existing
-	{
-		iChildrenData.Children[i]->ConstructFromCaption(captions[i], UCSUILibrary::GetCaptionStyle(settings, captions[i].SoundID.Source));
-		iChildrenData.IDs[i] = captions[i].ID;
-		iChildrenData.Slots[i]->SetPadding(settings->CaptionPadding);
-	}
-
-	/*for (UVerticalBoxSlot* slot : iChildrenData.Slots)//Apply padding to existing
-		slot->SetPadding(settings->CaptionPadding);*/
-
-	for (int32 ni = dcCaptions; ni < 0; ni++)//Add missing
-		OnCaptionReceived(captions[cCaptions + ni]);
 }

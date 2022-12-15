@@ -7,6 +7,7 @@
 #include "CSContainerWidgetSubtitles.generated.h"
 
 class UCSLetterboxWidget;
+class UVerticalBoxSlot;
 
 /**
  * 
@@ -18,7 +19,7 @@ class CRISPSUBTITLEFRAMEWORK_API UCSContainerWidgetSubtitles : public UCSContain
 
 #if WITH_EDITOR
 protected:
-	UCSLetterboxWidget* euExample = nullptr;
+	TArray<UCSLetterboxWidget*> eExamples = TArray<UCSLetterboxWidget*>();
 	virtual void eConstructExample(FVector2D const& size) override;
 #endif
 
@@ -27,8 +28,9 @@ protected:
 	virtual void NativeDestruct() override;
 
 public:
+
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Events")
-		UVerticalBoxSlot* GetSlot(const int32 ID);
+		UCSVerticalBoxSlot* GetSlot(const int32 ID);
 
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Events")
 		UCSLetterboxWidget* GetLetterbox(const int32 ID);
@@ -40,8 +42,11 @@ public:
 		void OnDestroy(const int32 ID);
 
 	UFUNCTION(BlueprintNativeEvent, Category = "CrispSubtitles|Events")
-		void OnReconstruct(TArray<FCrispSubtitle> const& Subtitles);
+		void OnReconstruct(TArray<FCrispSubtitle> const& Subtitles, UCSUserSettings* Settings);
 
-private:
-	FCSChildWidgetData<UCSLetterboxWidget> iChildrenData = FCSChildWidgetData<UCSLetterboxWidget>();
+	void OnSubtitleReceived_Implementation(FCrispSubtitle const& subtitle);
+	void OnDestroy_Implementation(const int32 id);
+	void OnReconstruct_Implementation(TArray<FCrispSubtitle> const& subtitles, UCSUserSettings* settings);
+
+	void SetSettings(UCSUserSettings* settings);
 };

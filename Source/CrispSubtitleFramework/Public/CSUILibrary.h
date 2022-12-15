@@ -6,8 +6,34 @@
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "CSUILibrary.generated.h"
 
-class UCSUserSettings;
+class UCSBaseSpacer;
 class UCSLineWidget;
+class UCSUserSettings;
+
+#pragma region STRUCTS
+//The data used to construct a spacer
+USTRUCT(BlueprintType)
+struct FCSSpacerInfo
+{
+	GENERATED_BODY()
+		
+public:
+	FCSSpacerInfo()
+		: Size()
+		, SpacerClass()
+	{};
+
+	FCSSpacerInfo(FVector2D const& size, TSubclassOf<UCSBaseSpacer> spacerClass)
+		: Size(size)
+		, SpacerClass(spacerClass)
+	{};
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "CrispSubtitles")
+		FVector2D Size;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "CrispSubtitles")
+		TSubclassOf<UCSBaseSpacer> SpacerClass;
+};
 
 //The data used to style a subtitle line
 USTRUCT(BlueprintType)
@@ -114,8 +140,8 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "CrispSubtitles")
 		bool bShowIndicator;
-
 };
+#pragma endregion
 
 /**
  * 
@@ -127,28 +153,28 @@ class CRISPSUBTITLEFRAMEWORK_API UCSUILibrary : public UBlueprintFunctionLibrary
 
 public:
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|UI")
-		static FCSLetterboxStyle GetLetterboxStyle(UCSUserSettings* UserSettings, const FName Speaker, const bool bIsIndirectSpeech);
+		static FCSLetterboxStyle GetLetterboxStyle(UCSUserSettings const* UserSettings, const FName Speaker, const bool bIsIndirectSpeech);
 	
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|UI")
-		static FCSLineStyle GetLabelStyle(UCSUserSettings* UserSettings, const FName Speaker);
+		static FCSLineStyle GetLabelStyle(UCSUserSettings const* UserSettings, const FName Speaker);
 	
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|UI")
-		static FCSLineStyle GetLineStyle(UCSUserSettings* UserSettings, const FName Speaker, const bool bIsIndirectSpeech);
+		static FCSLineStyle GetLineStyle(UCSUserSettings const* UserSettings, const FName Speaker, const bool bIsIndirectSpeech);
 
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|UI")
-		static FCSCaptionStyle GetCaptionStyle(UCSUserSettings* UserSettings, const FName Source);
+		static FCSCaptionStyle GetCaptionStyle(UCSUserSettings const* UserSettings, const FName Source);
 	
 #if WITH_EDITOR
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|UI")
-		static FCSLetterboxStyle GetDesignLetterboxStyle(const FName Speaker, FVector2D ScreenSize);
+		static FCSLetterboxStyle GetDesignLetterboxStyle(const FName Speaker, const bool bIsIndirectSpeech, FVector2D const& ScreenSize);
 
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|UI")
-		static FCSLineStyle GetDesignLabelStyle(const FName Speaker, FVector2D ScreenSize);
+		static FCSLineStyle GetDesignLabelStyle(const FName Speaker, FVector2D const& ScreenSize);
 
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|UI")
-		static FCSLineStyle GetDesignLineStyle(const FName Speaker, FVector2D ScreenSize);
+		static FCSLineStyle GetDesignLineStyle(const FName Speaker, const bool bIsIndirectSpeech, FVector2D const& ScreenSize);
 	
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|UI")
-		static FCSCaptionStyle GetDesignCaptionStyle(const FName Source, FVector2D ScreenSize);
+		static FCSCaptionStyle GetDesignCaptionStyle(const FName Source, FVector2D const& ScreenSize);
 #endif
 };

@@ -2,9 +2,10 @@
 
 #include "CSUserSettingsWidget.h"
 #include "CSS_SubtitleGISS.h"
+#include "CSUserSettings.h"
 #include "CSUserSettingsSelectionWidget.h"
-#include "CSLetterboxWidget.h"
-#include "CSCaptionWidget.h"
+#include "CSContainerWidgetSubtitles.h"
+#include "CSContainerWidgetCaptions.h"
 #include "Kismet/GameplayStatics.h"
 
 #if WITH_EDITOR
@@ -16,7 +17,7 @@ void UCSUserSettingsWidget::eConstructExample(FVector2D const& size)
 		return;
 
 	CurrentSettings = UCSProjectSettingFunctions::GetDesignSettings(size);
-	ReconstructExample();
+	//ReconstructExamples();
 }
 #endif
 
@@ -32,7 +33,7 @@ void UCSUserSettingsWidget::NativeConstruct()
 	if (ULocalPlayer* player = GetOwningLocalPlayer())
 		CurrentSettings->RecalculateLayout(player->ViewportClient);
 
-	ReconstructExample();
+	ReconstructExamples();
 
 	Super::NativeConstruct();
 }
@@ -57,19 +58,19 @@ void UCSUserSettingsWidget::OnSettingsSelected_Implementation(UCSUserSettings* s
 	if (ULocalPlayer* player = GetOwningLocalPlayer())
 		CurrentSettings->RecalculateLayout(player->ViewportClient);
 
-	ReconstructExample();
+	ReconstructExamples();
 }
 
-void UCSUserSettingsWidget::ReconstructExample_Implementation()
+void UCSUserSettingsWidget::ReconstructExamples_Implementation()
 {
-	const FCrispSubtitle sub = UCSProjectSettingFunctions::GetExampleSubtitle(CurrentSettings);
-	SubtitlePreview->ConstructFromSubtitle(sub, UCSUILibrary::GetLetterboxStyle(CurrentSettings, sub.Speaker, sub.IsIndirectSpeech()));
+	TArray<FCrispSubtitle> const& subtitles = UCSProjectSettingFunctions::GetExampleSubtitles(CurrentSettings);
+	SubtitlePreview->OnReconstruct(subtitles, CurrentSettings);
 
 	if (!CaptionPreview)
 		return;
-
-	FCrispCaption const& cap = UCSProjectSettingFunctions::GetExampleCaption();
-	CaptionPreview->ConstructFromCaption(cap, UCSUILibrary::GetCaptionStyle(CurrentSettings, cap.SoundID.Source));
+	
+	TArray<FCrispCaption> const& captions = UCSProjectSettingFunctions::GetExampleCaptions();
+	CaptionPreview->OnReconstruct(captions, CurrentSettings);
 }
 
 void UCSUserSettingsWidget::Save_Implementation()

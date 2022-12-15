@@ -24,11 +24,10 @@ protected:
 
 protected:
 	virtual void NativeConstruct() override;
-	virtual void NativeTick(FGeometry const& myGeometry, float dt) override;
 	virtual void NativeDestruct() override;
 
 public:
-	//
+	//The Image of the arrow that will point toward the sound.
 	UPROPERTY(BlueprintReadOnly, Category = "CrispSubtitles|UI", meta = (BindWidget))
 		UImage* Image = nullptr;
 
@@ -49,10 +48,6 @@ public:
 		FORCEINLINE FCSSoundID GetSoundID()
 			{ return iSoundID; };
 	
-	//TODO
-	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Data")
-		void UpdateCenterPosition(FGeometry const& MyGeometry);
-
 	//Called every time the TrackingManager has calculated new values for the indicators
 	UFUNCTION(BlueprintNativeEvent, Category = "CrispSubtitles|Events")
 		void OnUpdateIndicators();
@@ -68,7 +63,6 @@ protected:
 private:
 	UCSS_SubtitleGISS* uCSS = nullptr;
 	void uRegister(FCSSoundID const& soundID);
-	void iUpdateOffset() const;
 	void iUpdateDataPtr(CSSwapArgs const& a);
 	
 	FCSSoundID iSoundID;

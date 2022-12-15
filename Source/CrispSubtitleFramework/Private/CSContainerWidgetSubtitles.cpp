@@ -2,12 +2,14 @@
 
 #include "CSContainerWidgetSubtitles.h"
 #include "CSS_SubtitleGISS.h"
+#include "Kismet/GameplayStatics.h"
 #include "CSUserSettings.h"
 #include "CSUILibrary.h"
 #include "CSLetterboxWidget.h"
-#include "Components/VerticalBox.h"
-#include "Components/VerticalBoxSlot.h"
+#include "CSVerticalBox.h"
+#include "CSVerticalBoxSlot.h"
 
+#if WITH_EDITOR
 void UCSContainerWidgetSubtitles::eConstructExample(FVector2D const& size)
 {
 	Super::eConstructExample(size);
@@ -16,27 +18,39 @@ void UCSContainerWidgetSubtitles::eConstructExample(FVector2D const& size)
 		return;
 
 	UCSUserSettings* settings = UCSProjectSettingFunctions::GetDesignSettings(FVector2D());
-	FCrispSubtitle const& subtitle = UCSProjectSettingFunctions::GetExampleSubtitle(settings);
-	FCSLetterboxStyle const& style = UCSUILibrary::GetDesignLetterboxStyle(subtitle.Speaker, size);//TODO: mismatches
-
-	if (!euExample)
-		euExample = CreateWidget<UCSLetterboxWidget>(this, settings->LetterboxClass.LoadSynchronous());
+	TSubclassOf<UCSLetterboxWidget> letterboxClass = settings->LetterboxClass.LoadSynchronous();
+	TArray<FCrispSubtitle> const& subtitles = UCSProjectSettingFunctions::GetExampleSubtitles(settings);
 	
-	Container->RemoveChild(euExample);
-	UVerticalBoxSlot* slot = Container->AddChildToVerticalBox(euExample);
+	for (UCSLetterboxWidget* example : eExamples)
+		example->RemoveFromParent();
 
-	slot->SetPadding(settings->GetLayout().SubtitlePadding);
-	euExample->ConstructFromSubtitle(subtitle, style);
+	eExamples.Empty();
+
+	for (int32 x = 0; x < subtitles.Num(); x++)
+	{
+		UCSLetterboxWidget* example = CreateWidget<UCSLetterboxWidget>(this, letterboxClass);
+		eExamples.Add(example);
+		
+		UCSVerticalBoxSlot* slot = Cast<UCSVerticalBoxSlot>(Container->AddChild(example));
+		slot->SetPadding(settings->GetLayout().SubtitlePadding);
+
+		FCSLetterboxStyle const& style = UCSUILibrary::GetDesignLetterboxStyle(subtitles[x].Speaker, subtitles[x].IsIndirectSpeech(), size);
+		example->ConstructFromSubtitle(subtitles[x], style);
+	}
 }
+#endif
 
 void UCSContainerWidgetSubtitles::NativeConstruct()
 {
-	Super::NativeConstruct();
+	uCSS = UGameplayStatics::GetGameInstance(GetWorld())->GetSubsystem<UCSS_SubtitleGISS>();
 
 	uCSS->ConstructSubtitleEvent.AddDynamic(this, &UCSContainerWidgetSubtitles::OnSubtitleReceived);
 	uCSS->DestroySubtitleEvent.AddDynamic(this, &UCSContainerWidgetSubtitles::OnDestroy);
 	uCSS->ReconstructSubtitlesEvent.AddDynamic(this, &UCSContainerWidgetSubtitles::OnReconstruct);
+
 	uCSS->RecalculateLayout();
+
+	Super::NativeConstruct();
 }
 
 void UCSContainerWidgetSubtitles::NativeDestruct()
@@ -48,73 +62,79 @@ void UCSContainerWidgetSubtitles::NativeDestruct()
 	Super::NativeDestruct();
 }
 
-UVerticalBoxSlot* UCSContainerWidgetSubtitles::GetSlot(const int32 id)
+UCSVerticalBoxSlot* UCSContainerWidgetSubtitles::GetSlot(const int32 id)
 {
-	const int32 ux = iChildrenData.rxFind(id);
-
-	if (ux == INDEX_NONE)
+	if (!Container)
 		return nullptr;
 	else
-		return iChildrenData.Slots[ux];
+		return Container->rFindSlot(id);
 }
 
 UCSLetterboxWidget* UCSContainerWidgetSubtitles::GetLetterbox(const int32 id)
 {
-	const int32 ux = iChildrenData.rxFind(id);
-
-	if (ux == INDEX_NONE)
+	if (!Container)
 		return nullptr;
 	else
-		return iChildrenData.Children[ux];
+		return Cast<UCSLetterboxWidget>(Container->rFindChild(id));
 }
 
 void UCSContainerWidgetSubtitles::OnSubtitleReceived_Implementation(FCrispSubtitle const& subtitle)
 {
-	UCSUserSettings* settings = uCSS->GetCurrentSettings();
-
-	UCSLetterboxWidget* letterbox = CreateWidget<UCSLetterboxWidget>(this, settings->LetterboxClass.LoadSynchronous());
-	UVerticalBoxSlot* slot = Container->AddChildToVerticalBox(letterbox);
-
-	if (!slot)
+	if (!uSettings && !uCSS)
 		return;
 
+	if(!uSettings)
+		uSettings = uCSS->GetCurrentSettings();
+
+	UCSLetterboxWidget* letterbox = CreateWidget<UCSLetterboxWidget>(this, uSettings->LetterboxClass.LoadSynchronous());
+	UCSVerticalBoxSlot* slot = Container->FindOrAddSlot(letterbox, otNow(), uSettings->TimeGap, subtitle.ID);
+
 	slot->SetHorizontalAlignment(EHorizontalAlignment::HAlign_Center);
-	slot->SetPadding(settings->GetLayout().SubtitlePadding);
-	letterbox->ConstructFromSubtitle(subtitle, UCSUILibrary::GetLetterboxStyle(settings, subtitle.Speaker, subtitle.IsIndirectSpeech()));
-	iChildrenData.Add(subtitle.ID, letterbox, slot);
+	slot->SetPadding(uSettings->GetLayout().SubtitlePadding);
+	letterbox->ConstructFromSubtitle(subtitle, UCSUILibrary::GetLetterboxStyle(uSettings, subtitle.Speaker, subtitle.IsIndirectSpeech()));
 }
 
 void UCSContainerWidgetSubtitles::OnDestroy_Implementation(const int32 id)
 {
-	if (UCSLetterboxWidget* letterbox = iChildrenData.rConsume(id))
-		letterbox->RemoveFromParent();
+	if (!uSettings && !uCSS)
+		return;
+
+	if(!uSettings)
+		uSettings = uCSS->GetCurrentSettings();
+	
+	FCSSpacerInfo spacerInfo = FCSSpacerInfo();//TODO
+	spacerInfo.SpacerClass = uSettings->SubtitleSpacer.LoadSynchronous();
+	
+	const float dtMissing = Container->dtTryVacate(id, spacerInfo, otNow(), uSettings->TimeGap);
+
+	if (dtMissing > 0.f)
+	{
+		if (UWorld* world = GetWorld())
+		{
+			FTimerHandle dropped;
+			FTimerDelegate del = FTimerDelegate::CreateUObject(this, &UCSContainerWidgetSubtitles::OnDestroy, id);
+			world->GetTimerManager().SetTimer(dropped, del, dtMissing, false);
+		}
+	}
 }
 
-void UCSContainerWidgetSubtitles::OnReconstruct_Implementation(TArray<FCrispSubtitle> const& subtitles)
+void UCSContainerWidgetSubtitles::OnReconstruct_Implementation(TArray<FCrispSubtitle> const& subtitles, UCSUserSettings* settings)
 {
-	UCSUserSettings* settings = uCSS->GetCurrentSettings();
+	if (!settings || !Container)
+		return;
 
-	const int32 cSubtitles = subtitles.Num();
-	const int32 cWidgets = iChildrenData.Num();
-	const int32 dc = cWidgets - cSubtitles;
+	uSettings = settings;
 
-	for (int32 i = 1; i <= dc; i++)//Remove excess
+	for(FCrispSubtitle const& subtitle : subtitles)
 	{
-		const int32 ni = cWidgets - i;
-		iChildrenData.Children[ni]->RemoveFromParent();
-		iChildrenData.uRemoveAt(ni);
+		UCSLetterboxWidget* letterbox = CreateWidget<UCSLetterboxWidget>(this, uSettings->LetterboxClass.LoadSynchronous());
+		
+		if (UCSVerticalBoxSlot* slot = Container->rFindSlot(subtitle.ID))
+		{
+			slot->SetPadding(uSettings->GetLayout().CaptionPadding);
+
+			if (UCSLetterboxWidget* widget = Cast<UCSLetterboxWidget>(slot->Content))
+				widget->ConstructFromSubtitle(subtitle, UCSUILibrary::GetLetterboxStyle(uSettings, subtitle.Speaker, subtitle.IsIndirectSpeech()));
+		}
 	}
-
-	for (int32 i = 0; i < cSubtitles; i++)//Reconstruct existing
-	{
-		iChildrenData.Children[i]->ConstructFromSubtitle(subtitles[i], UCSUILibrary::GetLetterboxStyle(settings, subtitles[i].Speaker, subtitles[i].IsIndirectSpeech()));
-		iChildrenData.IDs[i] = subtitles[i].ID;
-		iChildrenData.Slots[i]->SetPadding(settings->SubtitlePadding);
-	}
-
-	/*for (UVerticalBoxSlot* slot : iChildrenData.Slots)//Apply padding to existing
-		slot->SetPadding(settings->SubtitlePadding);*/
-
-	for (int32 ni = dc; ni < 0; ni++)//Add missing
-		OnSubtitleReceived(subtitles[cSubtitles + ni]);
 }

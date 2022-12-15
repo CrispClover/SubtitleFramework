@@ -15,12 +15,16 @@ void UCSLetterboxWidget::eConstructExample(FVector2D const& size)
 {
 	Super::eConstructExample(size);
 
-	if (!Background || !LineContainer)
+	if (!Background || !LineContainer || GetParent())
 		return;
 
-	FCrispSubtitle const& subtitle = UCSProjectSettingFunctions::GetDefaultExampleSubtitle();
-	FCSLetterboxStyle const& style = UCSUILibrary::GetDesignLetterboxStyle(subtitle.Speaker, size);
-	ConstructFromSubtitle(subtitle, style);
+	TArray<FCrispSubtitle> const& subtitles = UCSProjectSettingFunctions::GetDefaultExampleSubtitle();
+
+	if (subtitles.IsEmpty())
+		return;
+
+	FCSLetterboxStyle const& style = UCSUILibrary::GetDesignLetterboxStyle(subtitles[0].Speaker, subtitles[0].IsIndirectSpeech(), size);
+	ConstructFromSubtitle(subtitles[0], style);
 }
 #endif
 

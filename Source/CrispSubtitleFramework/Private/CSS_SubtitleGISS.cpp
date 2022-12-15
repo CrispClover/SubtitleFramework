@@ -420,7 +420,7 @@ void UCSS_SubtitleGISS::uReconstructSubtitles() const
 	for (auto it = iCurrentSubtitles.GetIterator(); it; ++it)
 		subtitles.Add(UCSCoreLibrary::FrySubtitle(it.Data(), it.ID(), iCurrentSettings));
 
-	ReconstructSubtitlesEvent.Broadcast(subtitles);
+	ReconstructSubtitlesEvent.Broadcast(subtitles, iCurrentSettings);
 }
 
 #pragma endregion
@@ -446,20 +446,8 @@ void UCSS_SubtitleGISS::ClearCaptions()
 		return;
 
 	iManageRemoval(flushedHandles, flushedIDs);
-
-	const float tNow = itNow();
-	const float dtMissing = iCaptionBroadcastData.dtFlickerProtectDestruct(tNow, iCurrentSettings->TimeGap);
-
-	if (dtMissing > 0 && !iCaptionBroadcastData.IsDelayingDestruction())
-	{
-		iCaptionBroadcastData.LogDelay(true);
-		iSetTimer(&UCSS_SubtitleGISS::iDelayedDestroyCaptions, dtMissing);
-	}
-	else
-	{
-		iCaptionBroadcastData.LogDestruction(tNow);
-		uReconstructCaptions();
-	}
+	
+	iReconstructCaptions();
 }
 
 void UCSS_SubtitleGISS::PauseCaptions()
@@ -467,7 +455,7 @@ void UCSS_SubtitleGISS::PauseCaptions()
 	if (!uTimerManager)
 		return;
 
-	iCaptionBroadcastData.LogPaused();
+	iCaptionsArePaused = true;
 
 	for (FTimerHandle const& handle : iCurrentCaptions.Handles())
 		uTimerManager->PauseTimer(handle);
@@ -489,8 +477,8 @@ void UCSS_SubtitleGISS::UnpauseCaptions()
 {
 	if (!uTimerManager)
 		return;
-
-	iCaptionBroadcastData.LogUnpaused();
+	
+	iCaptionsArePaused = false;
 
 	for (FTimerHandle const& handle : iCurrentCaptions.Handles())
 		uTimerManager->UnPauseTimer(handle);
@@ -621,21 +609,9 @@ void UCSS_SubtitleGISS::iBroadcastCaption(FFullCaption const& caption, const flo
 	{
 		const FFullSubtitle subtitle = FFullSubtitle(caption, UCSProjectSettingFunctions::GetSpeakerNameForCaptions());
 		iBroadcastSubtitle(subtitle, tNow, id);
+		return;
 	}
-	else
-	{
-		const float dtMissing = iCaptionBroadcastData.dtFlickerProtectConstruct(tNow, iCurrentSettings->TimeGap);
 
-		if (dtMissing > 0)
-			iDelayCaption(caption, id, dtMissing);
-		else
-			uBroadcastCaption(caption, tNow, id);
-	}
-}
-
-//Unsafe to call without checking flicker protection
-void UCSS_SubtitleGISS::uBroadcastCaption(FFullCaption const& caption, const float tNow, const int32 id)
-{
 	if (!iSourcesManager.GetSources().Contains(caption.SoundID.Source))
 		return;//If the source isn't registered (or is excluded due to SourceOverride) we don't want to broadcast.
 
@@ -659,7 +635,6 @@ void UCSS_SubtitleGISS::uBroadcastCaption(FFullCaption const& caption, const flo
 	if (!iCurrentSettings->bShowCaptions)
 		return;//We will track captions without displaying them.
 
-	iCaptionBroadcastData.LogConstruction(tNow);
 	ConstructCaptionEvent.Broadcast(FCrispCaption(caption, id));
 }
 
@@ -673,58 +648,23 @@ void UCSS_SubtitleGISS::iDelayCaption(FFullCaption const& caption, const int32 i
 
 void UCSS_SubtitleGISS::iDelayedBroadcastCaptions()
 {
-	if (iCaptionBroadcastData.IsPaused())
+	if (iCaptionsArePaused)
 		return;//We will attempt to broadcast again when UnpauseCaptions is called.
 
 	const float tNow = itNow();
-	const float dtMissing = iCaptionBroadcastData.dtFlickerProtectConstruct(tNow, iCurrentSettings->TimeGap);
-
-	if (dtMissing > 0)
-		iSetTimer(&UCSS_SubtitleGISS::iDelayedBroadcastCaptions, dtMissing);
-	else
-		for (TPair<int32, FFullCaption> const& caption : iDelayedCaptions)
-			uBroadcastCaption(caption.Value, tNow, caption.Key);
+	
+	for (TPair<int32, FFullCaption> const& caption : iDelayedCaptions)
+			iBroadcastCaption(caption.Value, tNow, caption.Key);
 }
 
 void UCSS_SubtitleGISS::iDestroyCaption(const int32 id)
 {
-	const float tNow = itNow();
-	const float dtMissing = iCaptionBroadcastData.dtFlickerProtectDestruct(tNow, iCurrentSettings->TimeGap);
-	
 	iCurrentCaptions.Remove(id);
 	iManageRemoval(id);
-
-	if (dtMissing > 0 && !iCaptionBroadcastData.IsDelayingDestruction())
-	{
-		iCaptionBroadcastData.LogDelay(true);
-		iSetTimer(&UCSS_SubtitleGISS::iDelayedDestroyCaptions, dtMissing);
-	}
-	else
-	{
-		iCaptionBroadcastData.LogDestruction(tNow);
-		DestructCaptionEvent.Broadcast(id);
-	}
+	DestructCaptionEvent.Broadcast(id);
 }
 
-void UCSS_SubtitleGISS::iDelayedDestroyCaptions()
-{
-	const float tNow = itNow();
-	const float dtMissing = iCaptionBroadcastData.dtFlickerProtectDestruct(tNow, iCurrentSettings->TimeGap);
-
-	if (dtMissing > 0)
-	{
-		iSetTimer(&UCSS_SubtitleGISS::iDelayedDestroyCaptions, dtMissing);
-	}
-	else
-	{
-		iCaptionBroadcastData.LogDelay(false);
-		iCaptionBroadcastData.LogDestruction(tNow);
-		uReconstructCaptions();
-	}
-}
-
-//Unsafe to call without checking flicker protection
-void UCSS_SubtitleGISS::uReconstructCaptions() const
+void UCSS_SubtitleGISS::iReconstructCaptions() const
 {
 	TArray<FCrispCaption> captions;
 	captions.Reserve(iCurrentCaptions.Num());
@@ -732,7 +672,7 @@ void UCSS_SubtitleGISS::uReconstructCaptions() const
 	for (auto it = iCurrentCaptions.GetIterator(); it; ++it)
 		captions.Add(FCrispCaption(it.Data(), it.ID()));
 
-	ReconstructCaptionsEvent.Broadcast(captions);
+	ReconstructCaptionsEvent.Broadcast(captions, iCurrentSettings);
 }
 
 bool UCSS_SubtitleGISS::iTryUpdateCaptionDuration(FCSSoundID const& soundID, const float dtDisplay, const bool isPermanent)
@@ -905,9 +845,7 @@ void UCSS_SubtitleGISS::iRemoveCurrentCaptionsBySource(const FName source)
 		return;
 
 	iManageRemoval(removedHandles, removedIDs);
-
-	iCaptionBroadcastData.LogDestruction(itNow());
-	uReconstructCaptions();
+	iReconstructCaptions();
 }
 
 #pragma endregion
@@ -926,11 +864,6 @@ void UCSS_SubtitleGISS::UnregisterIndicator(FCSSoundID const& soundID, ULocalPla
 #pragma endregion
 
 #pragma region SETTINGS
-void UCSS_SubtitleGISS::RecalculateDesignLayout(const FIntPoint ViewportSize)//TODO
-{
-	iCurrentSettings->RecalculateDesignLayout(ViewportSize);
-}
-
 void UCSS_SubtitleGISS::RecalculateLayout()//TODO
 {
 	if (UGameViewportClient* viewportClient = GetGameInstance()->GetGameViewportClient())
@@ -945,11 +878,6 @@ void UCSS_SubtitleGISS::SetSettings(UCSUserSettings* settings)
 	iCurrentSettings = settings;
 
 	uReconstructSubtitles();
-}
-
-void UCSS_SubtitleGISS::iRecalculateLayout(UGameViewportClient const* viewportClient)//TODO?
-{
-	//iCurrentSettings->RecalculateLayout(viewportClient);
 }
 
 #pragma endregion
