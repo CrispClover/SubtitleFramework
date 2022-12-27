@@ -220,6 +220,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (UIMin = 1.f, UIMax = 2.f, EditCondition = "bShowSubtitles", EditConditionHides), Category = "Timing")
 		float ReadingSpeed;
 
+	//Whether to accumulate the subtitle read time of multiple on-screen subtitles to ensure all subtitles stay until they have been read.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "bShowSubtitles", EditConditionHides), Category = "Timing")
+		bool bAccumulateReadTime;
+
 	//The time gap (in seconds) between removing/adding subtitles to reduce flickering. If you ever change this, please only increase the value.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, AdvancedDisplay, meta = (UIMin = 0.16f, UIMax = 0.5f, EditCondition = "bShowSubtitles||bShowCaptions", EditConditionHides), Category = "Timing")
 		float TimeGap;

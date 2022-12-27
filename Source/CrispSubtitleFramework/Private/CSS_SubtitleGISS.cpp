@@ -26,6 +26,24 @@ void UCSS_SubtitleGISS::Deinitialize()
 
 #pragma region SUBTITLES
 
+TArray<FFullSubtitle> UCSS_SubtitleGISS::GetUpcomingSubtitles(float durationToSearch) const
+{
+	if (!uTimerManager)
+		return TArray<FFullSubtitle>();
+
+	TArray<FFullSubtitle> results = TArray<FFullSubtitle>();
+
+	TArray<FFullSubtitle> const& subtitles = iQueuedSubtitles.Get();
+	TArray<FTimerHandle> const& handles = iQueuedSubtitles.Handles();
+
+	int32 c = iQueuedSubtitles.Num();
+	for (int32 x = 0; x < c; x++)
+		if (uTimerManager->GetTimerRemaining(handles[x]) < durationToSearch)
+			results.Add(subtitles[x]);
+
+	return results;
+}
+
 bool UCSS_SubtitleGISS::HasPermanentSubtitle()
 {
 	for (auto it = iCurrentSubtitles.GetIterator(); it; ++it)
@@ -54,48 +72,25 @@ void UCSS_SubtitleGISS::KickSubtitle()
 	FTimerHandle handle;
 	int32 id;
 	iCurrentSubtitles.Kick(handle, id);
+
 	iManageRemoval(handle, id);
-
-	const float tNow = itNow();
-	const float dtMissing = iSubtitleBroadcastData.dtFlickerProtectDestruct(tNow, iCurrentSettings->TimeGap);
-
-	if (dtMissing > 0 && !iSubtitleBroadcastData.IsDelayingDestruction())
-	{
-		iSubtitleBroadcastData.LogDelay(true);
-		iSetTimer(&UCSS_SubtitleGISS::iDelayedDestroySubtitles, dtMissing);
-	}
-	else
-	{
-		iSubtitleBroadcastData.LogDestruction(tNow);
-		DestroySubtitleEvent.Broadcast(id);
-	}
+	
+	DestructSubtitleEvent.Broadcast(id);
 }
 
 void UCSS_SubtitleGISS::RemovePermanents()
 {
-	TArray<FTimerHandle> handles;
-	TArray<int32> ids;
+	TArray<FTimerHandle> removedHandles;
+	TArray<int32> removedIDs;
+	iCurrentSubtitles.RemovePermanents(removedHandles, removedIDs);
 
-	iCurrentSubtitles.RemovePermanents(handles, ids);
-
-	if (ids.IsEmpty())
+	if (removedIDs.IsEmpty())
 		return;
 
-	iManageRemoval(handles, ids);
+	iManageRemoval(removedHandles, removedIDs);
 
-	const float tNow = itNow();
-	const float dtMissing = iSubtitleBroadcastData.dtFlickerProtectDestruct(tNow, iCurrentSettings->TimeGap);
-
-	if (dtMissing > 0 && !iSubtitleBroadcastData.IsDelayingDestruction())
-	{
-		iSubtitleBroadcastData.LogDelay(true);
-		iSetTimer(&UCSS_SubtitleGISS::iDelayedDestroySubtitles, dtMissing);
-	}
-	else
-	{
-		iSubtitleBroadcastData.LogDestruction(tNow);
-		uReconstructSubtitles();
-	}
+	for (const int32 id : removedIDs)
+		DestructSubtitleEvent.Broadcast(id);
 }
 
 void UCSS_SubtitleGISS::ClearSubtitles()
@@ -109,19 +104,8 @@ void UCSS_SubtitleGISS::ClearSubtitles()
 
 	iManageRemoval(flushedHandles, flushedIDs);
 
-	const float tNow = itNow();
-	const float dtMissing = iSubtitleBroadcastData.dtFlickerProtectDestruct(tNow, iCurrentSettings->TimeGap);
-
-	if (dtMissing > 0 && !iSubtitleBroadcastData.IsDelayingDestruction())
-	{
-		iSubtitleBroadcastData.LogDelay(true);
-		iSetTimer(&UCSS_SubtitleGISS::iDelayedDestroySubtitles, dtMissing);
-	}
-	else
-	{
-		iSubtitleBroadcastData.LogDestruction(tNow);
-		uReconstructSubtitles();
-	}
+	for (const int32 id : flushedIDs)
+		DestructSubtitleEvent.Broadcast(id);
 }
 
 void UCSS_SubtitleGISS::PauseSubtitles()
@@ -159,8 +143,6 @@ void UCSS_SubtitleGISS::UnpauseSubtitles()
 
 	for (FTimerHandle const& handle : iQueuedSubtitles.Handles())
 		uTimerManager->UnPauseTimer(handle);
-
-	iDelayedBroadcastSubtitles();
 }
 
 void UCSS_SubtitleGISS::UnpauseQueuedSubtitles()
@@ -305,27 +287,18 @@ void UCSS_SubtitleGISS::iOnSubtitleTriggered(const int32 id)
 	iBroadcastSubtitle(iQueuedSubtitles.Consume(id), itNow(), id);
 }
 
-void UCSS_SubtitleGISS::iBroadcastSubtitle(FFullSubtitle const& subtitle, const float tNow, const int32 id)
-{
-	const float dtMissing = iSubtitleBroadcastData.dtFlickerProtectConstruct(tNow, iCurrentSettings->TimeGap);
-
-	if (dtMissing > 0)
-		iDelaySubtitle(subtitle, id, dtMissing);
-	else
-		uBroadcastSubtitle(subtitle, tNow, id);
-}
-
 //Unsafe to call without checking flicker protection
-void UCSS_SubtitleGISS::uBroadcastSubtitle(FFullSubtitle const& subtitle, const float tNow, const int32 id)
+void UCSS_SubtitleGISS::iBroadcastSubtitle(FFullSubtitle const& subtitle, const float tNow, const int32 id)
 {
 	if (!iSourcesManager.GetSources().Contains(subtitle.Source))
 		return;//If the source isn't registered (or is excluded due to SourceOverride) we don't want to broadcast.
 
 	const bool isPermanent = iCurrentSettings->ReadingSpeed < 0 || subtitle.ReadDuration < 0;
 
-	const float dtDisplay =
-		  FMath::Abs(subtitle.ReadDuration * iCurrentSettings->ReadingSpeed)
-		+ iSubtitleBroadcastData.dtBusy(tNow);
+	const float dtDisplay
+		= iCurrentSettings->bAccumulateReadTime
+		? FMath::Abs(subtitle.ReadDuration * iCurrentSettings->ReadingSpeed) + iSubtitleBroadcastData.dtBusy(tNow)
+		: FMath::Abs(subtitle.ReadDuration * iCurrentSettings->ReadingSpeed);
 
 	TArray<FTimerHandle> removedHandles = TArray<FTimerHandle>();
 	TArray<int32> removedIDs = TArray<int32>();
@@ -345,70 +318,20 @@ void UCSS_SubtitleGISS::uBroadcastSubtitle(FFullSubtitle const& subtitle, const 
 	
 	iSubtitleBroadcastData.LogBroadcast(tNow, dtDisplay);
 
-	if (removedHandles.Num())
-		uReconstructSubtitles();
-	else
-		ConstructSubtitleEvent.Broadcast(UCSCoreLibrary::FrySubtitle(subtitle, id, iCurrentSettings));
-}
-
-void UCSS_SubtitleGISS::iDelaySubtitle(FFullSubtitle const& subtitle, const int32 id, const float dtMissing)
-{
-	if (!iDelayedSubtitles.Num())
-		iSetTimer(&UCSS_SubtitleGISS::iDelayedBroadcastSubtitles, dtMissing);
-
-	iDelayedSubtitles.Add(id, subtitle);
-}
-
-void UCSS_SubtitleGISS::iDelayedBroadcastSubtitles()
-{
-	if (iSubtitleBroadcastData.IsPaused())
-		return;//We will attempt to broadcast again when UnpauseSubtitles is called.
-
-	const float tNow = itNow();
-	const float dtMissing = iSubtitleBroadcastData.dtFlickerProtectConstruct(tNow, iCurrentSettings->TimeGap);
-
-	if (dtMissing > 0)
-		iSetTimer(&UCSS_SubtitleGISS::iDelayedBroadcastSubtitles, dtMissing);
-	else
-		for (TPair<int32, FFullSubtitle> const& subtitle : iDelayedSubtitles)
-			uBroadcastSubtitle(subtitle.Value, tNow, subtitle.Key);
+	for (const int32 remID : removedIDs)
+		DestructSubtitleEvent.Broadcast(remID);
+	
+	ConstructSubtitleEvent.Broadcast(UCSCoreLibrary::FrySubtitle(subtitle, id, iCurrentSettings));
 }
 
 void UCSS_SubtitleGISS::iDestroySubtitle(const int32 id)
 {
 	const float tNow = itNow();
-	const float dtMissing = iSubtitleBroadcastData.dtFlickerProtectDestruct(tNow, iCurrentSettings->TimeGap);
 
 	iCurrentSubtitles.Remove(id);
 	iManageRemoval(id);
-
-	if (dtMissing > 0 && !iSubtitleBroadcastData.IsDelayingDestruction())
-	{
-		iSubtitleBroadcastData.LogDelay(true);
-		iSetTimer(&UCSS_SubtitleGISS::iDelayedDestroySubtitles, dtMissing);
-	}
-	else
-	{
-		iSubtitleBroadcastData.LogDestruction(tNow);
-		DestroySubtitleEvent.Broadcast(id);
-	}
-}
-
-void UCSS_SubtitleGISS::iDelayedDestroySubtitles()
-{
-	const float tNow = itNow();
-	const float dtMissing = iSubtitleBroadcastData.dtFlickerProtectDestruct(tNow, iCurrentSettings->TimeGap);
-
-	if (dtMissing > 0)
-	{
-		iSetTimer(&UCSS_SubtitleGISS::iDelayedDestroySubtitles, dtMissing);
-	}
-	else
-	{
-		iSubtitleBroadcastData.LogDelay(false);
-		iSubtitleBroadcastData.LogDestruction(tNow);
-		uReconstructSubtitles();
-	}
+	
+	DestructSubtitleEvent.Broadcast(id);
 }
 
 //Unsafe to call without checking flicker protection
@@ -485,8 +408,6 @@ void UCSS_SubtitleGISS::UnpauseCaptions()
 
 	for (FTimerHandle const& handle : iQueuedCaptions.Handles())
 		uTimerManager->UnPauseTimer(handle);
-
-	iDelayedBroadcastCaptions();
 }
 
 void UCSS_SubtitleGISS::UnpauseQueuedCaptions()
@@ -638,25 +559,6 @@ void UCSS_SubtitleGISS::iBroadcastCaption(FFullCaption const& caption, const flo
 	ConstructCaptionEvent.Broadcast(FCrispCaption(caption, id));
 }
 
-void UCSS_SubtitleGISS::iDelayCaption(FFullCaption const& caption, const int32 id, const float dtMissing)
-{
-	if (!iDelayedCaptions.Num())
-		iSetTimer(&UCSS_SubtitleGISS::iDelayedBroadcastCaptions, dtMissing);
-
-	iDelayedCaptions.Add(id, caption);
-}
-
-void UCSS_SubtitleGISS::iDelayedBroadcastCaptions()
-{
-	if (iCaptionsArePaused)
-		return;//We will attempt to broadcast again when UnpauseCaptions is called.
-
-	const float tNow = itNow();
-	
-	for (TPair<int32, FFullCaption> const& caption : iDelayedCaptions)
-			iBroadcastCaption(caption.Value, tNow, caption.Key);
-}
-
 void UCSS_SubtitleGISS::iDestroyCaption(const int32 id)
 {
 	iCurrentCaptions.Remove(id);
@@ -748,24 +650,6 @@ bool UCSS_SubtitleGISS::UnregisterSource(const FName source, const bool removeSu
 	RemoveQueuedSubtitlesBySource(source);
 	RemoveQueuedCaptionsBySource(source);
 
-	for (auto it = iDelayedSubtitles.CreateIterator(); it; ++it)
-	{
-		if (it.Value().Source == source)
-		{
-			iManageRemoval(it.Key());
-			it.RemoveCurrent();
-		}
-	}
-
-	for (auto it = iDelayedCaptions.CreateIterator(); it; ++it)
-	{
-		if (it.Value().SoundID.Source == source)
-		{
-			iManageRemoval(it.Key());
-			it.RemoveCurrent();
-		}
-	}
-
 	if (removeSubtitles)
 		iRemoveCurrentSubtitlesBySource(source);
 
@@ -819,8 +703,8 @@ void UCSS_SubtitleGISS::iRemoveCurrentSubtitlesBySource(const FName source)
 
 	iManageRemoval(removedHandles, removedIDs);
 
-	iSubtitleBroadcastData.LogDestruction(itNow());
-	uReconstructSubtitles();
+	for (const int32 id : removedIDs)
+		DestructCaptionEvent.Broadcast(id);
 
 	if (hadPermanent && !HasPermanentSubtitle())
 		PermanentSubtitlesRemoved.Broadcast();

@@ -20,6 +20,6 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = "CrispSubtitles", meta = (BindWidgetOptional))
 		USpacer* Spacer = nullptr;
 
-	UFUNCTION(BlueprintNativeEvent, Category = "CrispSubtitles|UI")
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "CrispSubtitles|UI")//TODO
 		void SetSize(FVector2D const& Size);
 };

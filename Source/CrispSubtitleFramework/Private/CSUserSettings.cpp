@@ -40,6 +40,7 @@ UCSUserSettings::UCSUserSettings()
 	, IndicatorSize(1.0f)
 	//Timing:
 	, ReadingSpeed(1.f)
+	, bAccumulateReadTime(true)
 	, TimeGap(.16f)
 	, MinimumSubtitleTime(1.f)
 	, MinimumCaptionTime(.85f)

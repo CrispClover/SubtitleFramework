@@ -11,30 +11,6 @@ class UCSLineWidget;
 class UCSUserSettings;
 
 #pragma region STRUCTS
-//The data used to construct a spacer
-USTRUCT(BlueprintType)
-struct FCSSpacerInfo
-{
-	GENERATED_BODY()
-		
-public:
-	FCSSpacerInfo()
-		: Size()
-		, SpacerClass()
-	{};
-
-	FCSSpacerInfo(FVector2D const& size, TSubclassOf<UCSBaseSpacer> spacerClass)
-		: Size(size)
-		, SpacerClass(spacerClass)
-	{};
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "CrispSubtitles")
-		FVector2D Size;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "CrispSubtitles")
-		TSubclassOf<UCSBaseSpacer> SpacerClass;
-};
-
 //The data used to style a subtitle line
 USTRUCT(BlueprintType)
 struct FCSLineStyle

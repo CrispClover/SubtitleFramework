@@ -406,6 +406,12 @@ struct FCSCurrentSubtitleData
 
 	FTimerHandle& Add(FFullSubtitle const& subtitle, const int32 id, const bool isPermanent, TArray<FTimerHandle>& removedHandles, TArray<int32>& removedIDs)
 	{
+		if (subtitle.Lines.Num() > UCSProjectSettingFunctions::GetMaxSubtitleLines())
+		{
+			iCurrentData.Flush(removedHandles, removedIDs);
+			return iCurrentData.Add(subtitle, id, isPermanent);
+		}
+
 		icLines += subtitle.Lines.Num();
 
 		while (icLines > UCSProjectSettingFunctions::GetMaxSubtitleLines() || iCurrentData.Num() == UCSProjectSettingFunctions::GetMaxSubtitles())
@@ -490,53 +496,20 @@ private:
 	int32 icLines = 0;
 };
 
-//Bundle to calculate flicker protection delta-times.
-struct FCSFlickerProtectionData
-{
-	inline float tLastSet() const
-		{ return itChanged; };
-
-	inline float dtMissing(const float tNow, const float dtGap) const
-	{
-		if (ifChanged == GFrameNumber)
-			return 0.f;
-		else
-			return FMath::Max(0, dtGap - (tNow - itChanged));
-	};
-
-	inline void Set(const float tNow)
-	{
-		itChanged = tNow;
-		ifChanged = GFrameNumber;
-	};
-
-private:
-	float itChanged = 0;
-	uint32 ifChanged = 0;
-};
-
 //Bundle to control broadcasts.
 struct FCSBroadcastingData
 {
 	FCSBroadcastingData()
-		: iProtectConstruct()
-		, iProtectDestruct()
+		: itLastBroadcast(0)
 		, idtBusy(0)
-		, iIsDelayingDestruction(false)
 		, iIsPaused(false)
 	{};
 
 	inline void LogBroadcast(const float tNow, const float dtBusy)
 	{
-		LogConstruction(tNow);
+		itLastBroadcast = tNow;
 		idtBusy = dtBusy;
 	};
-
-	inline void LogConstruction(const float tNow)
-		{ iProtectDestruct.Set(tNow); };
-
-	inline void LogDestruction(const float tNow)
-		{ iProtectConstruct.Set(tNow); };
 
 	inline void LogPaused()
 		{ iIsPaused = true; };
@@ -544,36 +517,15 @@ struct FCSBroadcastingData
 	inline void LogUnpaused()
 		{ iIsPaused = false; };
 
-	inline bool LogDelay(const bool isDelaying)
-		{ return iIsDelayingDestruction = isDelaying; };
-
-	inline bool IsDelayingDestruction() const
-		{ return iIsDelayingDestruction; };
-
 	inline bool IsPaused() const
 		{ return iIsPaused; };
 
-	inline float tLastConstruction() const
-		{ return iProtectDestruct.tLastSet(); };
-
 	inline float dtBusy(const float tNow) const
-		{ return FMath::Max(0.f, idtBusy + tLastConstruction() - tNow); };
-
-	//Returns the time to wait before we're allowed to add an element.
-	inline float dtFlickerProtectConstruct(const float tNow, const float dtGap) const
-		{ return iProtectConstruct.dtMissing(tNow, dtGap); };
-
-	//Returns the time to wait before we're allowed to remove an element.
-	inline float dtFlickerProtectDestruct(const float tNow, const float dtGap) const
-		{ return iProtectDestruct.dtMissing(tNow, dtGap); };
+		{ return FMath::Max(0.f, idtBusy + itLastBroadcast - tNow); };
 
 private:
-	FCSFlickerProtectionData iProtectConstruct;
-	FCSFlickerProtectionData iProtectDestruct;
-
+	float itLastBroadcast;
 	float idtBusy;
-
-	bool iIsDelayingDestruction;
 	bool iIsPaused;
 };
 #pragma endregion
@@ -623,16 +575,16 @@ private:
 	{
 		iIDManager.Delete(id);
 
-		if (CustomData)
-			CustomData->RemoveData(id);
+		if (CustomDataManager)
+			CustomDataManager->RemoveData(id);
 	}
 
 	inline void iManageRemoval(FTimerHandle& handle, const int32 id)
 	{
 		iIDManager.Delete(id);
 
-		if (CustomData)
-			CustomData->RemoveData(id);
+		if (CustomDataManager)
+			CustomDataManager->RemoveData(id);
 
 		if (uTimerManager)
 			uTimerManager->ClearTimer(handle);
@@ -644,8 +596,8 @@ private:
 		{
 			iIDManager.Delete(id);
 
-			if (CustomData)
-				CustomData->RemoveData(id);
+			if (CustomDataManager)
+				CustomDataManager->RemoveData(id);
 		}
 
 		if (uTimerManager)
@@ -662,6 +614,10 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "CrispSubtitles|Events")
 		FSubtitleTrigger ConstructSubtitleEvent;
 	
+	//Called when a subtitle should stop being displayed.
+	UPROPERTY(BlueprintAssignable, Category = "CrispSubtitles|Events")
+		FDestructTrigger DestructSubtitleEvent;
+	
 	//Called when a subtitle with infinite duration starts being displayed.
 	UPROPERTY(BlueprintAssignable, Category = "CrispSubtitles|Events")
 		FPermanentSubtitleNotify PermanentSubtitleAdded;
@@ -669,10 +625,6 @@ public:
 	//Called when all subtitles with infinite duration were removed.
 	UPROPERTY(BlueprintAssignable, Category = "CrispSubtitles|Events")
 		FPermanentSubtitleNotify PermanentSubtitlesRemoved;
-	
-	//Called when a subtitle should stop being displayed.
-	UPROPERTY(BlueprintAssignable, Category = "CrispSubtitles|Events")
-		FDestructTrigger DestroySubtitleEvent;
 	
 	/**
 	 * Called when the subtitle UI needs to be reconstructed.
@@ -686,18 +638,12 @@ public:
 		FORCEINLINE TArray<FFullSubtitle> const& GetCurrentSubtitles() const
 			{ return iCurrentSubtitles.Get(); };
 
-	//Returns the data for subtitles that are waiting for the flicker protection to run out.
-	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Subtitles")
-		FORCEINLINE TArray<FFullSubtitle> GetDelayedSubtitles() const
-	{ 
-		TArray<FFullSubtitle> delayed;
-		iDelayedSubtitles.GenerateValueArray(delayed);
-		return delayed;
-	};
-
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Subtitles")
 		FORCEINLINE TArray<FFullSubtitle> const& GetQueuedSubtitles() const
 			{ return iQueuedSubtitles.Get(); };
+
+	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Subtitles")
+		TArray<FFullSubtitle> GetUpcomingSubtitles(float DurationToSearch) const;
 	
 	//Returns whether a subtitle with infinite duration exists.
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Subtitles")
@@ -801,12 +747,8 @@ public:
 	
 private:
 	void iOnSubtitleTriggered(const int32 id);
-	void uBroadcastSubtitle(FFullSubtitle const& subtitle, const float tNow, const int32 id);
 	void iBroadcastSubtitle(FFullSubtitle const& subtitle, const float tNow, const int32 id);
-	void iDelaySubtitle(FFullSubtitle const& subtitle, const int32 id, const float dtMissing);
-	void iDelayedBroadcastSubtitles();
 	void iDestroySubtitle(const int32 id);
-	void iDelayedDestroySubtitles();
 	void uReconstructSubtitles() const;
 
 	inline void iPauseOnPermanentSubtitle()
@@ -819,7 +761,6 @@ private:
 	};
 
 	FCSCurrentSubtitleData iCurrentSubtitles = FCSCurrentSubtitleData();
-	TMap<int32, FFullSubtitle> iDelayedSubtitles = TMap<int32, FFullSubtitle>();
 	TCSTimedData<FFullSubtitle> iQueuedSubtitles = TCSTimedData<FFullSubtitle>();
 	FCSBroadcastingData iSubtitleBroadcastData = FCSBroadcastingData();
 
@@ -850,15 +791,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Captions")
 		FORCEINLINE TArray<FFullCaption> const& GetCurrentCaptions() const
 			{ return iCurrentCaptions.Get(); };
-
-	//Returns the data for captions that are waiting for the flicker protection to run out.
-	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Captions")
-		FORCEINLINE TArray<FFullCaption> GetDelayedCaptions() const
-	{ 
-		TArray<FFullCaption> delayed;
-		iDelayedCaptions.GenerateValueArray(delayed);
-		return delayed;
-	};
 
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Captions")
 		FORCEINLINE TArray<FFullCaption> const& GetQueuedCaptions() const
@@ -939,23 +871,18 @@ public:
 private:
 	void iOnCaptionTriggered(const int32 id);
 	void iBroadcastCaption(FFullCaption const& caption, const float tNow, const int32 id);
-	void iDelayCaption(FFullCaption const& caption, const int32 id, const float dtMissing);
-	void iDelayedBroadcastCaptions();
 	void iDestroyCaption(const int32 id);
-	void iDelayedDestroyCaptions();
 	void iReconstructCaptions() const;
 
 	bool iTryUpdateCaptionDuration(FCSSoundID const& soundID, const float dtDisplay, const bool isPermanent);
 
 	TCSCurrentData<FFullCaption> iCurrentCaptions = TCSCurrentData<FFullCaption>();
-	TMap<int32, FFullCaption> iDelayedCaptions = TMap<int32, FFullCaption>();
 	TCSTimedData<FFullCaption> iQueuedCaptions = TCSTimedData<FFullCaption>();
 	bool iCaptionsArePaused = false;
 
 #pragma endregion
 
 #pragma region DATA ACCESS
-	// --- DATA --- // TODO: more?
 public:
 	//Returns the approximated time the user will remain busy with reading the currently displayed subtitles.
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Data")
@@ -963,7 +890,7 @@ public:
 
 	//The object that will manage the custom data for subtitles.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "CrispSubtitles|CustomData")
-		UCSCustomDataManager* CustomData = nullptr;
+		UCSCustomDataManager* CustomDataManager = nullptr;
 
 #pragma endregion
 

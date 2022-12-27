@@ -31,7 +31,7 @@ void UCSContainerWidgetSubtitles::eConstructExample(FVector2D const& size)
 		UCSLetterboxWidget* example = CreateWidget<UCSLetterboxWidget>(this, letterboxClass);
 		eExamples.Add(example);
 		
-		UCSVerticalBoxSlot* slot = Cast<UCSVerticalBoxSlot>(Container->AddChild(example));
+		UCSVerticalBoxSlot* slot = Cast<UCSVerticalBoxSlot>(Container->AddDesignChild(example));
 		slot->SetPadding(settings->GetLayout().SubtitlePadding);
 
 		FCSLetterboxStyle const& style = UCSUILibrary::GetDesignLetterboxStyle(subtitles[x].Speaker, subtitles[x].IsIndirectSpeech(), size);
@@ -45,7 +45,7 @@ void UCSContainerWidgetSubtitles::NativeConstruct()
 	uCSS = UGameplayStatics::GetGameInstance(GetWorld())->GetSubsystem<UCSS_SubtitleGISS>();
 
 	uCSS->ConstructSubtitleEvent.AddDynamic(this, &UCSContainerWidgetSubtitles::OnSubtitleReceived);
-	uCSS->DestroySubtitleEvent.AddDynamic(this, &UCSContainerWidgetSubtitles::OnDestroy);
+	uCSS->DestructSubtitleEvent.AddDynamic(this, &UCSContainerWidgetSubtitles::OnDestroy);
 	uCSS->ReconstructSubtitlesEvent.AddDynamic(this, &UCSContainerWidgetSubtitles::OnReconstruct);
 
 	uCSS->RecalculateLayout();
@@ -56,7 +56,7 @@ void UCSContainerWidgetSubtitles::NativeConstruct()
 void UCSContainerWidgetSubtitles::NativeDestruct()
 {
 	uCSS->ConstructSubtitleEvent.RemoveAll(this);
-	uCSS->DestroySubtitleEvent.RemoveAll(this);
+	uCSS->DestructSubtitleEvent.RemoveAll(this);
 	uCSS->ReconstructSubtitlesEvent.RemoveAll(this);
 
 	Super::NativeDestruct();
@@ -102,10 +102,7 @@ void UCSContainerWidgetSubtitles::OnDestroy_Implementation(const int32 id)
 	if(!uSettings)
 		uSettings = uCSS->GetCurrentSettings();
 	
-	FCSSpacerInfo spacerInfo = FCSSpacerInfo();//TODO
-	spacerInfo.SpacerClass = uSettings->SubtitleSpacer.LoadSynchronous();
-	
-	const float dtMissing = Container->dtTryVacate(id, spacerInfo, otNow(), uSettings->TimeGap);
+	const float dtMissing = Container->dtTryVacate(id, uSettings->SubtitleSpacer.LoadSynchronous(), otNow(), uSettings->TimeGap);
 
 	if (dtMissing > 0.f)
 	{

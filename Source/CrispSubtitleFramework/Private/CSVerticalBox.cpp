@@ -3,7 +3,14 @@
 #include "CSVerticalBox.h"
 #include "CSVerticalBoxSlot.h"
 #include "CSBaseSpacer.h"
-#include "CSUILibrary.h"
+
+UCSVerticalBoxSlot* UCSVerticalBox::AddDesignChild(UWidget* child)
+{
+	if (!child)
+		return nullptr;
+
+	return Cast<UCSVerticalBoxSlot>(iAddChild(child));
+}
 
 UCSVerticalBoxSlot* UCSVerticalBox::rFindSlot(const int32 id)
 {
@@ -27,6 +34,9 @@ UWidget* UCSVerticalBox::rFindChild(const int32 id)
 
 UCSVerticalBoxSlot* UCSVerticalBox::FindOrAddSlot(UWidget* newChild, const float tNow, const float dtGap, const int32 id)
 {
+	if (!newChild)
+		return nullptr;
+
     const int32 c = iIDs.Num();
 	for (int32 x = 0; x < c; x++)
 	{
@@ -38,31 +48,26 @@ UCSVerticalBoxSlot* UCSVerticalBox::FindOrAddSlot(UWidget* newChild, const float
 		}
 	}
 
-    iAddData(CSFlickerData(tNow), false, id);
-	UCSVerticalBoxSlot* slot = Cast<UCSVerticalBoxSlot>(AddChild(newChild));
-	return slot;
+	return iAddChild(newChild, tNow, false, id);
 }
 
-UCSVerticalBoxSlot* UCSVerticalBox::AddVacantSlot(FCSSpacerInfo const& info, const float tNow)
+UCSVerticalBoxSlot* UCSVerticalBox::AddVacantSlot(TSubclassOf<UCSBaseSpacer> spacerClass, FVector2D size, const float tNow)
 {
-    if (!info.SpacerClass)
+    if (!spacerClass)
         return nullptr;
 
-	UCSBaseSpacer* spacer = CreateWidget<UCSBaseSpacer>(this, info.SpacerClass);
-	spacer->SetSize(info.Size);//TODO: calculate based on settings?
-
-    iAddData(CSFlickerData(tNow), true);
-	UCSVerticalBoxSlot* slot = Cast<UCSVerticalBoxSlot>(AddChild(spacer));
-	return slot;
+	UCSBaseSpacer* spacer = CreateWidget<UCSBaseSpacer>(this, spacerClass);
+	spacer->SetSize(size);//TODO: calculate based on settings?
+	
+	return iAddChild(spacer, tNow, true);
 }
 
-float UCSVerticalBox::dtTryVacate(const int32 id, FCSSpacerInfo const& info, const float tNow, const float dtGap)
+float UCSVerticalBox::dtTryVacate(const int32 id, TSubclassOf<UCSBaseSpacer> spacerClass, const float tNow, const float dtGap)
 {
-    if (!info.SpacerClass)
+    if (!spacerClass)
         return -1.f;
 
-	UCSBaseSpacer* spacer = CreateWidget<UCSBaseSpacer>(this, info.SpacerClass);
-	//spacer->SetSize(info.Size); //TODO: calculate based on settings?
+	UCSBaseSpacer* spacer = CreateWidget<UCSBaseSpacer>(this, spacerClass);
     
     const int32 c = iIDs.Num();
     for (int32 x = 0; x < c; x++)
@@ -158,16 +163,20 @@ void UCSVerticalBox::uReplaceChildAt(const int32 x, UWidget* newChild)
 {
 	UPanelSlot* slot = Slots[x];
 
+	Slots.RemoveAt(x);
+
 	if (UWidget* oldChild = slot->Content)
 	{
 		oldChild->Slot = nullptr;
-		
-		if (UCSBaseSpacer* spacer = Cast<UCSBaseSpacer>(newChild))
-			spacer->SetSize(oldChild->GetDesiredSize());//TODO: calculate based on settings?
-	}
 
-	Slots.RemoveAt(x);
-	OnSlotRemoved(slot);
+		if (UCSBaseSpacer* spacer = Cast<UCSBaseSpacer>(newChild))
+			spacer->SetSize(oldChild->GetDesiredSize());
+
+		TSharedPtr<SWidget> widget = oldChild->GetCachedWidget();
+
+		if (iVerticalBox.IsValid() && widget.IsValid())
+			iVerticalBox->RemoveSlot(widget.ToSharedRef());
+	}
 
 	slot->ReleaseSlateResources(true);
 	slot->Parent = nullptr;
@@ -180,6 +189,7 @@ void UCSVerticalBox::uReplaceChildAt(const int32 x, UWidget* newChild)
 	}
 
 	slot->Content = newChild;
+
 	Slots.EmplaceAt(x, slot);
 
 	if (iVerticalBox.IsValid())
@@ -188,11 +198,61 @@ void UCSVerticalBox::uReplaceChildAt(const int32 x, UWidget* newChild)
 	InvalidateLayoutAndVolatility();
 }
 
+UPanelSlot* UCSVerticalBox::iAddChild(UWidget* child)
+{
+	if (!child)
+		return nullptr;
+
+	child->RemoveFromParent();
+
+	EObjectFlags flags = RF_Transactional;
+	if (HasAnyFlags(RF_Transient))
+		flags |= RF_Transient;
+
+	UPanelSlot* slot = NewObject<UPanelSlot>(this, GetSlotClass(), NAME_None, flags);
+	slot->Content = child;
+	slot->Parent = this;
+
+	child->Slot = slot;
+
+	if (bAddToTop)
+	{
+		Slots.Insert(slot, 0);
+	}
+	else
+	{
+		Slots.Add(slot);
+	}
+
+	OnSlotAdded(slot);
+
+	InvalidateLayoutAndVolatility();
+
+	return slot;
+}
+
+UCSVerticalBoxSlot* UCSVerticalBox::iAddChild(UWidget* child, const float tNow, const bool vacant, const int32 id)
+{
+	if (bAddToTop)
+		uInsertData(0, CSFlickerData(tNow), vacant, id);
+	else
+		iAddData(CSFlickerData(tNow), vacant, id);
+
+	return Cast<UCSVerticalBoxSlot>(AddChild(child));
+}
+
 void UCSVerticalBox::iAddData(CSFlickerData const& flickerData, const bool vacant, const int32 id)
 {
     iFlickerData.Add(flickerData);
     iIDs.Add(id);
     iVacant.Add(vacant);
+}
+
+void UCSVerticalBox::uInsertData(const int32 x, CSFlickerData const& flickerData, const bool vacant, const int32 id)
+{
+	iFlickerData.Insert(flickerData, x);
+    iIDs.Insert(id, x);
+    iVacant.Insert(vacant, x);
 }
 
 void UCSVerticalBox::uSetData(const int32 x, CSFlickerData const& flickerData, const bool vacant, const int32 id)

@@ -33,7 +33,7 @@ void UCSContainerWidgetCaptions::eConstructExample(FVector2D const& size)
 		UCSCaptionWidget* example = CreateWidget<UCSCaptionWidget>(this, captionClass);
 		eExamples.Add(example);
 
-		UCSVerticalBoxSlot* slot = Cast<UCSVerticalBoxSlot>(Container->AddChild(example));
+		UCSVerticalBoxSlot* slot = Cast<UCSVerticalBoxSlot>(Container->AddDesignChild(example));
 		slot->SetPadding(settings->GetLayout().CaptionPadding);
 		slot->SetHorizontalAlignment(settings->CaptionAlignment);
 
@@ -108,10 +108,7 @@ void UCSContainerWidgetCaptions::OnDestroy_Implementation(const int32 id)
 	if (!uSettings)
 		uSettings = uCSS->GetCurrentSettings();
 
-	FCSSpacerInfo spacerInfo = FCSSpacerInfo();//TODO
-	spacerInfo.SpacerClass = uSettings->CaptionSpacer.LoadSynchronous();
-
-	const float dtMissing = Container->dtTryVacate(id, spacerInfo, otNow(), uSettings->TimeGap);
+	const float dtMissing = Container->dtTryVacate(id, uSettings->CaptionSpacer.LoadSynchronous(), otNow(), uSettings->TimeGap);
 
 	if (dtMissing > 0.f)
 	{

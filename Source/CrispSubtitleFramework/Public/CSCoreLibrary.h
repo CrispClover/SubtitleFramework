@@ -355,8 +355,8 @@ public:
 	 */
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Preparation")
 		static FCrispSubtitle FrySubtitle(FFullSubtitle const& Subtitle, const int32 ID, UCSUserSettings const* Settings);
-
-	//TODO
+	
+	//Calculates the Normalised Display Coordinates at the given position.
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|TODO")
 		static FVector2D LocalPositionToNDC(FVector2D const& LocalPosition, FIntPoint const& ViewportSize, FVector2D const& LayerSize);
 };
