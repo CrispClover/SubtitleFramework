@@ -921,7 +921,7 @@ public:
 	 * @return false if SourceName is already registered.
 	 */
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Sources")
-		bool RegisterAndTrackSound3D(FCSSoundID const& SoundID, FVector const& SourceLocation, ULocalPlayer const* Player = nullptr);
+		bool RegisterAndTrackSound(FCSSoundID const& SoundID, FVector const& SourceLocation, ULocalPlayer const* Player = nullptr);
 
 	/**
 	 * Starts tracking a registered sound source for direction indicators.
@@ -931,7 +931,7 @@ public:
 	 * @return false if source hasn't been registered yet.
 	 */
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Sources")
-		bool TrackSound3D(FCSSoundID const& SoundID, FVector const& SourceLocation, ULocalPlayer const* Player = nullptr);
+		bool TrackSound(FCSSoundID const& SoundID, FVector const& SourceLocation, ULocalPlayer const* Player = nullptr);
 
 	/**
 	 * @param SoundID The ID used at registration.
@@ -979,20 +979,17 @@ public:
 		bool HasSourcesOverride() const;
 
 	/**
-	 * TODO
+	 * Overrides which registered sources are allowed to broadcast subtitles and captions.
+	 * @param SourcesOverride The sources that are allowed to broadcast. Sources must still be registered to broadcast.
 	 */
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Sources")
 		void SetSourcesOverride(TSet<FName> const& SourcesOverride);
 
-	/**
-	 * TODO
-	 */
-	//UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Sources")
-		//TSet<FName> const& GetSourcesOverride() const;
+	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Sources")
+		FORCEINLINE TSet<FName> const& GetSourcesOverride() const
+			{ return iSourcesManager.GetOverride(); };
 
-	/**
-	 * TODO
-	 */
+	//Clears the SourcesOverride, allowing all registered sources to broadcast subtitles and captions.
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Sources")
 		void ClearSourcesOverride();
 
@@ -1010,7 +1007,7 @@ public:
 	 * Forces recalculation of the indicator data. Doesn't need to be called by default.
 	 * If you want to run calculations on a timer, use this and disable bCalculateIndicatorsOnTick in the project settings.
 	 */
-	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Tick")
+	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Indicators")
 		void UpdateIndicatorData(ULocalPlayer const* Player);
 
 	template<typename UserClass>
@@ -1023,7 +1020,7 @@ public:
 	 * @param Player The player the indicator widget belongs to.
 	 * @param Widget The widget to unregister.
 	 */
-	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Tick")
+	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Indicators")
 	void UnregisterIndicator(FCSSoundID const& SoundID, ULocalPlayer const* Player, UObject* Widget);
 
 #pragma endregion

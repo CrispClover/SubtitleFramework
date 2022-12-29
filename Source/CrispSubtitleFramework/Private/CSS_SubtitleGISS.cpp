@@ -619,7 +619,7 @@ bool UCSS_SubtitleGISS::RegisterAutoNamedSource(AActor const* source, FName& nam
 	return iSourcesManager.AddSource(name);
 }
 
-bool UCSS_SubtitleGISS::RegisterAndTrackSound3D(FCSSoundID const& soundID, FVector const& location, ULocalPlayer const* player)
+bool UCSS_SubtitleGISS::RegisterAndTrackSound(FCSSoundID const& soundID, FVector const& location, ULocalPlayer const* player)
 {
 	if (!RegisterSource(soundID.Source))
 		return false;
@@ -627,7 +627,7 @@ bool UCSS_SubtitleGISS::RegisterAndTrackSound3D(FCSSoundID const& soundID, FVect
 	return iSourcesManager.TrackSound(soundID, location, player);
 }
 
-bool UCSS_SubtitleGISS::TrackSound3D(FCSSoundID const& soundID, FVector const& location, ULocalPlayer const* player)
+bool UCSS_SubtitleGISS::TrackSound(FCSSoundID const& soundID, FVector const& location, ULocalPlayer const* player)
 {
 	return iSourcesManager.TrackSound(soundID, location, player);
 }

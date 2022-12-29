@@ -43,6 +43,9 @@ public:
 	inline bool HasOverride() const
 		{ return !iSourcesOverride.IsEmpty(); };
 
+	inline TSet<FName> const& GetOverride() const
+		{ return iSourcesOverride; };
+
 	inline bool IsRegistered(const FName source) const
 		{ return iSources.Contains(source); };
 
