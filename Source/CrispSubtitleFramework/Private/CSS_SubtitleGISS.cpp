@@ -12,6 +12,11 @@ void UCSS_SubtitleGISS::Initialize(FSubsystemCollectionBase& collection)
 	uTimerManager = gi->TimerManager;
 	gi->OnLocalPlayerAddedEvent.AddUObject(this, &UCSS_SubtitleGISS::iPlayerAdded);
 	gi->OnLocalPlayerRemovedEvent.AddUObject(this, &UCSS_SubtitleGISS::iPlayerRemoved);
+
+	TSubclassOf<UCSCustomDataManager> cdmClass = GetDefault<UCSProjectSettings>()->CustomDataClass;
+
+	if (cdmClass)
+		CustomDataManager = NewObject<UCSCustomDataManager>(this, cdmClass.Get());
 }
 
 void UCSS_SubtitleGISS::Deinitialize()
