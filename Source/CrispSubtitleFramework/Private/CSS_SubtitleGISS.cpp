@@ -89,7 +89,7 @@ void UCSS_SubtitleGISS::RemovePermanents()
 	TArray<int32> removedIDs;
 	iCurrentSubtitles.RemovePermanents(removedHandles, removedIDs);
 
-	if (removedIDs.IsEmpty())
+	if (removedIDs.Num() == 0)
 		return;
 
 	iManageRemoval(removedHandles, removedIDs);
@@ -104,7 +104,7 @@ void UCSS_SubtitleGISS::ClearSubtitles()
 	TArray<int32> flushedIDs;
 	iCurrentSubtitles.Flush(flushedHandles, flushedIDs);
 
-	if (flushedIDs.IsEmpty())
+	if (flushedIDs.Num() == 0)
 		return;
 
 	iManageRemoval(flushedHandles, flushedIDs);
@@ -370,7 +370,7 @@ void UCSS_SubtitleGISS::ClearCaptions()
 	TArray<int32> flushedIDs;
 	iCurrentCaptions.Flush(flushedHandles, flushedIDs);
 
-	if (flushedIDs.IsEmpty())
+	if (flushedIDs.Num() == 0)
 		return;
 
 	iManageRemoval(flushedHandles, flushedIDs);
@@ -703,7 +703,7 @@ void UCSS_SubtitleGISS::iRemoveCurrentSubtitlesBySource(const FName source)
 
 	iCurrentSubtitles.RemoveBySource(source, removedHandles, removedIDs);
 
-	if (removedHandles.IsEmpty())
+	if (removedHandles.Num() == 0)
 		return;
 
 	iManageRemoval(removedHandles, removedIDs);
@@ -730,7 +730,7 @@ void UCSS_SubtitleGISS::iRemoveCurrentCaptionsBySource(const FName source)
 		}
 	}
 
-	if (removedHandles.IsEmpty())
+	if (removedHandles.Num() == 0)
 		return;
 
 	iManageRemoval(removedHandles, removedIDs);

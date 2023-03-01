@@ -17,7 +17,7 @@ void UCSUserSettingsWidget::eConstructExample(FVector2D const& size)
 		return;
 
 	CurrentSettings = UCSProjectSettingFunctions::GetDesignSettings(size);
-	//ReconstructExamples();
+	ReconstructExamples();
 }
 #endif
 

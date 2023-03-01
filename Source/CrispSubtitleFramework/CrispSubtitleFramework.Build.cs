@@ -33,13 +33,13 @@ public class CrispSubtitleFramework : ModuleRules
 		
 		PrivateDependencyModuleNames.AddRange(
 			new string[]
-			{
-				"CoreUObject",
-				"Engine",
-				"UMG",
-				"Slate",
-				"SlateCore",
-				"InputCore",
+            {
+                "CoreUObject",
+                "Engine",
+                "UMG",
+                "Slate",
+                "SlateCore",
+                "InputCore",
                 "Overlay",
 				// ... add private dependencies that you statically link with here ...	
 			}
