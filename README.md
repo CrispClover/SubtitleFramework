@@ -7,6 +7,7 @@ This plugin helps you deliver subtitles in accordance with broadcasting industry
 ## Getting Started
 * [Wiki](https://github.com/CrispClover/SubtitleFramework/wiki)
 * [Download](https://github.com/CrispClover/SubtitleFramework/releases)
+* You can also use [PluginDownloader](https://www.unrealengine.com/marketplace/en-US/product/plugin-downloader) to download the plugin.
 
 ## [License](LICENSE.txt)
 **Ship it!** Preserving the copyright and license notices is only required when distributing the source code.
