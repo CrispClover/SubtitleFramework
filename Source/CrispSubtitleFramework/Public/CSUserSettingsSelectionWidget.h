@@ -23,14 +23,12 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOpening);
 UCLASS()
 class CRISPSUBTITLEFRAMEWORK_API UCSUserSettingsSelectionWidget : public UWidget
 {
-	GENERATED_BODY()
+	GENERATED_UCLASS_BODY()
 		
 protected:
 	virtual void SynchronizeProperties() override;
 
 public:
-	UCSUserSettingsSelectionWidget();
-
 	//Called when a new setting is selected.
 	UPROPERTY(BlueprintAssignable, Category = Events)
 		FSelectionChanged SelectionChangedEvent;

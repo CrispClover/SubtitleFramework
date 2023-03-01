@@ -51,31 +51,29 @@ void UCSVerticalBoxSlot::ReleaseSlateResources(bool releaseChildren)
 }
 
 void UCSVerticalBoxSlot::AddSlot(TSharedRef<SVerticalBox> verticalBox)
-{
-	verticalBox->AddSlot()
-		.Expose(iSlot)
+{	
+	iSlot = &verticalBox->AddSlot()
 		.Padding(Padding)
 		.HAlign(HorizontalAlignment)
 		.VAlign(VerticalAlignment)
-		.SizeParam(UWidget::ConvertSerializedSizeParamToRuntime(Size))
-		.Expose(iSlot)
 		[
 			Content == nullptr ? SNullWidget::NullWidget : Content->TakeWidget()
 		];
+
+	iSlot->SizeParam = UWidget::ConvertSerializedSizeParamToRuntime(Size);
 }
 
 void UCSVerticalBoxSlot::InsertSlot(TSharedRef<SVerticalBox> verticalBox, const int32 x)
 {
-	verticalBox->InsertSlot(x)
-		.Expose(iSlot)
+	iSlot = &verticalBox->InsertSlot(x)
 		.Padding(Padding)
 		.HAlign(HorizontalAlignment)
 		.VAlign(VerticalAlignment)
-		.SizeParam(UWidget::ConvertSerializedSizeParamToRuntime(Size))
-		.Expose(iSlot)
 		[
 			Content == nullptr ? SNullWidget::NullWidget : Content->TakeWidget()
 		];
+
+	iSlot->SizeParam = UWidget::ConvertSerializedSizeParamToRuntime(Size);
 }
 
 void UCSVerticalBoxSlot::SetPadding(FMargin padding)
@@ -83,7 +81,7 @@ void UCSVerticalBoxSlot::SetPadding(FMargin padding)
 	Padding = padding;
 
 	if (iSlot)
-		iSlot->SetPadding(padding);
+		iSlot->Padding(padding);
 }
 
 void UCSVerticalBoxSlot::SetSize(FSlateChildSize size)
@@ -91,7 +89,7 @@ void UCSVerticalBoxSlot::SetSize(FSlateChildSize size)
 	Size = size;
 	
 	if (iSlot)
-		iSlot->SetSizeParam(UWidget::ConvertSerializedSizeParamToRuntime(size));
+		iSlot->SizeParam = UWidget::ConvertSerializedSizeParamToRuntime(size);
 }
 
 void UCSVerticalBoxSlot::SetHorizontalAlignment(EHorizontalAlignment horizontalAlignment)
@@ -99,7 +97,7 @@ void UCSVerticalBoxSlot::SetHorizontalAlignment(EHorizontalAlignment horizontalA
 	HorizontalAlignment = horizontalAlignment;
 
 	if (iSlot)
-		iSlot->SetHorizontalAlignment(horizontalAlignment);
+		iSlot->HAlignment = horizontalAlignment;
 }
 
 void UCSVerticalBoxSlot::SetVerticalAlignment(EVerticalAlignment verticalAlignment)
@@ -107,7 +105,7 @@ void UCSVerticalBoxSlot::SetVerticalAlignment(EVerticalAlignment verticalAlignme
 	VerticalAlignment = verticalAlignment;
 
 	if (iSlot)
-		iSlot->SetVerticalAlignment(verticalAlignment);
+		iSlot->VAlignment = verticalAlignment;
 }
 
 void UCSVerticalBoxSlot::SynchronizeProperties()
