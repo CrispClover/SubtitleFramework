@@ -5,7 +5,7 @@
 
 UCSProjectSettings::UCSProjectSettings(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
-	, DefaultSettings(FSoftObjectPath("/CrispSubtitleFramework/Settings/DefaultSettings.DefaultSettings"))
+	, DefaultSettings(FSoftObjectPath("/CrispSubtitleFramework/Settings/Default.Default"))
 	, SettingsDirectories()
 	, bDisplayCaptionsAsSubtitles(false)
 	, MaximumSubtitles(3)
