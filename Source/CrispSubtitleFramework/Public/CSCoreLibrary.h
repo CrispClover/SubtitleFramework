@@ -24,10 +24,10 @@ struct FCSSoundID
 	GENERATED_BODY()
 
 public:
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="CrispSubtitles")
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 		FName Source;
 
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="CrispSubtitles")
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 		FName Sound;
 
 	FCSSoundID()
@@ -344,7 +344,7 @@ public:
 	 * @param Unit The angle unit you want returned.
 	 */
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Data")
-		static float AngleConversion(const float Angle, const int32 Segments = 0, const EAngleUnit Unit = EAngleUnit::degrees);
+		static double AngleConversion(const double Angle, const int32 Segments = 0, const EAngleUnit Unit = EAngleUnit::degrees);
 
 	/**
 	 * Prepares a subtitle for being displayed in the UI.

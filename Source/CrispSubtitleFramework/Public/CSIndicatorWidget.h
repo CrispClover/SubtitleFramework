@@ -35,8 +35,8 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "CrispSubtitles|Settings")
 		int32 Segments = 0;
 
-	//UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Data")
-		//bool GetIndicatorData(FCSIndicatorWidgetData& WidgetData) const;
+	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Data")
+		bool GetIndicatorData(FCSIndicatorWidgetData& WidgetData) const;
 	
 	//If the object is behind the camera, this value will be negative. Magnitude is the screen-distance between widget and object.
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Data")

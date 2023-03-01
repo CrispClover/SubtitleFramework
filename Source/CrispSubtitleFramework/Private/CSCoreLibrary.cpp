@@ -5,13 +5,13 @@
 #include "Engine/UserInterfaceSettings.h"
 #include "CSProjectSettingFunctions.h"
 
-float UCSCoreLibrary::AngleConversion(const float angle, const int32 segments, const EAngleUnit unit)
+double UCSCoreLibrary::AngleConversion(const double angle, const int32 segments, const EAngleUnit unit)
 {
 	const float twoPi = 6.2831855f;
 
 	if (segments > 0)
 	{
-		const float approx = FMath::Floor((angle / twoPi) * segments + 0.5) / segments;
+		const double approx = FMath::Floor((angle / twoPi) * segments + 0.5) / segments;
 		switch (unit)
 		{
 		case EAngleUnit::degrees:

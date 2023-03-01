@@ -41,7 +41,7 @@ public:
 		{ iSourcesOverride.Empty(); };
 
 	inline bool HasOverride() const
-		{ return iSourcesOverride.Num() != 0; };
+		{ return !iSourcesOverride.IsEmpty(); };
 
 	inline TSet<FName> const& GetOverride() const
 		{ return iSourcesOverride; };

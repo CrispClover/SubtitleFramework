@@ -9,7 +9,7 @@ void CSTrackingManager::Calculate()
 		return;
 
 	FSceneViewProjectionData projectionData;
-	if (!Player->GetProjectionData(Player->ViewportClient->Viewport, EStereoscopicPass::eSSP_FULL, projectionData))
+	if (!Player->GetProjectionData(Player->ViewportClient->Viewport, projectionData))
 		return;
 
 	const FMatrix projectionMatrix = projectionData.ComputeViewProjectionMatrix();
@@ -23,10 +23,10 @@ void CSTrackingManager::Calculate()
 		const float m = 1 - 2 * (int8)(projection.W < 0);//We want to mirror coordinates behind the player's view.
 
 		//Normalised coordinates (X/W), offset subtracted, and mirrored in back:
-		const FVector2D adjustedNDC = m * FVector2D(projection.X / projection.W - sound3D.Offset.X, -projection.Y / projection.W - sound3D.Offset.Y);
+		const FVector2f adjustedNDC = m * FVector2f(projection.X / projection.W - sound3D.Offset.X, -projection.Y / projection.W - sound3D.Offset.Y);
 
 		sound3D.Angle = FMath::Atan2(adjustedNDC.Y * rectangle.Height(), adjustedNDC.X * rectangle.Width());
-		sound3D.OpacityDriver = m * adjustedNDC.Size();//Negative numbers were unused. "Packing" projection.W < 0.
+		sound3D.OpacityDriver = m * adjustedNDC.Length();//Negative numbers were unused. "Packing" projection.W < 0.
 	}
 
 	UpdateIDataEvent.Broadcast();

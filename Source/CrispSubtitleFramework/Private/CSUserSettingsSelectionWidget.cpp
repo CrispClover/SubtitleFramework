@@ -2,12 +2,10 @@
 
 #include "CSUserSettingsSelectionWidget.h"
 #include "Kismet/GameplayStatics.h"
+#include "Styling/UMGCoreStyle.h"
 #include "Engine/ObjectLibrary.h"
 #include "CSS_SubtitleGISS.h"
 #include "CSUserSettings.h"
-
-static FComboBoxStyle* DefaultComboBoxStyle = nullptr;
-static FTableRowStyle* DefaultComboBoxRowStyle = nullptr;
 
 void UCSUserSettingsSelectionWidget::SynchronizeProperties()
 {
@@ -26,19 +24,12 @@ void UCSUserSettingsSelectionWidget::SynchronizeProperties()
 		oOnSettingsLoaded();
 }
 
-UCSUserSettingsSelectionWidget::UCSUserSettingsSelectionWidget(const FObjectInitializer& ObjectInitializer)
-	: Super(ObjectInitializer)
+UCSUserSettingsSelectionWidget::UCSUserSettingsSelectionWidget()
 {
-	if (!DefaultComboBoxStyle)
+	if (!IsRunningDedicatedServer())
 	{
-		DefaultComboBoxStyle = new FComboBoxStyle(FCoreStyle::Get().GetWidgetStyle<FComboBoxStyle>("ComboBox"));
-		DefaultComboBoxStyle->UnlinkColors();
-	}
-
-	if (!DefaultComboBoxRowStyle)
-	{
-		DefaultComboBoxRowStyle = new FTableRowStyle(FCoreStyle::Get().GetWidgetStyle<FTableRowStyle>("TableView.Row"));
-		DefaultComboBoxRowStyle->UnlinkColors();
+		ComboboxStyle = FUMGCoreStyle::Get().GetWidgetStyle<FComboBoxStyle>("ComboBox");
+		ItemRowStyle = FUMGCoreStyle::Get().GetWidgetStyle<FTableRowStyle>("TableView.Row");
 	}
 
 	ContentPadding = FMargin(4.0, 2.0);

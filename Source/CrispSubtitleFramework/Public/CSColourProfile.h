@@ -91,11 +91,11 @@ public:
 			{ return oColourWasMatched(Speaker); };
 
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|ColourProfile")
-		void LogMatch(FName Speaker)
+		FORCEINLINE void LogMatch(FName Speaker)
 			{ oLogMatch(Speaker); };
 
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|ColourProfile")
-		void ForgetMatch(FName Speaker)
+		FORCEINLINE void ForgetMatch(FName Speaker)
 			{ oForgetMatch(Speaker); };
 
 protected:
@@ -152,7 +152,7 @@ public:
 
 	//Returns the subtitle text colour for the given speaker.
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|ColourProfile")
-		void AssignColour(FName Speaker, FLinearColor Colour)
+		FORCEINLINE void AssignColour(FName Speaker, FLinearColor Colour)
 			{ oAssignColour(Speaker, Colour); };
 
 protected:

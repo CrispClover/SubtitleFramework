@@ -37,7 +37,7 @@ UCSProjectSettings::UCSProjectSettings(const FObjectInitializer& ObjectInitializ
 	})
 {
 #if WITH_EDITOR
-	if (SettingsDirectories.Num() == 0)
+	if (SettingsDirectories.IsEmpty())
 	{
 		FDirectoryPath settings;
 		settings.Path = "/CrispSubtitleFramework/Settings";

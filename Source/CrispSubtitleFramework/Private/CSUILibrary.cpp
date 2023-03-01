@@ -18,7 +18,7 @@ FCSLineStyle::FCSLineStyle()
 };
 
 FCSLetterboxStyle::FCSLetterboxStyle()
-    : LineClass()
+    : LineClass(UCSProjectSettingFunctions::GetDefaultSettings()->LineClass.LoadSynchronous())
     , LabelStyle()
     , LineStyle()
     , LetterboxColour(FLinearColor::Black)

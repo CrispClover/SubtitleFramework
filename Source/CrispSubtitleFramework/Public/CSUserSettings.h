@@ -171,7 +171,7 @@ public:
 
 	//The material to use when rendering this font, can be left blank.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, AdvancedDisplay, meta = (AllowedClasses = "MaterialInterface"), Category = "Font")
-		UObject* FontMaterial;
+		TObjectPtr<UObject> FontMaterial;
 
 	/**
 	 * The text size should fit into a line height of 8% screen height (recommended for TV).

@@ -15,7 +15,7 @@ void UCSIndicatorWidget::eConstructExample(FVector2D const& size)
 		return;
 
 	UCSUserSettings* settings = UCSProjectSettingFunctions::GetDesignSettings(size);
-	//Image->SetDesiredSizeOverride(settings->GetLayout().IndicatorSize);
+	Image->SetDesiredSizeOverride(settings->GetLayout().IndicatorSize);
 }
 #endif
 
@@ -34,14 +34,14 @@ void UCSIndicatorWidget::NativeDestruct()
 	Super::NativeDestruct();
 }
 
-/*bool UCSIndicatorWidget::GetIndicatorData(FCSIndicatorWidgetData& WidgetData) const
+bool UCSIndicatorWidget::GetIndicatorData(FCSIndicatorWidgetData& WidgetData) const
 {
 	if (!uWidgetData)
 		return false;
 
 	WidgetData = *uWidgetData;
 	return true;
-}*/
+}
 
 void UCSIndicatorWidget::OnUpdateIndicators_Implementation()
 {
@@ -93,7 +93,7 @@ void UCSIndicatorWidget::Register_Implementation(FCSSoundID const& id)
 
 	uCSS->RegisterIndicator(args, GetOwningLocalPlayer());
 
-	//Image->SetDesiredSizeOverride(uCSS->GetCurrentSettings()->GetLayout().IndicatorSize);
+	Image->SetDesiredSizeOverride(uCSS->GetCurrentSettings()->GetLayout().IndicatorSize);
 }
 
 void UCSIndicatorWidget::uRegister(FCSSoundID const& id)

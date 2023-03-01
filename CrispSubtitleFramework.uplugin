@@ -1,7 +1,7 @@
 {
 	"FileVersion": 3,
 	"Version": 1,
-	"VersionName": "1.0.1:4.27",
+	"VersionName": "1.0.0",
 	"FriendlyName": "CrispSubtitleFramework",
 	"Description": "This plugin helps deliver subtitles in accordance with broadcasting industry standards.",
 	"Category": "Accessibility",
@@ -12,7 +12,7 @@
 	"SupportURL": "https://github.com/CrispClover/SubtitleFramework/discussions",
 	"CanContainContent": true,
 	"IsBetaVersion": true,
-	"IsExperimentalVersion": false,
+	"IsExperimentalVersion": true,
 	"Installed": false,
 	"Modules": [
 		{

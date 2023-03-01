@@ -56,7 +56,7 @@ void FCSSourcesManager::EmptySources()
 
 void FCSSourcesManager::RebuildPlayers(TArray<ULocalPlayer*> const& players)
 {
-	if (players.Num() == 0)
+	if (players.IsEmpty())
 		return;
 	
 	if (UCSProjectSettingFunctions::SupportSplitscreen())

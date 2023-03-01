@@ -20,7 +20,7 @@ void UCSLetterboxWidget::eConstructExample(FVector2D const& size)
 
 	TArray<FCrispSubtitle> const& subtitles = UCSProjectSettingFunctions::GetDefaultExampleSubtitle();
 
-	if (subtitles.Num() == 0)
+	if (subtitles.IsEmpty())
 		return;
 
 	FCSLetterboxStyle const& style = UCSUILibrary::GetDesignLetterboxStyle(subtitles[0].Speaker, subtitles[0].IsIndirectSpeech(), size);
@@ -30,16 +30,16 @@ void UCSLetterboxWidget::eConstructExample(FVector2D const& size)
 
 void UCSLetterboxWidget::ConstructFromSubtitle_Implementation(FCrispSubtitle const& subtitle, FCSLetterboxStyle const& style)
 {
-	
 	LineContainer->ClearChildren();
 
 	Cast<UBorderSlot>(Background->GetContentSlot())->SetPadding(style.BoxPadding);
 	Background->SetBrushColor(style.LetterboxColour);
 
 	const bool hasLabel = !subtitle.Label.IsEmpty();
-	
+
 	if (!style.LineClass)
 		return;
+
 	if (hasLabel)//Create label
 	{
 		UCSLineWidget* lineW = CreateWidget<UCSLineWidget>(this, style.LineClass);

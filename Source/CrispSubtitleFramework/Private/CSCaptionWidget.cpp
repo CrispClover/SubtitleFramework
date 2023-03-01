@@ -18,7 +18,7 @@ void UCSCaptionWidget::eConstructExample(FVector2D const& size)
 		
 	TArray<FCrispCaption> const& captions = UCSProjectSettingFunctions::GetExampleCaptions();
 
-	if (captions.Num() == 0)
+	if (captions.IsEmpty())
 		return;
 
 	FCSCaptionStyle const& style = UCSUILibrary::GetDesignCaptionStyle(captions[0].SoundID.Source, size);
