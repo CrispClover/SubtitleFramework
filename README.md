@@ -15,7 +15,6 @@ This plugin helps you deliver subtitles in accordance with broadcasting industry
 Feel free to contact me if you need help. Contributions are also welcome.
 * [Twitter](https://twitter.com/crispclover)
 * [Unreal Forums](https://forums.unrealengine.com/t/crisp-subtitle-framework/737143)
-* [Discord](https://discord.gg/ghXRxA2YVf)
 
 **Note**: This plugin is free and will remain free forever.
 If you wish to support me financially regardless of that, feel free to [buy me a pizza](https://www.buymeacoffee.com/crispclover).
