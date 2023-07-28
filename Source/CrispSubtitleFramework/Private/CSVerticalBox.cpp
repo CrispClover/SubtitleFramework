@@ -12,7 +12,7 @@ UCSVerticalBoxSlot* UCSVerticalBox::AddDesignChild(UWidget* child)
 	return Cast<UCSVerticalBoxSlot>(iAddChild(child));
 }
 
-UCSVerticalBoxSlot* UCSVerticalBox::rFindSlot(const int32 id)
+UCSVerticalBoxSlot* UCSVerticalBox::uFindSlot(const int32 id)
 {
 	const int32 x = iIDs.Find(id);
 
@@ -22,7 +22,7 @@ UCSVerticalBoxSlot* UCSVerticalBox::rFindSlot(const int32 id)
 		return Cast<UCSVerticalBoxSlot>(Slots[x]);
 }
 
-UWidget* UCSVerticalBox::rFindChild(const int32 id)
+UWidget* UCSVerticalBox::uFindChild(const int32 id)
 {
 	const int32 x = iIDs.Find(id);
 
@@ -42,8 +42,8 @@ UCSVerticalBoxSlot* UCSVerticalBox::FindOrAddSlot(UWidget* newChild, const float
 	{
 		if (iVacant[x] && iFlickerData[x].IsAvailable(tNow, dtGap))
 		{
-            uSetData(x, CSFlickerData(tNow), false, id);
-			uReplaceChildAt(x, newChild);
+            vSetData(x, CSFlickerData(tNow), false, id);
+			vReplaceChildAt(x, newChild);
 			return Cast<UCSVerticalBoxSlot>(Slots[x]);
 		}
 	}
@@ -71,9 +71,9 @@ float UCSVerticalBox::dtTryVacate(const int32 id, TSubclassOf<UCSBaseSpacer> spa
     
     const int32 c = iIDs.Num();
     for (int32 x = 0; x < c; x++)
-        if (iIDs[x] == id)
-            return udtTryVacate(x, spacer, tNow, dtGap);
-    
+		if (iIDs[x] == id)
+			return vdtTryVacate(x, spacer, tNow, dtGap);
+
     return -1.f;
 }
 
@@ -83,7 +83,7 @@ void UCSVerticalBox::ClearVacant(const float tNow, const float dtGap)
 	{
 		if (iVacant[x] && iFlickerData[x].IsAvailable(tNow, dtGap))
 		{
-			uRemoveData(x);
+			vRemoveData(x);
 			RemoveChildAt(x);
 		}
 	}
@@ -96,7 +96,7 @@ void UCSVerticalBox::ClearExcessVacant(const float tNow, const float dtGap)
 		if (!iVacant[x])
 			return;
 		
-		uRemoveData(x);
+		vRemoveData(x);
 		RemoveChildAt(x);
 	}
 }
@@ -108,7 +108,9 @@ UClass* UCSVerticalBox::GetSlotClass() const
 
 void UCSVerticalBox::OnSlotAdded(UPanelSlot* slot)
 {
-	if (iVerticalBox.IsValid())
+	if (!iVerticalBox.IsValid())
+		return;
+	else
 		CastChecked<UCSVerticalBoxSlot>(slot)->AddSlot(iVerticalBox.ToSharedRef());
 }
 
@@ -119,7 +121,9 @@ void UCSVerticalBox::OnSlotRemoved(UPanelSlot* slot)
 		TSharedPtr<SWidget> widget = slot->Content->GetCachedWidget();
 
 		if (widget.IsValid())
+		{
 			iVerticalBox->RemoveSlot(widget.ToSharedRef());
+		}
 	}
 }
 
@@ -146,20 +150,20 @@ TSharedRef<SWidget> UCSVerticalBox::RebuildWidget()
 	return iVerticalBox.ToSharedRef();
 }
 
-float UCSVerticalBox::udtTryVacate(int32 x, UWidget* spacer, const float tNow, const float dtGap)
+float UCSVerticalBox::vdtTryVacate(int32 x, UWidget* spacer, const float tNow, const float dtGap)
 {
 	const float dtMissing = iFlickerData[x].dtMissing(tNow, dtGap);
 
 	if (dtMissing <= 0.f)
 	{
-		uSetData(x, CSFlickerData(tNow), true);
-		uReplaceChildAt(x, spacer);
+		vSetData(x, CSFlickerData(tNow), true);
+		vReplaceChildAt(x, spacer);
 	}
 
 	return dtMissing;
 }
 
-void UCSVerticalBox::uReplaceChildAt(const int32 x, UWidget* newChild)
+void UCSVerticalBox::vReplaceChildAt(const int32 x, UWidget* newChild)
 {
 	UPanelSlot* slot = Slots[x];
 
@@ -170,12 +174,16 @@ void UCSVerticalBox::uReplaceChildAt(const int32 x, UWidget* newChild)
 		oldChild->Slot = nullptr;
 
 		if (UCSBaseSpacer* spacer = Cast<UCSBaseSpacer>(newChild))
+		{
 			spacer->SetSize(oldChild->GetDesiredSize());
+		}
 
 		TSharedPtr<SWidget> widget = oldChild->GetCachedWidget();
 
 		if (iVerticalBox.IsValid() && widget.IsValid())
+		{
 			iVerticalBox->RemoveSlot(widget.ToSharedRef());
+		}
 	}
 
 	slot->ReleaseSlateResources(true);
@@ -192,7 +200,9 @@ void UCSVerticalBox::uReplaceChildAt(const int32 x, UWidget* newChild)
 
 	Slots.EmplaceAt(x, slot);
 
-	if (iVerticalBox.IsValid())
+	if (!iVerticalBox.IsValid())
+		return;
+	else
 		CastChecked<UCSVerticalBoxSlot>(slot)->InsertSlot(iVerticalBox.ToSharedRef(), x);
 
 	InvalidateLayoutAndVolatility();
@@ -207,7 +217,9 @@ UPanelSlot* UCSVerticalBox::iAddChild(UWidget* child)
 
 	EObjectFlags flags = RF_Transactional;
 	if (HasAnyFlags(RF_Transient))
+	{
 		flags |= RF_Transient;
+	}
 
 	UPanelSlot* slot = NewObject<UPanelSlot>(this, GetSlotClass(), NAME_None, flags);
 	slot->Content = child;
@@ -234,9 +246,13 @@ UPanelSlot* UCSVerticalBox::iAddChild(UWidget* child)
 UCSVerticalBoxSlot* UCSVerticalBox::iAddChild(UWidget* child, const float tNow, const bool vacant, const int32 id)
 {
 	if (bAddToTop)
-		uInsertData(0, CSFlickerData(tNow), vacant, id);
+	{
+		vInsertData(0, CSFlickerData(tNow), vacant, id);
+	}
 	else
+	{
 		iAddData(CSFlickerData(tNow), vacant, id);
+	}
 
 	return Cast<UCSVerticalBoxSlot>(AddChild(child));
 }
@@ -248,21 +264,21 @@ void UCSVerticalBox::iAddData(CSFlickerData const& flickerData, const bool vacan
     iVacant.Add(vacant);
 }
 
-void UCSVerticalBox::uInsertData(const int32 x, CSFlickerData const& flickerData, const bool vacant, const int32 id)
+void UCSVerticalBox::vInsertData(const int32 x, CSFlickerData const& flickerData, const bool vacant, const int32 id)
 {
 	iFlickerData.Insert(flickerData, x);
     iIDs.Insert(id, x);
     iVacant.Insert(vacant, x);
 }
 
-void UCSVerticalBox::uSetData(const int32 x, CSFlickerData const& flickerData, const bool vacant, const int32 id)
+void UCSVerticalBox::vSetData(const int32 x, CSFlickerData const& flickerData, const bool vacant, const int32 id)
 {
     iFlickerData[x] = flickerData;
     iIDs[x] = id;
     iVacant[x] = vacant;
 }
 
-void UCSVerticalBox::uRemoveData(const int32 x)
+void UCSVerticalBox::vRemoveData(const int32 x)
 {
     iFlickerData.RemoveAt(x);
     iIDs.RemoveAt(x);

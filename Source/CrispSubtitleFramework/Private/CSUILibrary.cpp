@@ -83,7 +83,9 @@ FCSLineStyle UCSUILibrary::GetLineStyle(UCSUserSettings const* settings, const F
     style.FontInfo = layout.FontInfo;
 
     if (indirectSpeech)
+    {
         style.FontInfo.TypefaceFontName = settings->IndirectSpeechTypeface;
+    }
 
     style.BackColour = settings->ColourProfile.LoadSynchronous()->LineBackColour;
     style.TextColour = settings->GetSubtitleTextColour(speaker);
@@ -163,7 +165,9 @@ FCSLineStyle UCSUILibrary::GetDesignLineStyle(const FName speaker, const bool is
     style.FontInfo = layout.FontInfo;
 
     if (isIndirectSpeech)
+    {
         style.FontInfo.TypefaceFontName = settings->IndirectSpeechTypeface;
+    }
 
     style.BackColour = settings->ColourProfile.LoadSynchronous()->LineBackColour;
     style.TextColour = settings->GetSubtitleTextColour(speaker);

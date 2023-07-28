@@ -17,7 +17,7 @@ void UCSUserSettingsWidget::eConstructExample(FVector2D const& size)
 		return;
 
 	CurrentSettings = UCSProjectSettingFunctions::GetDesignSettings(size);
-	//ReconstructExamples();
+	//ReconstructExamples();//TODO?
 }
 #endif
 
@@ -28,10 +28,14 @@ void UCSUserSettingsWidget::NativeConstruct()
 	CurrentSettings = uCSS->GetCurrentSettings();
 
 	if (SettingsSelector)
+	{
 		SettingsSelector->SelectionChangedEvent.AddDynamic(this, &UCSUserSettingsWidget::OnSettingsSelected);
+	}
 	
 	if (ULocalPlayer* player = GetOwningLocalPlayer())
+	{
 		CurrentSettings->RecalculateLayout(player->ViewportClient);
+	}
 
 	ReconstructExamples();
 
@@ -43,7 +47,9 @@ void UCSUserSettingsWidget::NativeDestruct()
 	SubtitlePreview->RemoveFromParent();
 
 	if (CaptionPreview)
+	{
 		CaptionPreview->RemoveFromParent();
+	}
 
 	Super::NativeDestruct();
 }
@@ -56,7 +62,9 @@ void UCSUserSettingsWidget::OnSettingsSelected_Implementation(UCSUserSettings* s
 	CurrentSettings = selectedSettings;
 
 	if (ULocalPlayer* player = GetOwningLocalPlayer())
+	{
 		CurrentSettings->RecalculateLayout(player->ViewportClient);
+	}
 
 	ReconstructExamples();
 }

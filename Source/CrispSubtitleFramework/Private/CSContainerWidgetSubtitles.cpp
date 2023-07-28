@@ -67,7 +67,7 @@ UCSVerticalBoxSlot* UCSContainerWidgetSubtitles::GetSlot(const int32 id)
 	if (!Container)
 		return nullptr;
 	else
-		return Container->rFindSlot(id);
+		return Container->uFindSlot(id);
 }
 
 UCSLetterboxWidget* UCSContainerWidgetSubtitles::GetLetterbox(const int32 id)
@@ -75,7 +75,7 @@ UCSLetterboxWidget* UCSContainerWidgetSubtitles::GetLetterbox(const int32 id)
 	if (!Container)
 		return nullptr;
 	else
-		return Cast<UCSLetterboxWidget>(Container->rFindChild(id));
+		return Cast<UCSLetterboxWidget>(Container->uFindChild(id));
 }
 
 void UCSContainerWidgetSubtitles::OnSubtitleReceived_Implementation(FCrispSubtitle const& subtitle)
@@ -84,10 +84,12 @@ void UCSContainerWidgetSubtitles::OnSubtitleReceived_Implementation(FCrispSubtit
 		return;
 
 	if(!uSettings)
+	{
 		uSettings = uCSS->GetCurrentSettings();
+	}
 
 	UCSLetterboxWidget* letterbox = CreateWidget<UCSLetterboxWidget>(this, uSettings->LetterboxClass.LoadSynchronous());
-	UCSVerticalBoxSlot* slot = Container->FindOrAddSlot(letterbox, otNow(), uSettings->TimeGap, subtitle.ID);
+	UCSVerticalBoxSlot* slot = Container->FindOrAddSlot(letterbox, tNow(), uSettings->TimeGap, subtitle.ID);
 
 	slot->SetHorizontalAlignment(EHorizontalAlignment::HAlign_Center);
 	slot->SetPadding(uSettings->GetLayout().SubtitlePadding);
@@ -100,9 +102,11 @@ void UCSContainerWidgetSubtitles::OnDestroy_Implementation(const int32 id)
 		return;
 
 	if(!uSettings)
+	{
 		uSettings = uCSS->GetCurrentSettings();
+	}
 	
-	const float dtMissing = Container->dtTryVacate(id, uSettings->SubtitleSpacer.LoadSynchronous(), otNow(), uSettings->TimeGap);
+	const float dtMissing = Container->dtTryVacate(id, uSettings->SubtitleSpacer.LoadSynchronous(), tNow(), uSettings->TimeGap);
 
 	if (dtMissing > 0.f)
 	{
@@ -126,7 +130,7 @@ void UCSContainerWidgetSubtitles::OnReconstruct_Implementation(TArray<FCrispSubt
 	{
 		UCSLetterboxWidget* letterbox = CreateWidget<UCSLetterboxWidget>(this, uSettings->LetterboxClass.LoadSynchronous());
 		
-		if (UCSVerticalBoxSlot* slot = Container->rFindSlot(subtitle.ID))
+		if (UCSVerticalBoxSlot* slot = Container->uFindSlot(subtitle.ID))
 		{
 			slot->SetPadding(uSettings->GetLayout().CaptionPadding);
 

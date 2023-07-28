@@ -43,10 +43,10 @@ struct FCSIDManager
 	};
 
 	inline void Shrink()
-	{ iIDs.Compact(); };
+		{ iIDs.Compact(); };
 
 	inline bool Contains(const int32 id) const
-	{ return iIDs.Contains(id); };
+		{ return iIDs.Contains(id); };
 
 private:
 	TSet<int32> iIDs = TSet<int32>();
@@ -84,7 +84,7 @@ struct TCSTimedData
 			if (iIDs[i] == id)
 			{
 				const DataElement element = iDataElements[i];
-				uRemoveAt(i);
+				vRemoveAt(i);
 				return element;
 			}
 		}
@@ -92,7 +92,7 @@ struct TCSTimedData
 		return DataElement();
 	};
 
-	DataElement* rAccess(const int32 id)
+	DataElement* uAccess(const int32 id)
 	{
 		for (int32 i = 0; i < iIDs.Num(); i++)
 			if (iIDs[i] == id)
@@ -108,7 +108,7 @@ struct TCSTimedData
 			if (iIDs[i] == id)
 			{
 				FTimerHandle handle = iTimerHandles[i];
-				uRemoveAt(i);
+				vRemoveAt(i);
 				return handle;
 			}
 		}
@@ -140,7 +140,7 @@ struct TCSTimedData
 	};
 
 private:
-	inline void uRemoveAt(const int32 index)
+	inline void vRemoveAt(const int32 index)
 	{
 		iDataElements.RemoveAt(index, 1);
 		iTimerHandles.RemoveAt(index, 1);
@@ -191,7 +191,7 @@ public:
 		
 		void RemoveCurrent()
 		{
-			iData3D.uRemoveAt(iIndex);
+			iData3D.vRemoveAt(iIndex);
 			iIndex--;
 		};
 
@@ -230,7 +230,7 @@ struct TCSCurrentData
 		{
 			if (iTimedData.iIDs[i] == id)
 			{
-				uRemoveAt(i);
+				vRemoveAt(i);
 				return;
 			}
 		}
@@ -246,7 +246,7 @@ struct TCSCurrentData
 				handles.Add(it.Handle());
 				ids.Add(it.ID());
 				
-				uRemoveAt(it.xCurrent());
+				vRemoveAt(it.xCurrent());
 			}
 		}
 	};
@@ -270,10 +270,10 @@ struct TCSCurrentData
 	};
 
 private:
-	inline void uRemoveAt(const int32 index)
+	inline void vRemoveAt(const int32 index)
 	{
 		iArePermanent.RemoveAt(index, 1);
-		iTimedData.uRemoveAt(index);
+		iTimedData.vRemoveAt(index);
 	};
 
 	TCSTimedData<DataElement> iTimedData = TCSTimedData<DataElement>();
@@ -325,7 +325,7 @@ public:
 		
 		void RemoveCurrent()
 		{
-			iData3D.uRemoveAt(iIndex);
+			iData3D.vRemoveAt(iIndex);
 			iIndex--;
 		};
 
@@ -433,7 +433,7 @@ struct FCSCurrentSubtitleData
 			if (it.ID() == id)
 			{
 				icLines -= it.Data().Lines.Num();
-				iCurrentData.uRemoveAt(it.xCurrent());
+				iCurrentData.vRemoveAt(it.xCurrent());
 				return;
 			}
 		}
@@ -448,7 +448,7 @@ struct FCSCurrentSubtitleData
 				icLines -= it.Data().Lines.Num();
 				removedHandles.Add(it.Handle());
 				removedIDs.Add(it.ID());
-				iCurrentData.uRemoveAt(it.xCurrent());
+				iCurrentData.vRemoveAt(it.xCurrent());
 			}
 		}
 	}
@@ -464,7 +464,7 @@ struct FCSCurrentSubtitleData
 				handles.Add(it.Handle());
 				ids.Add(it.ID());
 				
-				iCurrentData.uRemoveAt(it.xCurrent());
+				iCurrentData.vRemoveAt(it.xCurrent());
 			}
 		}
 	};
@@ -479,7 +479,7 @@ struct FCSCurrentSubtitleData
 		handle = iCurrentData.Handles()[0];
 		id = iCurrentData.iTimedData.IDs()[0];
 
-		iCurrentData.uRemoveAt(0);
+		iCurrentData.vRemoveAt(0);
 	};
 
 	inline void Flush(TArray<FTimerHandle>& flushedHandles, TArray<int32>& flushedIDs)
@@ -549,6 +549,9 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FDestructTrigger, const int32, Index
 
 //Delegate to notify about permanent subtitle changes.
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FPermanentSubtitleNotify);
+
+//Delegate to notify about location dump changes.
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FLocationDumpNotify);
 
 #pragma endregion
 
@@ -749,7 +752,7 @@ private:
 	void iOnSubtitleTriggered(const int32 id);
 	void iBroadcastSubtitle(FFullSubtitle const& subtitle, const float tNow, const int32 id);
 	void iDestroySubtitle(const int32 id);
-	void uReconstructSubtitles() const;
+	void iReconstructSubtitles() const;
 
 	inline void iPauseOnPermanentSubtitle()
 	{ 
@@ -896,6 +899,10 @@ public:
 
 #pragma region SOURCE MANAGEMENT
 public:
+	//Called when a location was updated.
+	UPROPERTY(BlueprintAssignable, Category = "CrispSubtitles|Events")
+		FLocationDumpNotify LocationUpdated;
+
 	/**
 	 * Registers a sound source with this subsystem without including any location data.
 	 * @param SourceName The name to use for identification.
@@ -941,6 +948,14 @@ public:
 	 */
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Sources")
 		bool GetSoundLocation(FCSSoundID const& SoundID, FVector& Location, ULocalPlayer const* Player = nullptr) const;
+
+	/**
+	 * @param SoundIDs The IDs used at registration, indeces match with the location array.
+	 * @param Player The player to get the tracked sound position for. Can be left blank to get all positions.
+	 * @return The currently registered positions of the sources.
+	 */
+	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|Sources")
+		TArray<FVector> GetSoundLocationDump(TArray<FCSSoundID>& SoundIDs, ULocalPlayer const* Player = nullptr) const;
 
 	/**
 	 * Removes a sound from the list of tracked sounds.
@@ -1070,7 +1085,7 @@ private:
 		uTimerManager->SetTimer(handle, del, dt, false);
 	};
 
-	inline float itNow() const
+	inline float tNow() const
 	{ return GetWorld()->GetRealTimeSeconds(); };
 
 #pragma endregion

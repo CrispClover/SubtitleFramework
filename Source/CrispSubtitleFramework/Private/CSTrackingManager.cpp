@@ -19,11 +19,12 @@ void CSTrackingManager::Calculate()
 	{
 		CSTrackedSoundData& sound3D = iData.AccessItem(i);
 
-		const FVector4 projection = projectionMatrix.TransformFVector4(FVector4(sound3D.SoundData, 1.f));
+		const FVector4 projection = projectionMatrix.TransformFVector4(FVector4(sound3D.pSound, 1.f));
 		const float m = 1 - 2 * (int8)(projection.W < 0);//We want to mirror coordinates behind the player's view.
 
-		//Normalised coordinates (X/W), offset subtracted, and mirrored in back:
-		const FVector2f adjustedNDC = m * FVector2f(projection.X / projection.W - sound3D.Offset.X, -projection.Y / projection.W - sound3D.Offset.Y);
+		
+		const FVector2f adjustedNDC //= Normalised coordinates (X/W), offset subtracted, and mirrored in back
+			= m * FVector2f(projection.X / projection.W - sound3D.Offset.X, -projection.Y / projection.W - sound3D.Offset.Y);
 
 		sound3D.Angle = FMath::Atan2(adjustedNDC.Y * rectangle.Height(), adjustedNDC.X * rectangle.Width());
 		sound3D.OpacityDriver = m * adjustedNDC.Length();//Negative numbers were unused. "Packing" projection.W < 0.
@@ -35,17 +36,19 @@ void CSTrackingManager::Calculate()
 void CSTrackingManager::TrackSound(FCSSoundID const& id, FVector const& data)
 {
 	if (iData.TrackSound(id, data))
+	{
 		iNotifyOfNewTrackedSound(id);
+	}
 }
 
 bool CSTrackingManager::GetSoundData(FCSSoundID const& id, FVector& data) const
 {
-	CSTrackedSoundData const* ptr = iData.rFind(id);
+	CSTrackedSoundData const* trackedData = iData.uFind(id);
 
-	if (!ptr)
+	if (!trackedData)
 		return false;
 
-	data = ptr->SoundData;
+	data = trackedData->pSound;
 	return true;
 }
 
@@ -66,14 +69,18 @@ void CSTrackingManager::UnregisterIndicator(FCSSoundID const& id, UObject* widge
 		iData.Unregister(id, args);
 
 		if (args.WidgetDataPtr)
+		{
 			iSwapDataEvent.Broadcast(args);
+		}
 	}
 }
 
 void CSTrackingManager::Copy(CSTrackingManager const* manager)
 {
 	for (int32 i = 0; i < manager->iData.Num(); i++)
-		TrackSound(manager->iData.GetID(i), manager->iData.GetItem(i).SoundData);
+	{
+		TrackSound(manager->iData.GetID(i), manager->iData.GetItem(i).pSound);
+	}
 }
 
 void CSTrackingManager::iNotifyOfNewTrackedSound(FCSSoundID const& id)

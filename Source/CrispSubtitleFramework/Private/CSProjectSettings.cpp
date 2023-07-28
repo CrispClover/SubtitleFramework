@@ -21,19 +21,23 @@ UCSProjectSettings::UCSProjectSettings(const FObjectInitializer& ObjectInitializ
 		(
 			FRawSubtitle
 			(
-				FSoundCaption(FText::FromString("testing"))
-				, TArray<FText>{FText::FromString("With the currently selected settings"), FText::FromString("subtitles will look like this.") }
+				FSoundCaption(FText::FromString(TEXT("testing")))
+				, TArray<FText>
+				{
+					  FText::FromString(TEXT("With the currently selected settings"))
+					, FText::FromString(TEXT("subtitles will look like this."))
+				}
 				, 3
 			)
-			, FText::FromString("Test")
+			, FText::FromString(TEXT("Test"))
 			, FName("test")
 			, FName("test")
 		)
 	})
 	, ExampleCaptions
 	({
-		  FFullCaption(FSoundCaption(FText::FromString("Example")), FName("example"), FName("example"))
-		, FFullCaption(FSoundCaption(FText::FromString("Test")), FName("example"), FName("test"))
+		  FFullCaption(FSoundCaption(FText::FromString(TEXT("Example"))), FName("example"), FName("example"))
+		, FFullCaption(FSoundCaption(FText::FromString(TEXT("Test"))), FName("example"), FName("test"))
 	})
 {
 #if WITH_EDITOR

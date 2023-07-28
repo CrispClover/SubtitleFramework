@@ -26,7 +26,7 @@ protected:
 	UCSS_SubtitleGISS* uCSS = nullptr;
 	UCSUserSettings const* uSettings = nullptr;
 
-	inline float otNow() const
+	inline float tNow() const
 	{
 		if (UWorld* world = GetWorld())
 			return world->GetRealTimeSeconds();

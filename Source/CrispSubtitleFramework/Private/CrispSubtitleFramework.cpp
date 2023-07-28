@@ -8,9 +8,9 @@
 
 void FCrispSubtitleFrameworkModule::StartupModule()
 {
-	if (ISettingsModule* SettingsModule = FModuleManager::GetModulePtr<ISettingsModule>("Settings"))
+	if (ISettingsModule* settingsModule = FModuleManager::GetModulePtr<ISettingsModule>("Settings"))
 	{
-		SettingsModule->RegisterSettings("Project", "Plugins", "CrispSubtitles",
+		settingsModule->RegisterSettings("Project", "Plugins", "CrispSubtitles",
 			LOCTEXT("RuntimeSettingsName", "Crisp Subtitles"),
 			LOCTEXT("RuntimeSettingsDescription", "Configure the Crisp Subtitles plugin"),
 			GetMutableDefault<UCSProjectSettings>()
@@ -20,9 +20,13 @@ void FCrispSubtitleFrameworkModule::StartupModule()
 
 void FCrispSubtitleFrameworkModule::ShutdownModule()
 {
-	if (UObjectInitialized())
-		if (ISettingsModule* SettingsModule = FModuleManager::GetModulePtr<ISettingsModule>("Settings"))
-			SettingsModule->UnregisterSettings("Project", "Plugins", "CrispSubtitles");
+	if (!UObjectInitialized())
+		return;
+	
+	if (ISettingsModule* settingsModule = FModuleManager::GetModulePtr<ISettingsModule>("Settings"))
+	{
+		settingsModule->UnregisterSettings("Project", "Plugins", "CrispSubtitles");
+	}
 }
 
 #undef LOCTEXT_NAMESPACE

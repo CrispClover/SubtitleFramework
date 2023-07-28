@@ -38,7 +38,11 @@ void UCSCaptionWidget::ConstructFromCaption_Implementation(FCrispCaption const& 
 		return;
 
 	if (style.bShowIndicator)
+	{
 		Indicator->Register(caption.SoundID);
+	}
 	else
+	{
 		Indicator->RemoveFromParent();
+	}
 }

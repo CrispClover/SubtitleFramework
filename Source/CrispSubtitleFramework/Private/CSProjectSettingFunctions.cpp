@@ -11,9 +11,13 @@ UCSUserSettings* UCSProjectSettingFunctions::GetDesignSettings(FVector2D const& 
 	UCSUserSettings* settings = GetDefaultSettings();
 	
 	if (screenSize == FVector2D())
+	{
 		settings->RecalculateDesignLayout(GetDefault<UUserInterfaceSettings>()->DesignScreenSize);
+	}
 	else
+	{
 		settings->RecalculateDesignLayout(screenSize);
+	}
 
 	return settings;
 };
@@ -24,7 +28,9 @@ TArray<FString> UCSProjectSettingFunctions::GetSettingsDirectories()
 	TArray<FString> paths;
 
 	for (FDirectoryPath const& path : GetDefault<UCSProjectSettings>()->SettingsDirectories)
+	{
 		paths.Add(path.Path);
+	}
 
 	return paths;
 }
@@ -46,7 +52,9 @@ TArray<FCrispCaption> UCSProjectSettingFunctions::GetExampleCaptions()
 	TArray<FCrispCaption> captions;
 
 	for (FFullCaption const& caption : GetDefault<UCSProjectSettings>()->ExampleCaptions)
+	{
 		captions.Add(FCrispCaption(caption, INDEX_NONE));
+	}
 
 	return captions;
 }

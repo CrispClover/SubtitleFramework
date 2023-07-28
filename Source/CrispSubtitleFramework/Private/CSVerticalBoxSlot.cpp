@@ -32,6 +32,7 @@ void UCSVerticalBoxSlot::SynchronizeFromTemplate(UPanelSlot const* const templat
 	UCSVerticalBox* parent = CastChecked<UCSVerticalBox>(Parent);
 	parent->ShiftChild(x, Content);
 }
+
 #endif
 
 UCSVerticalBoxSlot::UCSVerticalBoxSlot(const FObjectInitializer& ObjectInitializer)
@@ -83,7 +84,9 @@ void UCSVerticalBoxSlot::SetPadding(FMargin padding)
 	Padding = padding;
 
 	if (iSlot)
+	{
 		iSlot->SetPadding(padding);
+	}
 }
 
 void UCSVerticalBoxSlot::SetSize(FSlateChildSize size)
@@ -91,7 +94,9 @@ void UCSVerticalBoxSlot::SetSize(FSlateChildSize size)
 	Size = size;
 	
 	if (iSlot)
+	{
 		iSlot->SetSizeParam(UWidget::ConvertSerializedSizeParamToRuntime(size));
+	}
 }
 
 void UCSVerticalBoxSlot::SetHorizontalAlignment(EHorizontalAlignment horizontalAlignment)
@@ -99,7 +104,9 @@ void UCSVerticalBoxSlot::SetHorizontalAlignment(EHorizontalAlignment horizontalA
 	HorizontalAlignment = horizontalAlignment;
 
 	if (iSlot)
+	{
 		iSlot->SetHorizontalAlignment(horizontalAlignment);
+	}
 }
 
 void UCSVerticalBoxSlot::SetVerticalAlignment(EVerticalAlignment verticalAlignment)
@@ -107,7 +114,9 @@ void UCSVerticalBoxSlot::SetVerticalAlignment(EVerticalAlignment verticalAlignme
 	VerticalAlignment = verticalAlignment;
 
 	if (iSlot)
+	{
 		iSlot->SetVerticalAlignment(verticalAlignment);
+	}
 }
 
 void UCSVerticalBoxSlot::SynchronizeProperties()

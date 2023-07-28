@@ -6,12 +6,9 @@
 
 float UCSToolsBFL::CalculateDisplayTime(const int32 unitCount, UCSLanguageData const* languageData, const bool unitIsWords, const float minSubTime)
 {
-	float unitTime;
-
-	if (unitIsWords)
-		unitTime = languageData->WordTime;
-	else
-		unitTime = languageData->CharacterTime;
+	const float unitTime = unitIsWords ?
+		languageData->WordTime :
+		languageData->CharacterTime;
 
 	return FMath::Max(minSubTime, unitCount * unitTime);
 }
@@ -50,7 +47,9 @@ TArray<FString> UCSToolsBFL::AutomaticLineBreaks(FString const& subtitle, int32&
 	}
 
 	if (LineLength != 0) //add (possibly) remaining line to lines
+	{
 		lines.Add(line);
+	}
 
 	return lines;
 }
@@ -169,7 +168,9 @@ TArray<FSoundCaption> UCSToolsBFL::SortByStartTime<FSoundCaption>(TArray<FSoundC
 		}
 
 		if (!inserted)
+		{
 			sorted.Add(cap);
+		}
 	}
 
 	return sorted;

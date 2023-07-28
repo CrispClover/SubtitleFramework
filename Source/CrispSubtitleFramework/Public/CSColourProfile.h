@@ -36,18 +36,18 @@ public:
 	//Returns the subtitle text colour for the given speaker.
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|ColourProfile")
 		FORCEINLINE FLinearColor const& GetSubtitleColour(FName Speaker) const
-			{ return oSubtitleGetColour(Speaker); };
+			{ return oGetSubtitleColour(Speaker); };
 
 	//Returns the subtitle text colour for the given speaker.
 	UFUNCTION(BlueprintCallable, Category = "CrispSubtitles|ColourProfile")
 		FORCEINLINE FLinearColor const& GetCaptionColour(FName Source) const
-			{ return oCaptionGetColour(Source); };
+			{ return oGetCaptionColour(Source); };
 
 protected:
-	inline virtual FLinearColor const& oSubtitleGetColour(FName speaker) const
+	inline virtual FLinearColor const& oGetSubtitleColour(FName speaker) const
 		{ return FLinearColor::White; };
 
-	inline virtual FLinearColor const& oCaptionGetColour(FName source) const
+	inline virtual FLinearColor const& oGetCaptionColour(FName source) const
 		{ return FLinearColor::White; };
 };
 
@@ -69,8 +69,8 @@ public:
 		FLinearColor DefaultCaptionTextColour = FLinearColor::White;
 
 protected:
-	virtual FLinearColor const& oSubtitleGetColour(FName speaker) const override;
-	virtual FLinearColor const& oCaptionGetColour(FName source) const override;
+	virtual FLinearColor const& oGetSubtitleColour(FName speaker) const override;
+	virtual FLinearColor const& oGetCaptionColour(FName source) const override;
 };
 
 /**
@@ -129,7 +129,7 @@ public:
 
 protected:
 	virtual bool oHasColour(FName speaker) const override;
-	virtual FLinearColor const& oSubtitleGetColour(FName speaker) const override;
+	virtual FLinearColor const& oGetSubtitleColour(FName speaker) const override;
 	virtual void oLogMatch(FName speaker) override;
 };
 

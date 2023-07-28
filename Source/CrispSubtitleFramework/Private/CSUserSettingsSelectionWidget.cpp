@@ -21,7 +21,9 @@ void UCSUserSettingsSelectionWidget::SynchronizeProperties()
 	const bool settingsNeedLoading = iLoadSettingsAsync(&UCSUserSettingsSelectionWidget::oOnSettingsLoaded);
 
 	if (!settingsNeedLoading)
+	{
 		oOnSettingsLoaded();
+	}
 }
 
 UCSUserSettingsSelectionWidget::UCSUserSettingsSelectionWidget()
@@ -48,7 +50,9 @@ UCSUserSettingsSelectionWidget::UCSUserSettingsSelectionWidget()
 void UCSUserSettingsSelectionWidget::LoadSettings()
 {
 	if (!uSettingsLibrary)
+	{
 		uSettingsLibrary = UObjectLibrary::CreateLibrary(UCSUserSettings::StaticClass(), true, GIsEditor);
+	}
 	
 	uSettingsLibrary->LoadAssetDataFromPaths(UCSProjectSettingFunctions::GetSettingsDirectories());
 	uSettingsLibrary->LoadAssetsFromAssetData();
@@ -59,7 +63,9 @@ void UCSUserSettingsSelectionWidget::LoadSettings()
 TArray<UCSUserSettings*> UCSUserSettingsSelectionWidget::GetSettingsList()
 {
 	if (!uSettingsLibrary)
+	{
 		LoadSettings();
+	}
 
 	TArray<FAssetData> aDataList;
 	uSettingsLibrary->GetAssetDataList(aDataList);
@@ -68,7 +74,9 @@ TArray<UCSUserSettings*> UCSUserSettingsSelectionWidget::GetSettingsList()
 	settingsList.Reserve(aDataList.Num());
 
 	for (FAssetData aData : aDataList)
+	{
 		settingsList.Add(Cast<UCSUserSettings>(aData.GetAsset()));
+	}
 
 	return settingsList;
 }
@@ -79,7 +87,9 @@ void UCSUserSettingsSelectionWidget::SetSelectedSettings(UCSUserSettings* option
 		return;
 
 	if (iComboBox)
+	{
 		iComboBox->SetSelectedItem(option);
+	}
 	
 	oSelectedSettings = option;
 }
@@ -106,7 +116,9 @@ void UCSUserSettingsSelectionWidget::oOnSettingsLoaded()
 	SettingsOptions = GetSettingsList();
 
 	if (iComboBox)
+	{
 		iComboBox->RefreshOptions();
+	}
 
 	SetSelectedSettings(uCSS->GetCurrentSettings());
 }
@@ -114,7 +126,9 @@ void UCSUserSettingsSelectionWidget::oOnSettingsLoaded()
 bool UCSUserSettingsSelectionWidget::iLoadSettingsAsync(SelectWidgetVFunction function)
 {
 	if (!uSettingsLibrary)
+	{
 		uSettingsLibrary = UObjectLibrary::CreateLibrary(UCSUserSettings::StaticClass(), true, GIsEditor);
+	}
 
 	const int32 numSettings = uSettingsLibrary->LoadAssetDataFromPaths(UCSProjectSettingFunctions::GetSettingsDirectories());
 
@@ -125,8 +139,12 @@ bool UCSUserSettingsSelectionWidget::iLoadSettingsAsync(SelectWidgetVFunction fu
 	uSettingsLibrary->GetAssetDataList(assetDataList);
 
 	for (FAssetData assetData : assetDataList)
+	{
 		if (!assetData.IsAssetLoaded())
+		{
 			settingsPaths.Add(assetData.ToSoftObjectPath());
+		}
+	}
 
 	if (!settingsPaths.Num())
 		return false;
@@ -146,10 +164,12 @@ void UCSUserSettingsSelectionWidget::iOnSelectionChanged(UCSUserSettings* option
 		return;
 
 	oSelectedSettings = option;
-
+	
 	if (!IsDesignTime())
+	{
 		SelectionChangedEvent.Broadcast(option, selectionType);
-		
+	}
+
 	iGenerateContent();
 }
 
@@ -169,7 +189,9 @@ void UCSUserSettingsSelectionWidget::iGenerateContent()
 void UCSUserSettingsSelectionWidget::iOnOpening()
 {
 	if (!IsDesignTime())
+	{
 		OpeningEvent.Broadcast();
+	}
 }
 
 void UCSUserSettingsSelectionWidget::ReleaseSlateResources(bool releaseChildren)

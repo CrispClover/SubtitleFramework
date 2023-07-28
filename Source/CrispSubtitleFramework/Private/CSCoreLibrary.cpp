@@ -56,27 +56,41 @@ FCrispSubtitle UCSCoreLibrary::FrySubtitle(FFullSubtitle const& sub, const int32
 	const bool excludeDescription = !settings->bShowSubtitleDescriptions || sub.Description.IsEmpty();
 
 	if (!excludeSpeaker)
+	{
 		settings->LogSpeakerShown(sub.Speaker);
+	}
 	else if (excludeSpeaker && excludeDescription)
+	{
 		return FCrispSubtitle(FText(), sub.Lines, sub.Speaker, sub.Source, id);
+	}
 
 	FText labelFormat;
 	if (excludeDescription)
+	{
 		labelFormat = settings->SpeakerOnlyLabelFormat;
+	}
 	else if (excludeSpeaker)
+	{
 		labelFormat = settings->DescriptionOnlyLabelFormat;
+	}
 	else
+	{
 		labelFormat = settings->FullLabelFormat;
+	}
 
 	FText speakerM;
 	if (settings->bSpeakersAreUpperCase)
+	{
 		speakerM = sub.SpeakerText.ToUpper();
+	}
 	else
+	{
 		speakerM = sub.SpeakerText;
+	}
 
 	FFormatNamedArguments args;
-	args.Add("speaker", speakerM);
-	args.Add("description", sub.Description);
+	args.Add(TEXT("speaker"), speakerM);
+	args.Add(TEXT("description"), sub.Description);
 
 	const FText label = FText::Format(labelFormat, args);
 
@@ -87,7 +101,9 @@ FVector2D UCSCoreLibrary::LocalPositionToNDC(FVector2D const& localPos, FIntPoin
 {
 	static TFrameValue<float> scaleCache;
 	if (!scaleCache.IsSet() || WITH_EDITOR)
+	{
 		scaleCache = GetDefault<UUserInterfaceSettings>()->GetDPIScaleBasedOnSize(viewportSize);
+	}
 
 	const float scale = scaleCache.GetValue();
 

@@ -23,8 +23,12 @@ void UCSContainerWidgetCaptions::eConstructExample(FVector2D const& size)
 	TArray<FCrispCaption> const& captions = UCSProjectSettingFunctions::GetExampleCaptions();
 		
 	for (UCSCaptionWidget* example : eExamples)
+	{
 		if (Container->HasChild(example))
+		{
 			example->RemoveFromParent();
+		}
+	}
 
 	eExamples.Empty();
 
@@ -70,7 +74,7 @@ UCSVerticalBoxSlot* UCSContainerWidgetCaptions::GetSlot(const int32 id)
 	if (!Container)
 		return nullptr;
 	else
-		return Container->rFindSlot(id);
+		return Container->uFindSlot(id);
 }
 
 UCSCaptionWidget* UCSContainerWidgetCaptions::GetCaptionWidget(const int32 id)
@@ -78,7 +82,7 @@ UCSCaptionWidget* UCSContainerWidgetCaptions::GetCaptionWidget(const int32 id)
 	if (!Container)
 		return nullptr;
 	else
-		return Cast<UCSCaptionWidget>(Container->rFindChild(id));
+		return Cast<UCSCaptionWidget>(Container->uFindChild(id));
 }
 
 void UCSContainerWidgetCaptions::OnCaptionReceived_Implementation(FCrispCaption const& caption)
@@ -87,13 +91,15 @@ void UCSContainerWidgetCaptions::OnCaptionReceived_Implementation(FCrispCaption 
 		return;
 
 	if(!uSettings)
+	{
 		uSettings = uCSS->GetCurrentSettings();
+	}
 
 	const FCSCaptionStyle style = UCSUILibrary::GetCaptionStyle(uSettings, caption.SoundID.Source);
 
 	UCSCaptionWidget* captionWidget = CreateWidget<UCSCaptionWidget>(this, uSettings->CaptionClass.LoadSynchronous());
 
-	UCSVerticalBoxSlot* slot = Container->FindOrAddSlot(captionWidget, otNow(), uSettings->TimeGap, caption.ID);
+	UCSVerticalBoxSlot* slot = Container->FindOrAddSlot(captionWidget, tNow(), uSettings->TimeGap, caption.ID);
 	slot->SetPadding(uSettings->GetLayout().CaptionPadding);
 	slot->SetHorizontalAlignment(uSettings->CaptionAlignment);
 
@@ -106,9 +112,11 @@ void UCSContainerWidgetCaptions::OnDestroy_Implementation(const int32 id)
 		return;
 
 	if (!uSettings)
+	{
 		uSettings = uCSS->GetCurrentSettings();
+	}
 
-	const float dtMissing = Container->dtTryVacate(id, uSettings->CaptionSpacer.LoadSynchronous(), otNow(), uSettings->TimeGap);
+	const float dtMissing = Container->dtTryVacate(id, uSettings->CaptionSpacer.LoadSynchronous(), tNow(), uSettings->TimeGap);
 
 	if (dtMissing > 0.f)
 	{
@@ -130,13 +138,15 @@ void UCSContainerWidgetCaptions::OnReconstruct_Implementation(TArray<FCrispCapti
 
 	for (FCrispCaption const& caption : captions)
 	{
-		if (UCSVerticalBoxSlot* slot = Container->rFindSlot(caption.ID))
+		if (UCSVerticalBoxSlot* slot = Container->uFindSlot(caption.ID))
 		{
 			slot->SetPadding(uSettings->GetLayout().CaptionPadding);
 			slot->SetHorizontalAlignment(uSettings->CaptionAlignment);
 
 			if (UCSCaptionWidget* widget = Cast<UCSCaptionWidget>(slot->Content))
+			{
 				widget->ConstructFromCaption(caption, UCSUILibrary::GetCaptionStyle(uSettings, caption.SoundID.Source));
+			}
 		}
 	}
 }

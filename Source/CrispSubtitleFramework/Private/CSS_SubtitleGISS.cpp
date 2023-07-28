@@ -16,7 +16,9 @@ void UCSS_SubtitleGISS::Initialize(FSubsystemCollectionBase& collection)
 	TSubclassOf<UCSCustomDataManager> cdmClass = GetDefault<UCSProjectSettings>()->CustomDataClass;
 
 	if (cdmClass)
+	{
 		CustomDataManager = NewObject<UCSCustomDataManager>(this, cdmClass.Get());
+	}
 }
 
 void UCSS_SubtitleGISS::Deinitialize()
@@ -43,8 +45,12 @@ TArray<FFullSubtitle> UCSS_SubtitleGISS::GetUpcomingSubtitles(float durationToSe
 
 	int32 c = iQueuedSubtitles.Num();
 	for (int32 x = 0; x < c; x++)
+	{
 		if (uTimerManager->GetTimerRemaining(handles[x]) < durationToSearch)
+		{
 			results.Add(subtitles[x]);
+		}
+	}
 
 	return results;
 }
@@ -52,8 +58,12 @@ TArray<FFullSubtitle> UCSS_SubtitleGISS::GetUpcomingSubtitles(float durationToSe
 bool UCSS_SubtitleGISS::HasPermanentSubtitle()
 {
 	for (auto it = iCurrentSubtitles.GetIterator(); it; ++it)
+	{
 		if (it.IsPermanent())
+		{
 			return true;
+		}
+	}
 
 	return false;
 }
@@ -62,12 +72,14 @@ void UCSS_SubtitleGISS::ModifyQueuedSubtitles(TArray<int32> const& ids, const FN
 {
 	for (const int32 id : ids)
 	{
-		if (FFullSubtitle* subtitle = iQueuedSubtitles.rAccess(id))
+		if (FFullSubtitle* subtitle = iQueuedSubtitles.uAccess(id))
 		{
 			subtitle->Source = newSource;
 
 			if (shouldChangeDescription)
+			{
 				subtitle->Description = newDescription;
+			}
 		}
 	}
 }
@@ -166,7 +178,7 @@ int32 UCSS_SubtitleGISS::QueueSubtitle(FFullSubtitle const& subtitle)
 	if (subtitle.StartDelay == 0)
 	{
 		//ensure broadcast, even with start time of zero
-		iBroadcastSubtitle(subtitle, itNow(), id);
+		iBroadcastSubtitle(subtitle, tNow(), id);
 	}
 	else
 	{
@@ -193,7 +205,7 @@ TArray<int32> UCSS_SubtitleGISS::QueueRawSubtitles(TArray<FRawSubtitle> const& s
 		if (subtitle.StartDelay == 0)
 		{
 			//ensure broadcast, even with start time of zero
-			iBroadcastSubtitle(fullSub, itNow(), id);
+			iBroadcastSubtitle(fullSub, tNow(), id);
 		}
 		else
 		{
@@ -221,7 +233,7 @@ TArray<int32> UCSS_SubtitleGISS::QueueGroupSubtitles(TArray<FGroupSubtitle> cons
 		if (subtitle.StartDelay == 0)
 		{
 			//ensure broadcast, even with start time of zero
-			iBroadcastSubtitle(fullSub, itNow(), id);
+			iBroadcastSubtitle(fullSub, tNow(), id);
 		}
 		else
 		{
@@ -248,7 +260,7 @@ TArray<int32> UCSS_SubtitleGISS::QueueFullSubtitles(TArray<FFullSubtitle> const&
 		if (subtitle.StartDelay == 0)
 		{
 			//ensure broadcast, even with start time of zero
-			iBroadcastSubtitle(subtitle, itNow(), id);
+			iBroadcastSubtitle(subtitle, tNow(), id);
 		}
 		else
 		{
@@ -289,7 +301,7 @@ void UCSS_SubtitleGISS::RemoveQueuedSubtitlesBySource(const FName source)
 
 void UCSS_SubtitleGISS::iOnSubtitleTriggered(const int32 id)
 {
-	iBroadcastSubtitle(iQueuedSubtitles.Consume(id), itNow(), id);
+	iBroadcastSubtitle(iQueuedSubtitles.Consume(id), tNow(), id);
 }
 
 //Unsafe to call without checking flicker protection
@@ -312,11 +324,17 @@ void UCSS_SubtitleGISS::iBroadcastSubtitle(FFullSubtitle const& subtitle, const 
 	iManageRemoval(removedHandles, removedIDs);
 
 	if (isPermanent && iCurrentSettings->bShowSubtitles)
+	{
 		iPauseOnPermanentSubtitle();
+	}
 	else if (dtDisplay < iCurrentSettings->MinimumSubtitleTime)
+	{
 		iSetTimer(&UCSS_SubtitleGISS::iDestroySubtitle, handle, id, iCurrentSettings->MinimumSubtitleTime);
+	}
 	else
+	{
 		iSetTimer(&UCSS_SubtitleGISS::iDestroySubtitle, handle, id, dtDisplay);
+	}
 
 	if (!iCurrentSettings->bShowSubtitles)
 		return;//We will track subtitles without displaying them.
@@ -331,16 +349,13 @@ void UCSS_SubtitleGISS::iBroadcastSubtitle(FFullSubtitle const& subtitle, const 
 
 void UCSS_SubtitleGISS::iDestroySubtitle(const int32 id)
 {
-	const float tNow = itNow();
-
 	iCurrentSubtitles.Remove(id);
 	iManageRemoval(id);
 	
 	DestructSubtitleEvent.Broadcast(id);
 }
 
-//Unsafe to call without checking flicker protection
-void UCSS_SubtitleGISS::uReconstructSubtitles() const
+void UCSS_SubtitleGISS::iReconstructSubtitles() const
 {
 	TArray<FCrispSubtitle> subtitles;
 	subtitles.Reserve(iCurrentSubtitles.Num());
@@ -431,7 +446,7 @@ int32 UCSS_SubtitleGISS::QueueCaption(FFullCaption const& caption)
 	if (caption.StartDelay == 0)
 	{
 		//ensure broadcast, even with start time of zero
-		iBroadcastCaption(caption, itNow(), id);
+		iBroadcastCaption(caption, tNow(), id);
 	}
 	else
 	{
@@ -458,7 +473,7 @@ TArray<int32> UCSS_SubtitleGISS::QueueCaptions(TArray<FSoundCaption> const& capt
 		if (fullCap.StartDelay == 0)
 		{
 			//ensure broadcast, even with start time of zero
-			iBroadcastCaption(fullCap, itNow(), id);
+			iBroadcastCaption(fullCap, tNow(), id);
 		}
 		else
 		{
@@ -485,7 +500,7 @@ TArray<int32> UCSS_SubtitleGISS::QueueFullCaptions(TArray<FFullCaption> const& c
 		if (caption.StartDelay == 0)
 		{
 			//ensure broadcast, even with start time of zero
-			iBroadcastCaption(caption, itNow(), id);
+			iBroadcastCaption(caption, tNow(), id);
 		}
 		else
 		{
@@ -526,7 +541,7 @@ void UCSS_SubtitleGISS::RemoveQueuedCaptionsBySource(const FName source)
 
 void UCSS_SubtitleGISS::iOnCaptionTriggered(const int32 id)
 {
-	iBroadcastCaption(iQueuedCaptions.Consume(id), itNow(), id);
+	iBroadcastCaption(iQueuedCaptions.Consume(id), tNow(), id);
 }
 
 void UCSS_SubtitleGISS::iBroadcastCaption(FFullCaption const& caption, const float tNow, const int32 id)
@@ -553,9 +568,13 @@ void UCSS_SubtitleGISS::iBroadcastCaption(FFullCaption const& caption, const flo
 	if (!isPermanent)
 	{
 		if (dtDisplay < iCurrentSettings->MinimumCaptionTime)
+		{
 			iSetTimer(&UCSS_SubtitleGISS::iDestroyCaption, handle, id, iCurrentSettings->MinimumCaptionTime);
+		}
 		else
+		{
 			iSetTimer(&UCSS_SubtitleGISS::iDestroyCaption, handle, id, dtDisplay);
+		}
 	}
 
 	if (!iCurrentSettings->bShowCaptions)
@@ -589,9 +608,13 @@ bool UCSS_SubtitleGISS::iTryUpdateCaptionDuration(FCSSoundID const& soundID, con
 		if (it.Data().SoundID == soundID)
 		{
 			if (isPermanent && uTimerManager)
+			{
 				uTimerManager->ClearTimer(it.Handle());
+			}
 			else
+			{
 				iSetTimer(&UCSS_SubtitleGISS::iDestroyCaption, it.Handle(), it.ID(), dtDisplay);
+			}
 
 			return true;
 		}
@@ -606,7 +629,7 @@ bool UCSS_SubtitleGISS::iTryUpdateCaptionDuration(FCSSoundID const& soundID, con
 
 float UCSS_SubtitleGISS::GetBusyDuration() const
 {
-	return iSubtitleBroadcastData.dtBusy(itNow());
+	return iSubtitleBroadcastData.dtBusy(tNow());
 }
 
 #pragma endregion
@@ -628,18 +651,29 @@ bool UCSS_SubtitleGISS::RegisterAndTrackSound(FCSSoundID const& soundID, FVector
 {
 	if (!RegisterSource(soundID.Source))
 		return false;
-
-	return iSourcesManager.TrackSound(soundID, location, player);
+	else
+		return TrackSound(soundID, location, player);
 }
 
 bool UCSS_SubtitleGISS::TrackSound(FCSSoundID const& soundID, FVector const& location, ULocalPlayer const* player)
 {
-	return iSourcesManager.TrackSound(soundID, location, player);
+	if (!iSourcesManager.TrackSound(soundID, location, player))
+		return false;
+	
+	LocationUpdated.Broadcast();
+	return true;
 }
 
 bool UCSS_SubtitleGISS::GetSoundLocation(FCSSoundID const& soundID,  FVector& location, ULocalPlayer const* player) const
 {
 	return iSourcesManager.GetSoundData(soundID, location, player);
+}
+
+TArray<FVector> UCSS_SubtitleGISS::GetSoundLocationDump(TArray<FCSSoundID>& soundIDs, ULocalPlayer const* player) const
+{
+	soundIDs.Empty();//Ensures sync with positions; we use append later.
+
+	return iSourcesManager.GetSoundDataDump(soundIDs, player);
 }
 
 void UCSS_SubtitleGISS::StopTrackingSound(FCSSoundID const& soundID, ULocalPlayer const* player)
@@ -712,7 +746,9 @@ void UCSS_SubtitleGISS::iRemoveCurrentSubtitlesBySource(const FName source)
 		DestructCaptionEvent.Broadcast(id);
 
 	if (hadPermanent && !HasPermanentSubtitle())
+	{
 		PermanentSubtitlesRemoved.Broadcast();
+	}
 }
 
 void UCSS_SubtitleGISS::iRemoveCurrentCaptionsBySource(const FName source)
@@ -740,6 +776,7 @@ void UCSS_SubtitleGISS::iRemoveCurrentCaptionsBySource(const FName source)
 #pragma endregion
 
 #pragma region INDICATORS
+
 void UCSS_SubtitleGISS::UpdateIndicatorData(ULocalPlayer const* player)
 {
 	iSourcesManager.CallCalculate(player);
@@ -756,7 +793,9 @@ void UCSS_SubtitleGISS::UnregisterIndicator(FCSSoundID const& soundID, ULocalPla
 void UCSS_SubtitleGISS::RecalculateLayout()//TODO
 {
 	if (UGameViewportClient* viewportClient = GetGameInstance()->GetGameViewportClient())
+	{
 		iCurrentSettings->RecalculateLayout(viewportClient);
+	}
 }
 
 void UCSS_SubtitleGISS::SetSettings(UCSUserSettings* settings)
@@ -766,7 +805,7 @@ void UCSS_SubtitleGISS::SetSettings(UCSUserSettings* settings)
 
 	iCurrentSettings = settings;
 
-	uReconstructSubtitles();
+	iReconstructSubtitles();
 }
 
 #pragma endregion

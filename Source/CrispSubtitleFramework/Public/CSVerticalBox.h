@@ -54,8 +54,8 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Layout")
 		bool bAddToTop = false;
 
-	UCSVerticalBoxSlot* rFindSlot(const int32 id);
-	UWidget* rFindChild(const int32 id);
+	UCSVerticalBoxSlot* uFindSlot(const int32 id);
+	UWidget* uFindChild(const int32 id);
 
 	UCSVerticalBoxSlot* FindOrAddSlot(UWidget* newChild, const float tNow, const float dtGap = 0.16f, const int32 id = INDEX_NONE);
 	UCSVerticalBoxSlot* AddVacantSlot(TSubclassOf<UCSBaseSpacer> spacerClass, FVector2D size, const float currentTime);
@@ -79,13 +79,13 @@ private:
 	TArray<int32> iIDs;
 	TArray<bool> iVacant;
 
-	float udtTryVacate(int32 x, UWidget* spacer, const float tNow, const float dtGap);
-	void uReplaceChildAt(const int32 x, UWidget* newChild);
+	float vdtTryVacate(int32 x, UWidget* spacer, const float tNow, const float dtGap);
+	void vReplaceChildAt(const int32 x, UWidget* newChild);
 	UPanelSlot* iAddChild(UWidget* child);
 	UCSVerticalBoxSlot* iAddChild(UWidget* child, const float tNow, const bool vacant, const int32 id = INDEX_NONE);
 	
 	void iAddData(CSFlickerData const& flickerData, const bool vacant, const int32 id = INDEX_NONE);
-	void uInsertData(const int32 x, CSFlickerData const& flickerData, const bool vacant, const int32 id = INDEX_NONE);
-	void uSetData(const int32 x, CSFlickerData const& flickerData, const bool vacant, const int32 id = INDEX_NONE);
-	void uRemoveData(const int32 x);
+	void vInsertData(const int32 x, CSFlickerData const& flickerData, const bool vacant, const int32 id = INDEX_NONE);
+	void vSetData(const int32 x, CSFlickerData const& flickerData, const bool vacant, const int32 id = INDEX_NONE);
+	void vRemoveData(const int32 x);
 };

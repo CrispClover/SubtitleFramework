@@ -2,12 +2,12 @@
 
 #include "CSColourProfile.h"
 
-FLinearColor const& UCSCPSimple::oSubtitleGetColour(FName speaker) const
+FLinearColor const& UCSCPSimple::oGetSubtitleColour(FName speaker) const
 {
 	return DefaultSubtitleTextColour;
 }
 
-FLinearColor const& UCSCPSimple::oCaptionGetColour(FName source) const
+FLinearColor const& UCSCPSimple::oGetCaptionColour(FName source) const
 {
 	return DefaultCaptionTextColour;
 }
@@ -32,18 +32,24 @@ bool UCSCPAssigned::oHasColour(FName speaker) const
 	return AssignedColours.Contains(speaker);
 }
 
-FLinearColor const& UCSCPAssigned::oSubtitleGetColour(FName speaker) const
+FLinearColor const& UCSCPAssigned::oGetSubtitleColour(FName speaker) const
 {
 	if (FLinearColor const* colour = AssignedColours.Find(speaker))
+	{
 		return *colour;
+	}
 	else
+	{
 		return DefaultSubtitleTextColour;
+	}
 }
 
 void UCSCPAssigned::oLogMatch(FName speaker)
 {
 	if (AssignedColours.Contains(speaker))
+	{
 		UCSCPMatched::oLogMatch(speaker);
+	}
 }
 
 void UCSCPCustom::Empty()

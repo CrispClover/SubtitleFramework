@@ -6,5 +6,7 @@
 void UCSBaseSpacer::SetSize_Implementation(FVector2D const& size)
 {
 	if (Spacer)
+	{
 		Spacer->SetSize(size);
+	}
 }

@@ -16,9 +16,9 @@ UCSUserSettings::UCSUserSettings()
 	, bShowCaptionIndicators(true)
 	, ColourProfile(nullptr)
 	//Label:
-	, FullLabelFormat(FText::FromString("{speaker}: [{description}]"))
-	, SpeakerOnlyLabelFormat(FText::FromString("{speaker}:"))
-	, DescriptionOnlyLabelFormat(FText::FromString("[{description}]"))
+	, FullLabelFormat(FText::FromString(TEXT("{speaker}: [{description}]")))
+	, SpeakerOnlyLabelFormat(FText::FromString(TEXT("{speaker}:")))
+	, DescriptionOnlyLabelFormat(FText::FromString(TEXT("[{description}]")))
 	, ShowSpeaker(EShowSpeaker::Never)
 	, bSpeakersAreUpperCase(true)
 	, bShowSubtitleDescriptions(false)
@@ -120,7 +120,9 @@ bool UCSUserSettings::GetShowSpeaker(const FName speaker) const
 void UCSUserSettings::LogSpeakerShown(const FName speaker) const
 {
 	if (UCSCPMatched* cp = Cast<UCSCPMatched>(ColourProfile.LoadSynchronous()))
+	{
 		cp->LogMatch(speaker);
+	}
 }
 
 FLinearColor const& UCSUserSettings::GetSubtitleTextColour(const FName speaker) const
@@ -145,8 +147,12 @@ TArray<FName> UCSUserSettings::GetTypefaceOptions() const
 	TArray<FName> options = TArray<FName>();
 
 	if (UFont const* font = Cast<const UFont>(Font.LoadSynchronous()))
+	{
 		for (const FTypefaceEntry& typefaceEntry : font->CompositeFont.DefaultTypeface.Fonts)
+		{
 			options.Add(typefaceEntry.Name);
+		}
+	}
 
 	return options;
 }

@@ -68,10 +68,12 @@ public:
 
 	bool GetSoundData(FCSSoundID const& soundID, FVector& location, ULocalPlayer const* player) const;
 
+	TArray<FVector> GetSoundDataDump(TArray<FCSSoundID>& soundIDs, ULocalPlayer const* player) const;
+
 	template<typename UserClass>
 	void RegisterIndicator(CSIndicatorRegistrationData<UserClass> args, ULocalPlayer const* player)
 	{
-		if (CSTrackingManager* manager = rAccessManager(player))
+		if (CSTrackingManager* manager = uAccessManager(player))
 			manager->RegisterIndicator(args);
 	}
 
@@ -84,8 +86,8 @@ public:
 	void UnionisePlayerSources(ULocalPlayer const* receivingPlayer, ULocalPlayer const* copiedPlayer);
 
 private:
-	CSTrackingManager const* rGetManager(ULocalPlayer const* player = nullptr) const;
-	CSTrackingManager* rAccessManager(ULocalPlayer const* player = nullptr);
+	CSTrackingManager const* uGetManager(ULocalPlayer const* player = nullptr) const;
+	CSTrackingManager* uAccessManager(ULocalPlayer const* player = nullptr);
 
 	CSTrackingManager* uTrackingManager = nullptr;
 	TArray<CSTrackingManager*> iSplitscreenTrackingManagers = TArray<CSTrackingManager*>();

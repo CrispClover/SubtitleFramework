@@ -8,7 +8,9 @@ void UCSBaseWidget::SynchronizeProperties()
 	Super::SynchronizeProperties();
 	
 	if (IsDesignTime())
+	{
 		eConstructExample(FVector2D());
+	}
 }
 
 void UCSBaseWidget::SetDesignerFlags(EWidgetDesignFlags newFlags)
@@ -16,7 +18,9 @@ void UCSBaseWidget::SetDesignerFlags(EWidgetDesignFlags newFlags)
 	Super::SetDesignerFlags(newFlags);
 
 	if (IsDesignTime())
+	{
 		eConstructExample(FVector2D());
+	}
 }
 
 void UCSBaseWidget::OnDesignerChanged(const FDesignerChangedEventArgs& args)

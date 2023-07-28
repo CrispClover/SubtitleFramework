@@ -97,16 +97,16 @@ public:
 //All data required to calculate a 3D direction indicator correctly.
 struct CSTrackedSoundData : public FCSIndicatorWidgetData
 {
-	FVector SoundData;
+	FVector pSound;
 
 	CSTrackedSoundData()
 		: FCSIndicatorWidgetData()
-		, SoundData()
+		, pSound()
 	{};
 
 	CSTrackedSoundData(FVector data)
 		: FCSIndicatorWidgetData()
-		, SoundData(data)
+		, pSound(data)
 	{};
 };
 
@@ -116,7 +116,7 @@ struct CSTrackingData
 	{
 		iSoundIDs.Empty();
 		iDeletionScheduledIDs.Empty();
-		iSoundData.Empty();
+		iTrackedSounds.Empty();
 		icActiveSounds = 0;
 	};
 
@@ -125,13 +125,13 @@ struct CSTrackingData
 		//We keep all active indicators' data alive.
 		const int32 inactive = iSoundIDs.Num() - icActiveSounds;
 		iSoundIDs.RemoveAt(icActiveSounds, inactive, true);
-		iSoundData.RemoveAt(icActiveSounds, inactive, true);
+		iTrackedSounds.RemoveAt(icActiveSounds, inactive, true);
 	};
 
 	inline void Shrink()
 	{
 		iSoundIDs.Shrink();
-		iSoundData.Shrink();
+		iTrackedSounds.Shrink();
 	};
 
 	inline bool NeedsCalc(const int32 index)
@@ -144,19 +144,19 @@ struct CSTrackingData
 		{ return iSoundIDs.Contains(id); }
 
 	inline CSTrackedSoundData& AccessItem(const int32 index)
-		{ return iSoundData[index]; }
+		{ return iTrackedSounds[index]; }
 
 	inline CSTrackedSoundData const& GetItem(const int32 index) const
-		{ return iSoundData[index]; }
+		{ return iTrackedSounds[index]; }
 
 	inline FCSSoundID const& GetID(const int32 index) const
 		{ return iSoundIDs[index]; }
 
-	inline CSTrackedSoundData const* rFind(FCSSoundID const& id) const
+	inline CSTrackedSoundData const* uFind(FCSSoundID const& id) const
 	{
 		const int32 i = iSoundIDs.Find(id);
 		if (i > 0)
-			return &iSoundData[i];
+			return &iTrackedSounds[i];
 		else
 			return nullptr;
 	}
@@ -165,12 +165,16 @@ struct CSTrackingData
 	inline bool TrackSound(FCSSoundID const& id, FVector const& data)
 	{
 		const int32 index = iSoundIDs.AddUnique(id);
-		const bool isOld = index < iSoundData.Num();
+		const bool isOld = index < iTrackedSounds.Num();
 
 		if (isOld)
-			iSoundData[index].SoundData = data;
+		{
+			iTrackedSounds[index].pSound = data;
+		}
 		else
-			iSoundData.Add(CSTrackedSoundData(data));
+		{
+			iTrackedSounds.Add(CSTrackedSoundData(data));
+		}
 
 		return !isOld;
 	};
@@ -193,7 +197,7 @@ struct CSTrackingData
 			//Remove inactive data.
 			if (iSoundIDs[i] == id)
 			{
-				uRemove(i);
+				vRemove(i);
 				return;
 			}
 		}
@@ -208,14 +212,18 @@ struct CSTrackingData
 			FCSSoundID const& id = iSoundIDs[i];
 
 			if (source == id.Source)
+			{
 				iDeletionScheduledIDs.AddUnique(id);
+			}
 		}
 
 		for (; i < iSoundIDs.Num(); i++)
 		{
 			//Remove inactive data.
 			if (source == iSoundIDs[i].Source)
-				uRemove(i);
+			{
+				vRemove(i);
+			}
 		}
 	};
 
@@ -228,11 +236,10 @@ struct CSTrackingData
 
 		if (uxToSwap != icActiveSounds)
 		{
-			iSoundIDs.SwapMemory(uxToSwap, icActiveSounds);
-			iSoundData.SwapMemory(uxToSwap, icActiveSounds);
+			vSwap(uxToSwap);
 		}
 
-		args.WidgetDataPtrRef = &iSoundData[icActiveSounds];
+		args.WidgetDataPtrRef = &iTrackedSounds[icActiveSounds];
 
 		icActiveSounds++;
 
@@ -251,35 +258,49 @@ struct CSTrackingData
 		icActiveSounds--;//index of last indicator (for now)
 
 		if (ux != icActiveSounds)
-			args = uSwapNotify(ux);
+		{
+			args = vSwapNotify(ux);
+		}
 		
 		if (iDeletionScheduledIDs.Remove(id))
-			uRemove(icActiveSounds);
+		{
+			vRemove(icActiveSounds);
+		}
 	};
 
+	void DumpSoundData(TArray<FCSSoundID>& ids, TArray<FVector>& positions) const
+	{
+		ids.Append(iSoundIDs);
+
+		positions.Reserve(positions.Num() + iTrackedSounds.Num());
+
+		for (CSTrackedSoundData const& data : iTrackedSounds)
+			positions.Add(data.pSound);
+	}
+
 private:
-	inline void uRemove(const int32 index)
+	inline void vRemove(const int32 index)
 	{
 		iSoundIDs.RemoveAtSwap(index, 1, false);
-		iSoundData.RemoveAtSwap(index, 1, false);
+		iTrackedSounds.RemoveAtSwap(index, 1, false);
 	}
 
-	inline void uSwap(const int32 index)
+	inline void vSwap(const int32 index)
 	{
 		iSoundIDs.SwapMemory(index, icActiveSounds);
-		iSoundData.SwapMemory(index, icActiveSounds);
+		iTrackedSounds.SwapMemory(index, icActiveSounds);
 	}
 
-	inline CSSwapArgs uSwapNotify(const int32 index)
+	inline CSSwapArgs vSwapNotify(const int32 index)
 	{
-		uSwap(index);
-		return CSSwapArgs(iSoundIDs[index], &iSoundData[index]);
+		vSwap(index);
+		return CSSwapArgs(iSoundIDs[index], &iTrackedSounds[index]);
 	}
 
 	TArray<FCSSoundID> iSoundIDs = TArray<FCSSoundID>();
 	TArray<FCSSoundID> iDeletionScheduledIDs = TArray<FCSSoundID>();
 
-	TArray<CSTrackedSoundData> iSoundData = TArray<CSTrackedSoundData>();
+	TArray<CSTrackedSoundData> iTrackedSounds = TArray<CSTrackedSoundData>();
 	int32 icActiveSounds = 0;
 };
 
@@ -303,7 +324,7 @@ public:
 	void Calculate();
 
 	inline bool Contains(FCSSoundID const& soundID) const
-		{ return nullptr != iData.rFind(soundID); };
+		{ return nullptr != iData.uFind(soundID); };
 	
 	CSTrackingManager() = delete;
 
@@ -333,6 +354,9 @@ public:
 	void TrackSound(FCSSoundID const& id, FVector const& data);
 
 	bool GetSoundData(FCSSoundID const& id, FVector& data) const;
+
+	inline void GetSoundDataDump(TArray<FCSSoundID>& soundIDs, TArray<FVector>& positions) const
+		{ iData.DumpSoundData(soundIDs, positions); };
 
 	inline void RemoveSound(FCSSoundID const& id)
 		{ return iData.RemoveSound(id); };

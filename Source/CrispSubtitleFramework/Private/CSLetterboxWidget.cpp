@@ -63,7 +63,11 @@ void UCSLetterboxWidget::ConstructFromSubtitle_Implementation(FCrispSubtitle con
 		return;
 
 	if (style.bShowIndicator)
+	{
 		Indicator->Register(FCSSoundID(subtitle.Source, UCSProjectSettingFunctions::GetSoundNameForSpeech()));
+	}
 	else
+	{
 		Indicator->RemoveFromParent();
+	}
 }
