@@ -1,4 +1,4 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+// Copyright Crisp Clover.
 
 #include "CrispSubtitleFramework.h"
 #include "CSProjectSettings.h"
