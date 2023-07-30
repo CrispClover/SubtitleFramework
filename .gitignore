@@ -3,3 +3,5 @@
 ################################################################################
 
 /.vs
+/Source/CrispSubtitleFramework/Private/SCTextLine.cpp
+/Source/CrispSubtitleFramework/Public/SCTextLine.h
