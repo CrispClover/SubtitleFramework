@@ -45,7 +45,7 @@ FCrispSubtitle UCSCoreLibrary::FrySubtitle(FFullSubtitle const& sub, const int32
 	if (sub.Speaker == UCSProjectSettingFunctions::GetSpeakerNameForCaptions())
 	{
 		FFormatNamedArguments args;
-		args.Add("description", sub.Description);
+		args.Add(TEXT("description"), sub.Description);
 
 		const FText label = FText::Format(settings->DescriptionOnlyLabelFormat, args);
 

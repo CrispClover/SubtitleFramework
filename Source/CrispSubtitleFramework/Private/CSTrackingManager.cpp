@@ -17,7 +17,7 @@ void CSTrackingManager::Calculate()
 
 	for (int32 i = 0; iData.NeedsCalc(i); i++)
 	{
-		CSTrackedSoundData& sound3D = iData.AccessItem(i);
+		CSTrackedSoundData& sound3D = iData.vAccessItem(i);
 
 		const FVector4 projection = projectionMatrix.TransformFVector4(FVector4(sound3D.pSound, 1.f));
 		const float m = 1 - 2 * (int8)(projection.W < 0);//We want to mirror coordinates behind the player's view.
@@ -33,22 +33,22 @@ void CSTrackingManager::Calculate()
 	UpdateIDataEvent.Broadcast();
 }
 
-void CSTrackingManager::TrackSound(FCSSoundID const& id, FVector const& data)
+void CSTrackingManager::TrackSound(FCSSoundID const& id, FVector const& pSound)
 {
-	if (iData.TrackSound(id, data))
+	if (iData.TrackSound(id, pSound))
 	{
 		iNotifyOfNewTrackedSound(id);
 	}
 }
 
-bool CSTrackingManager::GetSoundData(FCSSoundID const& id, FVector& data) const
+bool CSTrackingManager::GetSoundData(FCSSoundID const& id, FVector& pSound) const
 {
 	CSTrackedSoundData const* trackedData = iData.uFind(id);
 
 	if (!trackedData)
 		return false;
 
-	data = trackedData->pSound;
+	pSound = trackedData->pSound;
 	return true;
 }
 
@@ -57,12 +57,12 @@ void CSTrackingManager::UnregisterIndicator(FCSSoundID const& id, UObject* widge
 	FDelegateHandle handle;
 	if (iPendingIndicatorDelegates.RemoveAndCopyValue(id, handle))
 	{
-		iNewSoundTrackedEvent.Remove(handle);
+		NewSoundTrackedEvent.Remove(handle);
 	}
 	else
 	{
 		UpdateIDataEvent.RemoveAll(widget);
-		iSwapDataEvent.RemoveAll(widget);
+		SwapDataEvent.RemoveAll(widget);
 
 		CSSwapArgs args = CSSwapArgs(id, nullptr);
 
@@ -70,16 +70,16 @@ void CSTrackingManager::UnregisterIndicator(FCSSoundID const& id, UObject* widge
 
 		if (args.WidgetDataPtr)
 		{
-			iSwapDataEvent.Broadcast(args);
+			SwapDataEvent.Broadcast(args);
 		}
 	}
 }
 
-void CSTrackingManager::Copy(CSTrackingManager const* manager)
+void CSTrackingManager::vCopy(CSTrackingManager const* manager)
 {
 	for (int32 i = 0; i < manager->iData.Num(); i++)
 	{
-		TrackSound(manager->iData.GetID(i), manager->iData.GetItem(i).pSound);
+		TrackSound(manager->iData.vGetID(i), manager->iData.vGetItem(i).pSound);
 	}
 }
 
@@ -88,7 +88,7 @@ void CSTrackingManager::iNotifyOfNewTrackedSound(FCSSoundID const& id)
 	FDelegateHandle handle;
 	if (iPendingIndicatorDelegates.RemoveAndCopyValue(id, handle))
 	{
-		iNewSoundTrackedEvent.Broadcast(id);
-		iNewSoundTrackedEvent.Remove(handle);
+		NewSoundTrackedEvent.Broadcast(id);
+		NewSoundTrackedEvent.Remove(handle);
 	}
 }

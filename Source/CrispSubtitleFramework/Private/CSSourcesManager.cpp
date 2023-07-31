@@ -127,7 +127,7 @@ bool FCSSourcesManager::RemoveSource(FName name)
 	return true;
 }
 
-bool FCSSourcesManager::TrackSound(FCSSoundID const& soundID, FVector const& location, ULocalPlayer const* player)
+bool FCSSourcesManager::TrackSound(FCSSoundID const& soundID, FVector const& pSound, ULocalPlayer const* player)
 {
 	if (!IsRegistered(soundID.Source))
 		return false;
@@ -135,13 +135,13 @@ bool FCSSourcesManager::TrackSound(FCSSoundID const& soundID, FVector const& loc
 	if (UCSProjectSettingFunctions::SupportSplitscreen() && !player)
 	{
 		for (CSTrackingManager* manager : iSplitscreenTrackingManagers)
-			manager->TrackSound(soundID, location);
+			manager->TrackSound(soundID, pSound);
 	}
 	else
 	{
 		if (CSTrackingManager* manager = uAccessManager(player))
 		{
-			manager->TrackSound(soundID, location);
+			manager->TrackSound(soundID, pSound);
 		}
 	}
 
@@ -199,10 +199,10 @@ bool FCSSourcesManager::IsSoundTracked(FCSSoundID const& soundID, ULocalPlayer c
 	}
 }
 
-bool FCSSourcesManager::GetSoundData(FCSSoundID const& soundID, FVector& location, ULocalPlayer const* player) const
+bool FCSSourcesManager::GetSoundData(FCSSoundID const& soundID, FVector& pSound, ULocalPlayer const* player) const
 {
 	if (CSTrackingManager const* manager = uGetManager(player))
-		return manager->GetSoundData(soundID, location);
+		return manager->GetSoundData(soundID, pSound);
 	else
 		return false;
 }
@@ -295,7 +295,7 @@ void FCSSourcesManager::UnionisePlayerSources(ULocalPlayer const* receivingPlaye
 
 	if (copying && receiving)
 	{
-		receiving->Copy(copying);
+		receiving->vCopy(copying);
 	}
 }
 

@@ -647,26 +647,26 @@ bool UCSS_SubtitleGISS::RegisterAutoNamedSource(AActor const* source, FName& nam
 	return iSourcesManager.AddSource(name);
 }
 
-bool UCSS_SubtitleGISS::RegisterAndTrackSound(FCSSoundID const& soundID, FVector const& location, ULocalPlayer const* player)
+bool UCSS_SubtitleGISS::RegisterAndTrackSound(FCSSoundID const& soundID, FVector const& pSound, ULocalPlayer const* player)
 {
 	if (!RegisterSource(soundID.Source))
 		return false;
 	else
-		return TrackSound(soundID, location, player);
+		return TrackSound(soundID, pSound, player);
 }
 
-bool UCSS_SubtitleGISS::TrackSound(FCSSoundID const& soundID, FVector const& location, ULocalPlayer const* player)
+bool UCSS_SubtitleGISS::TrackSound(FCSSoundID const& soundID, FVector const& pSound, ULocalPlayer const* player)
 {
-	if (!iSourcesManager.TrackSound(soundID, location, player))
+	if (!iSourcesManager.TrackSound(soundID, pSound, player))
 		return false;
 	
 	LocationUpdated.Broadcast();
 	return true;
 }
 
-bool UCSS_SubtitleGISS::GetSoundLocation(FCSSoundID const& soundID,  FVector& location, ULocalPlayer const* player) const
+bool UCSS_SubtitleGISS::GetSoundLocation(FCSSoundID const& soundID,  FVector& pSound, ULocalPlayer const* player) const
 {
-	return iSourcesManager.GetSoundData(soundID, location, player);
+	return iSourcesManager.GetSoundData(soundID, pSound, player);
 }
 
 TArray<FVector> UCSS_SubtitleGISS::GetSoundLocationDump(TArray<FCSSoundID>& soundIDs, ULocalPlayer const* player) const

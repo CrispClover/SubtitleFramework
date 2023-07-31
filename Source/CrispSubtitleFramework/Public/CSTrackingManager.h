@@ -104,9 +104,9 @@ struct CSTrackedSoundData : public FCSIndicatorWidgetData
 		, pSound()
 	{};
 
-	CSTrackedSoundData(FVector data)
+	CSTrackedSoundData(FVector pSound)
 		: FCSIndicatorWidgetData()
-		, pSound(data)
+		, pSound(pSound)
 	{};
 };
 
@@ -143,13 +143,13 @@ struct CSTrackingData
 	inline bool Contains(FCSSoundID const& id) const
 		{ return iSoundIDs.Contains(id); }
 
-	inline CSTrackedSoundData& AccessItem(const int32 index)
+	inline CSTrackedSoundData& vAccessItem(const int32 index)
 		{ return iTrackedSounds[index]; }
 
-	inline CSTrackedSoundData const& GetItem(const int32 index) const
+	inline CSTrackedSoundData const& vGetItem(const int32 index) const
 		{ return iTrackedSounds[index]; }
 
-	inline FCSSoundID const& GetID(const int32 index) const
+	inline FCSSoundID const& vGetID(const int32 index) const
 		{ return iSoundIDs[index]; }
 
 	inline CSTrackedSoundData const* uFind(FCSSoundID const& id) const
@@ -162,18 +162,18 @@ struct CSTrackingData
 	}
 
 	//Returns true when the sound is newly tracked.
-	inline bool TrackSound(FCSSoundID const& id, FVector const& data)
+	inline bool TrackSound(FCSSoundID const& id, FVector const& pSound)
 	{
 		const int32 index = iSoundIDs.AddUnique(id);
 		const bool isOld = index < iTrackedSounds.Num();
 
 		if (isOld)
 		{
-			iTrackedSounds[index].pSound = data;
+			iTrackedSounds[index].pSound = pSound;
 		}
 		else
 		{
-			iTrackedSounds.Add(CSTrackedSoundData(data));
+			iTrackedSounds.Add(CSTrackedSoundData(pSound));
 		}
 
 		return !isOld;
@@ -268,14 +268,14 @@ struct CSTrackingData
 		}
 	};
 
-	void DumpSoundData(TArray<FCSSoundID>& ids, TArray<FVector>& positions) const
+	void DumpSoundData(TArray<FCSSoundID>& ids, TArray<FVector>& pSounds) const
 	{
 		ids.Append(iSoundIDs);
 
-		positions.Reserve(positions.Num() + iTrackedSounds.Num());
+		pSounds.Reserve(pSounds.Num() + iTrackedSounds.Num());
 
 		for (CSTrackedSoundData const& data : iTrackedSounds)
-			positions.Add(data.pSound);
+			pSounds.Add(data.pSound);
 	}
 
 private:
@@ -338,10 +338,10 @@ public:
 	inline void Clear()
 	{
 		UpdateIDataEvent.Clear();
-		iSwapDataEvent.Clear();
+		SwapDataEvent.Clear();
 		iData.Clear();
 		iPendingIndicatorDelegates.Empty();
-		iNewSoundTrackedEvent.Clear();
+		NewSoundTrackedEvent.Clear();
 	};
 
 	inline void Empty()
@@ -351,12 +351,12 @@ public:
 	inline void Shrink()
 		{ iData.Shrink(); };
 
-	void TrackSound(FCSSoundID const& id, FVector const& data);
+	void TrackSound(FCSSoundID const& id, FVector const& pSound);
 
-	bool GetSoundData(FCSSoundID const& id, FVector& data) const;
+	bool GetSoundData(FCSSoundID const& id, FVector& pSound) const;
 
-	inline void GetSoundDataDump(TArray<FCSSoundID>& soundIDs, TArray<FVector>& positions) const
-		{ iData.DumpSoundData(soundIDs, positions); };
+	inline void GetSoundDataDump(TArray<FCSSoundID>& soundIDs, TArray<FVector>& pSounds) const
+		{ iData.DumpSoundData(soundIDs, pSounds); };
 
 	inline void RemoveSound(FCSSoundID const& id)
 		{ return iData.RemoveSound(id); };
@@ -370,24 +370,24 @@ public:
 		if (iData.Register(args.RegisterArgs))
 		{
 			UpdateIDataEvent.AddUObject(args.User, args.Functions.UpdateFunction);
-			iSwapDataEvent.AddUObject(args.User, args.Functions.SwapFunction);
+			SwapDataEvent.AddUObject(args.User, args.Functions.SwapFunction);
 		}
 		else
 		{
-			FDelegateHandle handle = iNewSoundTrackedEvent.AddUObject(args.User, args.Functions.TrackFunction);
+			FDelegateHandle handle = NewSoundTrackedEvent.AddUObject(args.User, args.Functions.TrackFunction);
 			iPendingIndicatorDelegates.Add(args.RegisterArgs.ID, handle);
 		}
 	}
 
 	void UnregisterIndicator(FCSSoundID const& id, UObject* widget);
 	
-	void Copy(CSTrackingManager const* manager);
+	void vCopy(CSTrackingManager const* manager);
 
 private:
 	CSUpdateIData UpdateIDataEvent;
-	CSSwapIData iSwapDataEvent;
+	CSSwapIData SwapDataEvent;
+	CSNewSoundTracked NewSoundTrackedEvent;
 
-	CSNewSoundTracked iNewSoundTrackedEvent;
 	void iNotifyOfNewTrackedSound(FCSSoundID const& id);
 
 	CSTrackingData iData = CSTrackingData();

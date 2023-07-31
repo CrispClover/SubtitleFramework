@@ -145,7 +145,13 @@ public:
 	FRawSubtitle()
 		: FSoundCaption()
 		, ReadDuration(1.5f)
-		, Lines(TArray<FText>{FText::FromString("We would like to show you something,"), FText::FromString("but this subtitle is empty.")})
+		, Lines(
+			TArray<FText>
+				{
+					  NSLOCTEXT("CrispSubtitles", "emptySubLine0", "We would like to show you something,")
+					, NSLOCTEXT("CrispSubtitles", "emptySubLine1", "but this subtitle is empty.")
+				}
+		)
 	{};
 
 	FRawSubtitle(FText const& description, const float displayDuration)
@@ -178,7 +184,7 @@ public:
 
 	FGroupSubtitle()
 		: FRawSubtitle()
-		, SpeakerText(FText::FromString("error"))
+		, SpeakerText(NSLOCTEXT("CrispSubtitles", "error", "error"))
 		, Speaker(FName("error"))
 	{};
 

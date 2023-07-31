@@ -28,17 +28,18 @@ TArray<FString> UCSToolsBFL::AutomaticLineBreaks(FString const& subtitle, int32&
 	{
 		int32 temp = word.Len() + LineLength;//potential line length
 
-		if (temp == maxLineLength) //append word to line, add line to lines, start new empty line
+		if (temp == maxLineLength) //start new empty line after adding word
 		{
 			lines.Add(line + word);
 			line = "";
 			LineLength = 0;
 		}
-		else if (temp < maxLineLength) {//append delimiter to word, append word to line 
+		else if (temp < maxLineLength) //add word and delimiter
+		{
 			line.Append(word + wordDelimiter);
 			LineLength = temp + 1;
 		}
-		else //add line to lines, start new line with word and delimiter
+		else //too long, add word to next line
 		{
 			lines.Add(line);
 			line = word + wordDelimiter;

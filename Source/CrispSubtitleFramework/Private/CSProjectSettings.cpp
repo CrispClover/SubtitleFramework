@@ -21,23 +21,23 @@ UCSProjectSettings::UCSProjectSettings(const FObjectInitializer& ObjectInitializ
 		(
 			FRawSubtitle
 			(
-				FSoundCaption(FText::FromString(TEXT("testing")))
+				FSoundCaption(NSLOCTEXT("CrispSubtitles", "testing", "testing"))
 				, TArray<FText>
 				{
-					  FText::FromString(TEXT("With the currently selected settings"))
-					, FText::FromString(TEXT("subtitles will look like this."))
+					  NSLOCTEXT("CrispSubtitles", "exampleSubLine0", "With the currently selected settings")
+					, NSLOCTEXT("CrispSubtitles", "exampleSubLine1", "subtitles will look like this.")
 				}
 				, 3
 			)
-			, FText::FromString(TEXT("Test"))
+			, NSLOCTEXT("CrispSubtitles", "test", "Test")
 			, FName("test")
 			, FName("test")
 		)
 	})
 	, ExampleCaptions
 	({
-		  FFullCaption(FSoundCaption(FText::FromString(TEXT("Example"))), FName("example"), FName("example"))
-		, FFullCaption(FSoundCaption(FText::FromString(TEXT("Test"))), FName("example"), FName("test"))
+		  FFullCaption(FSoundCaption(NSLOCTEXT("CrispSubtitles", "example", "Example")), FName("example"), FName("example"))
+		, FFullCaption(FSoundCaption(NSLOCTEXT("CrispSubtitles", "test", "Test")), FName("example"), FName("test"))
 	})
 {
 #if WITH_EDITOR

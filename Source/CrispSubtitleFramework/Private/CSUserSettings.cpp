@@ -6,7 +6,7 @@
 
 UCSUserSettings::UCSUserSettings()
 	//Core:
-	: DisplayName(FText::FromString("Default"))
+	: DisplayName(NSLOCTEXT("CrispSubtitles", "FullLabelFormat", "Default"))
 	, LetterboxClass(nullptr)
 	, LineClass(nullptr)
 	, CaptionClass(nullptr)
@@ -16,9 +16,9 @@ UCSUserSettings::UCSUserSettings()
 	, bShowCaptionIndicators(true)
 	, ColourProfile(nullptr)
 	//Label:
-	, FullLabelFormat(FText::FromString(TEXT("{speaker}: [{description}]")))
-	, SpeakerOnlyLabelFormat(FText::FromString(TEXT("{speaker}:")))
-	, DescriptionOnlyLabelFormat(FText::FromString(TEXT("[{description}]")))
+	, FullLabelFormat(NSLOCTEXT("CrispSubtitles", "FullLabelFormat", "{speaker}: [{description}]"))
+	, SpeakerOnlyLabelFormat(NSLOCTEXT("CrispSubtitles", "FullLabelFormat", "{speaker}:"))
+	, DescriptionOnlyLabelFormat(NSLOCTEXT("CrispSubtitles", "FullLabelFormat", "[{description}]"))
 	, ShowSpeaker(EShowSpeaker::Never)
 	, bSpeakersAreUpperCase(true)
 	, bShowSubtitleDescriptions(false)

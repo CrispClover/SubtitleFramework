@@ -125,11 +125,11 @@ struct TCSTimedData
 		iIDs.Empty();
 	};
 
-	inline void Reserve(const int32 n)
+	inline void Reserve(const int32 c)
 	{
-		iDataElements.Reserve(n);
-		iTimerHandles.Reserve(n);
-		iIDs.Reserve(n);
+		iDataElements.Reserve(c);
+		iTimerHandles.Reserve(c);
+		iIDs.Reserve(c);
 	};
 
 	inline void Shrink()

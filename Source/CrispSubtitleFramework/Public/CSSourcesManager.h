@@ -58,7 +58,7 @@ public:
 
 	bool RemoveSource(const FName name);
 
-	bool TrackSound(FCSSoundID const& soundID, FVector const& location, ULocalPlayer const* player);
+	bool TrackSound(FCSSoundID const& soundID, FVector const& pSound, ULocalPlayer const* player);
 
 	void StopTrackingSound(FCSSoundID const& soundID, ULocalPlayer const* player);
 
@@ -66,7 +66,7 @@ public:
 
 	bool IsSoundTracked(FCSSoundID const& soundID, ULocalPlayer const* player) const;
 
-	bool GetSoundData(FCSSoundID const& soundID, FVector& location, ULocalPlayer const* player) const;
+	bool GetSoundData(FCSSoundID const& soundID, FVector& pSound, ULocalPlayer const* player) const;
 
 	TArray<FVector> GetSoundDataDump(TArray<FCSSoundID>& soundIDs, ULocalPlayer const* player) const;
 
