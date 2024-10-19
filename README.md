@@ -17,7 +17,7 @@ I want to build an FAQ section: [Discussion](https://github.com/CrispClover/Subt
 
 ## Support
 Feel free to contact me if you need help. Contributions are also welcome.
-* [Twitter](https://twitter.com/crispclover)
+* [Bsky](https://bsky.app/profile/crispclover.com)
 * [Unreal Forums](https://forums.unrealengine.com/t/crisp-subtitle-framework/737143)
 
 **Note**: This plugin is free and will remain free forever.
