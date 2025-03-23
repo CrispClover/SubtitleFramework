@@ -8,8 +8,8 @@ This plugin helps you deliver subtitles in accordance with broadcasting industry
 * [Download](https://github.com/CrispClover/SubtitleFramework/releases)
 * You can also use [PluginDownloader](https://www.unrealengine.com/marketplace/en-US/product/plugin-downloader) to download the plugin.
 
-## Will there be updates?
-Maybe. I haven't updated Unreal in a while, and while I have plans to improve parts of the plugin, I have only very little time to spare. Still, if you need help with upgrading the plugin to a new Unreal version, feel free to contact me!
+### Will there be updates?
+Maybe. I haven't updated Unreal in some time, and while I have plans to improve parts of the plugin, I have only very little time to spare. Still, if you need help with upgrading the plugin to a new Unreal version, feel free to contact me!
 
 ### Also!
 I want to build an FAQ section: [Discussion](https://github.com/CrispClover/SubtitleFramework/discussions/4)
